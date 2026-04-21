@@ -25,10 +25,14 @@
             "id": "2af4d2e86cb954ce",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "手机测试.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "新标签页"
+              "title": "手机测试"
             }
           }
         ],
@@ -123,6 +127,7 @@
         "state": {
           "type": "backlink",
           "state": {
+            "file": "手机测试.md",
             "collapseAll": false,
             "extraContext": false,
             "sortOrder": "alphabetical",
@@ -141,6 +146,7 @@
         "state": {
           "type": "outgoing-link",
           "state": {
+            "file": "手机测试.md",
             "linksCollapsed": false,
             "unlinkedCollapsed": true
           },
@@ -154,6 +160,7 @@
         "state": {
           "type": "outline",
           "state": {
+            "file": "手机测试.md",
             "followCursor": false,
             "showSearch": false,
             "searchQuery": ""
@@ -189,6 +196,7 @@
   },
   "active": "2af4d2e86cb954ce",
   "lastOpenFiles": [
+    "手机测试.md",
     "Markdown基础.md"
   ]
 }
