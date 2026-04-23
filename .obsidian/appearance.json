@@ -4,5 +4,8 @@
   "baseFontSize": 18,
   "cssTheme": "Dracula for Obsidian",
   "accentColor": "",
-  "theme": "obsidian"
+  "theme": "system",
+  "interfaceFontFamily": "JetBrains Mono",
+  "textFontFamily": "JetBrains Mono",
+  "monospaceFontFamily": "JetBrains Mono"
 }
