@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Markdown基础.md",
+                "file": "手机测试.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Markdown基础"
+              "title": "手机测试"
             }
           }
         ],
@@ -196,6 +196,7 @@
   },
   "active": "2af4d2e86cb954ce",
   "lastOpenFiles": [
+    "Markdown基础.md",
     "手机测试.md",
     "讲座/越过废人陷阱——AI时代，教育将如何被改写？.md",
     "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260422164624299.png",
@@ -211,7 +212,6 @@
     "/讲座/assets",
     "/讲座",
     "/assets/Markdown基础",
-    "/assets",
-    "Markdown基础.md"
+    "/assets"
   ]
 }
