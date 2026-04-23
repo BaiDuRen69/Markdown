@@ -1,5 +1,7 @@
 [
   "obsidian-git",
   "obsidian-custom-attachment-location",
-  "obsidian-enhancing-export"
+  "obsidian-enhancing-export",
+  "file-cleaner-redux",
+  "calendar"
 ]
