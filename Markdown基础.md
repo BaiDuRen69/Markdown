@@ -24,7 +24,7 @@ Markdown段落没有特殊的格式，直接写文字就好
 2. 在段落后使用一个空行  
 3. HTML换行标签：再要换行的部分加`<br>`
 
-注：在安装preview enhance插件后，插件默认勾选了break on single new line,导致直接回车就换段落,请务必**关闭**
+注：在vscode中写Markdown，在安装preview enhance插件后，插件默认勾选了break on single new line,导致直接回车就换段落,请务必**关闭**
 
 ### 强调语法
 
