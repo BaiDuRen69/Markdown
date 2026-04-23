@@ -1,4 +1,8 @@
 {
   "baseFontSizeAction": true,
-  "nativeMenus": false
+  "nativeMenus": false,
+  "baseFontSize": 18,
+  "cssTheme": "Dracula for Obsidian",
+  "accentColor": "",
+  "theme": "obsidian"
 }
