@@ -296,9 +296,9 @@ eg.~~这是添加了删除线的文本~~
 
 alt文本（替代文字）在图片无法显示是提供替代信息，同时对无障碍访问和SEO很重要  
 >好的alt文本示例：   
->![苹果公司总部大楼外观，现代玻璃幕墙建筑](./images/apple-headquarters.jpg)  
-> ![网站流量统计图表，显示过去六个月的访问量呈上升趋势](./charts/traffic-stats.png)  
-> ![用户登录界面，包含用户名和密码输入框](./screenshots/login-page.png)
+>`![苹果公司总部大楼外观，现代玻璃幕墙建筑](./images/apple-headquarters.jpg)`  
+>`![网站流量统计图表，显示过去六个月的访问量呈上升趋势](./charts/traffic-stats.png)`  
+>`![用户登录界面，包含用户名和密码输入框](./screenshots/login-page.png)`
 
 ---
 
