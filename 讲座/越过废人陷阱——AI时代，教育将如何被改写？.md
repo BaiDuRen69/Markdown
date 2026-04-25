@@ -2,10 +2,9 @@
 tags:
   - 教育
 ---
-
 # 越过"废人陷阱"——AI时代，教育将如何被改写？
 
-> 讲座笔记，2026-04-24
+> 讲座笔记[【越过废人陷阱：AI时代，教育将被如何改写？  沈辛成  |【老师在B站】02】 ](https://www.bilibili.com/video/BV1yRA7zJE1k/?share_source=copy_web&vd_source=783a3f9c63a4e1c518117920c825f547)，2026-04-24
 
 ---
 
