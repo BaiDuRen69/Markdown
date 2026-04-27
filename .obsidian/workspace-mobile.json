@@ -13,30 +13,15 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Markdown基础.md",
+                "file": "随手记.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Markdown基础"
-            }
-          },
-          {
-            "id": "2af4d2e86cb954ce",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "随记.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "随记"
+              "title": "随手记"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -195,23 +180,32 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "2af4d2e86cb954ce",
+  "active": "4be940fd3bb5ca97",
   "lastOpenFiles": [
+    "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260424205055431.png",
+    "/随手记.md",
+    "/讲座/越过废人陷阱——AI时代，教育将如何被改写？.md",
+    "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260424205055431.png",
+    "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/PixPin_2026-04-24_20-02-26.png",
+    "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/PixPin_2026-04-24_20-02-26.png",
+    "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？",
+    "/讲座/assets",
+    "/讲座",
+    "/Markdown基础.md",
+    "[].md",
+    "随手记.md",
     "Markdown基础.md",
+    "随记.md",
+    "/[].md",
     "手机测试.md",
     "讲座/越过废人陷阱——AI时代，教育将如何被改写？.md",
     "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260422164624299.png",
-    "/讲座/越过废人陷阱——AI时代，教育将如何被改写？.md",
     "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260422164624299.png",
     "assets/Markdown基础/1.jpg",
-    "/Markdown基础.md",
     "/assets/Markdown基础/1.jpg",
     "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？",
     "讲座/assets",
     "讲座",
-    "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？",
-    "/讲座/assets",
-    "/讲座",
     "/assets/Markdown基础",
     "/assets"
   ]
