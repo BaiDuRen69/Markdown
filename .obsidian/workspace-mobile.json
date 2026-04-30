@@ -13,15 +13,30 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Markdown基础.md",
+                "file": "随记/碎片化信息的驯化与注意力困境.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Markdown基础"
+              "title": "碎片化信息的驯化与注意力困境"
+            }
+          },
+          {
+            "id": "b5a6c41f66ebf37c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "未命名.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "未命名"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -180,11 +195,14 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "4be940fd3bb5ca97",
+  "active": "b5a6c41f66ebf37c",
   "lastOpenFiles": [
-    "讲座/越过废人陷阱——AI时代，教育将如何被改写？.md",
+    "随记/碎片化信息的驯化与注意力困境.md",
+    "未命名.md",
+    "未命名",
+    "随记",
     "Markdown基础.md",
-    "随手记.md",
+    "讲座/越过废人陷阱——AI时代，教育将如何被改写？.md",
     "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260424205055431.png",
     "/随手记.md",
     "/讲座/越过废人陷阱——AI时代，教育将如何被改写？.md",
