@@ -59,12 +59,34 @@
   },
   "cookieAutoRefreshToggle": false,
   "cookieRefreshInterval": 12,
-  "scheduledSyncToggle": false,
+  "scheduledSyncToggle": true,
   "scheduledSyncInterval": 5,
-  "lastSyncTime": 0,
-  "lastSyncBookCount": 0,
+  "lastSyncTime": 1777788263379,
+  "lastSyncBookCount": 2,
   "lastSyncBookTitles": [],
-  "syncLogs": [],
+  "syncLogs": [
+    {
+      "id": "sync-1777788262517",
+      "timestamp": 1777788262517,
+      "totalBooks": 2,
+      "syncedBooks": 2,
+      "skippedBooks": 0,
+      "duration": 0.861,
+      "notes": [
+        {
+          "bookId": "3300054813",
+          "title": "社会心理学（第11版）",
+          "filePath": "社会心理学（第11版）.md"
+        },
+        {
+          "bookId": "25615385",
+          "title": "被讨厌的勇气：“自我启发之父”阿德勒的哲学课",
+          "filePath": "被讨厌的勇气：“自我启发之父”阿德勒的哲学课.md"
+        }
+      ],
+      "success": true
+    }
+  ],
   "bookshelfSortMode": "recent",
   "bookshelfGroupByYear": true,
   "bookshelfDefaultSyncStatusFilter": "all",
