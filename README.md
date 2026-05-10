@@ -15,14 +15,15 @@
 
 ```text
 Markdown/
-├── .idea/
-├── out/
+├── .obsidian/
+├── assets/
 ├── 讲座/
 ├── 随记/
 ├── 题目/
+├── .gitignore
 ├── DeepSeek提示词技巧.md
-├── Markdown.iml
 ├── Markdown基础.md
+├── README.md
 └── 豆瓣电影Top250.md
 ```
 
