@@ -1,0 +1,230 @@
+{
+  "main": {
+    "id": "37c8b345abc21d0f",
+    "type": "split",
+    "children": [
+      {
+        "id": "04ffafbde40a9d46",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4be940fd3bb5ca97",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "随记/碎片化信息的驯化与注意力困境.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "碎片化信息的驯化与注意力困境"
+            }
+          },
+          {
+            "id": "b5a6c41f66ebf37c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "未命名.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "未命名"
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e0246aee1e5f83e0",
+    "type": "mobile-drawer",
+    "children": [
+      {
+        "id": "50eae20fbab09bf1",
+        "type": "leaf",
+        "state": {
+          "type": "file-explorer",
+          "state": {
+            "sortOrder": "alphabetical",
+            "autoReveal": false
+          },
+          "icon": "lucide-folder-closed",
+          "title": "文件列表"
+        }
+      },
+      {
+        "id": "e65474d8d53bc4c6",
+        "type": "leaf",
+        "state": {
+          "type": "search",
+          "state": {
+            "query": "",
+            "matchingCase": false,
+            "explainSearch": false,
+            "collapseAll": false,
+            "extraContext": false,
+            "sortOrder": "alphabetical"
+          },
+          "icon": "lucide-search",
+          "title": "搜索"
+        }
+      },
+      {
+        "id": "bb3dab1aa75b9c36",
+        "type": "leaf",
+        "state": {
+          "type": "tag",
+          "state": {
+            "sortOrder": "frequency",
+            "useHierarchy": true,
+            "showSearch": false,
+            "searchQuery": ""
+          },
+          "icon": "lucide-tags",
+          "title": "标签"
+        }
+      },
+      {
+        "id": "2ae449b3a8b51b9f",
+        "type": "leaf",
+        "state": {
+          "type": "all-properties",
+          "state": {
+            "sortOrder": "frequency",
+            "showSearch": false,
+            "searchQuery": ""
+          },
+          "icon": "lucide-archive",
+          "title": "添加笔记属性"
+        }
+      },
+      {
+        "id": "628e702db731fc90",
+        "type": "leaf",
+        "state": {
+          "type": "bookmarks",
+          "state": {},
+          "icon": "lucide-bookmark",
+          "title": "书签"
+        }
+      }
+    ],
+    "currentTab": 0
+  },
+  "right": {
+    "id": "2dafb3291697f5d5",
+    "type": "mobile-drawer",
+    "children": [
+      {
+        "id": "6abc4bbcc78146e5",
+        "type": "leaf",
+        "state": {
+          "type": "backlink",
+          "state": {
+            "file": "手机测试.md",
+            "collapseAll": false,
+            "extraContext": false,
+            "sortOrder": "alphabetical",
+            "showSearch": false,
+            "searchQuery": "",
+            "backlinkCollapsed": false,
+            "unlinkedCollapsed": true
+          },
+          "icon": "links-coming-in",
+          "title": "反向链接"
+        }
+      },
+      {
+        "id": "d8633de70887ae07",
+        "type": "leaf",
+        "state": {
+          "type": "outgoing-link",
+          "state": {
+            "file": "手机测试.md",
+            "linksCollapsed": false,
+            "unlinkedCollapsed": true
+          },
+          "icon": "links-going-out",
+          "title": "出链"
+        }
+      },
+      {
+        "id": "323d38cb9872eaac",
+        "type": "leaf",
+        "state": {
+          "type": "outline",
+          "state": {
+            "file": "手机测试.md",
+            "followCursor": false,
+            "showSearch": false,
+            "searchQuery": ""
+          },
+          "icon": "lucide-list",
+          "title": "大纲"
+        }
+      },
+      {
+        "id": "5ee3f9bad6e96c44",
+        "type": "leaf",
+        "state": {
+          "type": "git-view",
+          "state": {},
+          "icon": "git-pull-request",
+          "title": "Source Control"
+        }
+      }
+    ],
+    "currentTab": 3
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false,
+      "file-cleaner-redux:Clean files": false,
+      "obsidian-git:Open Git source control": false
+    }
+  },
+  "active": "b5a6c41f66ebf37c",
+  "lastOpenFiles": [
+    "随记/碎片化信息的驯化与注意力困境.md",
+    "未命名.md",
+    "未命名",
+    "随记",
+    "Markdown基础.md",
+    "讲座/越过废人陷阱——AI时代，教育将如何被改写？.md",
+    "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260424205055431.png",
+    "/随手记.md",
+    "/讲座/越过废人陷阱——AI时代，教育将如何被改写？.md",
+    "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260424205055431.png",
+    "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/PixPin_2026-04-24_20-02-26.png",
+    "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/PixPin_2026-04-24_20-02-26.png",
+    "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？",
+    "/讲座/assets",
+    "/讲座",
+    "/Markdown基础.md",
+    "[].md",
+    "随记.md",
+    "/[].md",
+    "手机测试.md",
+    "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260422164624299.png",
+    "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260422164624299.png",
+    "assets/Markdown基础/1.jpg",
+    "/assets/Markdown基础/1.jpg",
+    "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？",
+    "讲座/assets",
+    "讲座",
+    "/assets/Markdown基础",
+    "/assets"
+  ]
+}

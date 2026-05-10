@@ -18,7 +18,9 @@ public class GenerateReadmeTree {
     // 要排除的文件/目录
     private static final Set<String> EXCLUDE = Set.of(
             "assets", ".git", ".DS_Store",
-            "README.md", "GenerateReadmeTree.java", "GenerateReadmeTree.class",
+            "README.md",
+            "generate_readme_tree.py",
+            "GenerateReadmeTree.java", "GenerateReadmeTree.class",
             ".obsidian", ".gitignore", "Thumbs.db"
     );
 

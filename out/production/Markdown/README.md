@@ -15,15 +15,7 @@
 
 ```text
 Markdown/
-├── .idea/
-├── out/
-├── 讲座/
-├── 随记/
-├── 题目/
-├── DeepSeek提示词技巧.md
-├── Markdown.iml
-├── Markdown基础.md
-└── 豆瓣电影Top250.md
+
 ```
 
 > 各目录下另有 `assets/` 文件夹存放对应图片，结构同上。
