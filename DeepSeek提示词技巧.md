@@ -38,3 +38,4 @@ DeepSeek有一套自己的思维链，也就是它自带的思考逻辑，那么
 
 ![](assets/DeepSeek提示词技巧/file-20260510113409666.png)
 
+## DeepSeek提示词技巧——擅长锐pin
