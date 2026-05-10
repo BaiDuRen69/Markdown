@@ -18,4 +18,12 @@ DeepSeek——真诚是必杀技：
 
 ![](assets/DeepSeek提示词技巧/file-20260510111421325.png)
 
-## DeepSeek提示词技巧——
+## DeepSeek提示词技巧——说人话
+
+要避免DeepSeek的回答过于官方、专业，可以尝试这三个字==“说人话”==
+
+![](assets/DeepSeek提示词技巧/file-20260510111855682.png)
+
+## DeepSeek提示词技巧——反向PUA
+
+DeepSeek有一套自己的思维链，也就是它自带的思考逻辑，那么
