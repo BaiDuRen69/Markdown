@@ -15,12 +15,10 @@
 
 ```text
 Markdown/
-├── .obsidian/
 ├── assets/
 ├── 讲座/
 ├── 随记/
 ├── 题目/
-├── .gitignore
 ├── DeepSeek提示词技巧.md
 ├── Markdown基础.md
 ├── README.md
