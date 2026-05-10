@@ -18,12 +18,6 @@ DeepSeek——真诚是必杀技：
 
 ![](assets/DeepSeek提示词技巧/file-20260510111421325.png)
 
-## DeepSeek提示词技巧——说人话
-
-要避免DeepSeek的回答过于官方、专业，可以尝试这三个字==“说人话”==
-
-![](assets/DeepSeek提示词技巧/file-20260510111855682.png)
-
 ## DeepSeek提示词技巧——反向PUA
 
 DeepSeek有一套自己的思维链，也就是它自带的思考逻辑，那么如果你想要DeepSeek跟卖力给你搬砖，就需要你运用==“反向PUA”==
@@ -40,7 +34,7 @@ DeepSeek有一套自己的思维链，也就是它自带的思考逻辑，那么
 
 ## DeepSeek提示词技巧——擅长锐评
 
-==“……，笑死”==句式，触发DeepSeek的毒舌属性
+==“请用毒舌语气评论……”==，触发DeepSeek的毒舌属性
 
 ## DeepSeek提示词技巧——激发深度思考
 
