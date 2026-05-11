@@ -193,8 +193,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 394.5,
-    "collapsed": true
+    "width": 394.5
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -211,6 +210,7 @@
   },
   "active": "b01ea3cd624c282e",
   "lastOpenFiles": [
+    "gitignore.txt",
     "README.md",
     "未命名.md",
     "Markdown基础.md",
@@ -257,7 +257,6 @@
     "未命名.canvas",
     "2026-05-03.md",
     "被讨厌的勇气：“自我启发之父”阿德勒的哲学课.md",
-    "社会心理学（第11版）.md",
-    "随手记.md"
+    "社会心理学（第11版）.md"
   ]
 }
