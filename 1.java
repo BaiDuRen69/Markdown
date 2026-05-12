@@ -3,7 +3,23 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
+/**
+ * 自动生成仓库目录结构树并更新到 README.md 中。
+ * 用法: java GenerateTree [仓库路径，默认为当前目录]
+ */
 public class GenerateTree {
+
+    // ============================================================
+    // 🔧 在这里添加你希望额外忽略的文件/目录（遵循 .gitignore 语法）
+    // ============================================================
+    private static final String[] EXTRA_IGNORES = {
+            "/.git/",          // 忽略仓库根目录下的 .git 文件夹
+            // "*.log",        // 示例：忽略所有 .log 文件
+            // "!/keep.log",   // 示例：但不忽略 keep.log
+            // "/build/",      // 示例：忽略根目录下的 build 目录
+            "/.obsidian/",
+    };
+
     private final Path repoRoot;
     private final List<IgnoreRule> ignoreRules;
     private static final String START_MARK = "<!-- TREE START -->";
@@ -19,33 +35,50 @@ public class GenerateTree {
         this.ignoreRules = loadIgnoreRules();
     }
 
+    // 加载所有忽略规则：先 .gitignore，再自定义
     private List<IgnoreRule> loadIgnoreRules() throws IOException {
-        Path gitignoreFile = repoRoot.resolve(".gitignore");
         List<IgnoreRule> rules = new ArrayList<>();
-        rules.add(new IgnoreRule(".git", true, false)); // 始终忽略 .git
+
+        // 1. 读取仓库下的 .gitignore 文件
+        Path gitignoreFile = repoRoot.resolve(".gitignore");
         if (Files.exists(gitignoreFile)) {
             for (String line : Files.readAllLines(gitignoreFile)) {
-                String trimmed = line.trim();
-                if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
-                boolean negate = false;
-                if (trimmed.startsWith("!")) {
-                    negate = true;
-                    trimmed = trimmed.substring(1).trim();
-                }
-                if (trimmed.isEmpty()) continue;
-                boolean dirOnly = trimmed.endsWith("/");
-                if (dirOnly) trimmed = trimmed.substring(0, trimmed.length() - 1);
-                rules.add(new IgnoreRule(trimmed, dirOnly, negate));
+                addRuleFromLine(rules, line);
             }
+        }
+
+        // 2. 加入额外自定义的忽略规则
+        for (String line : EXTRA_IGNORES) {
+            addRuleFromLine(rules, line);
         }
         return rules;
     }
 
+    // 将一行文本解析为 IgnoreRule 并加入列表
+    private void addRuleFromLine(List<IgnoreRule> rules, String line) {
+        String trimmed = line.trim();
+        if (trimmed.isEmpty() || trimmed.startsWith("#")) return;
+
+        boolean negate = false;
+        if (trimmed.startsWith("!")) {
+            negate = true;
+            trimmed = trimmed.substring(1).trim();
+        }
+        if (trimmed.isEmpty()) return;
+
+        boolean dirOnly = trimmed.endsWith("/");
+        if (dirOnly) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        rules.add(new IgnoreRule(trimmed, dirOnly, negate));
+    }
+
+    // 判断某个绝对路径是否应该被忽略
     private boolean isIgnored(Path absolutePath) {
         if (!absolutePath.startsWith(repoRoot)) return true;
         Path relative = repoRoot.relativize(absolutePath);
         String pathStr = relative.toString().replace('\\', '/');
-        boolean isDir = Files.isDirectory(absolutePath);
+        boolean isDir = Files.isDirectory(absolutePath);   // 关键修复：不再给路径加 /
 
         boolean ignored = false;
         for (IgnoreRule rule : ignoreRules) {
@@ -56,6 +89,7 @@ public class GenerateTree {
         return ignored;
     }
 
+    // 表示一条 .gitignore 风格的忽略规则
     private static class IgnoreRule {
         final Pattern regex;
         final boolean dirOnly;
@@ -72,6 +106,7 @@ public class GenerateTree {
             return regex.matcher(relativePath).matches();
         }
 
+        // 将 .gitignore 模式转换为正则表达式（支持 **, *, ? 等）
         private static Pattern buildRegex(String pattern) {
             StringBuilder sb = new StringBuilder();
             boolean hasSlash = pattern.contains("/");
@@ -83,6 +118,7 @@ public class GenerateTree {
             } else {
                 sb.append("^");
             }
+
             String[] parts = pattern.split("\\*\\*", -1);
             for (int i = 0; i < parts.length; i++) {
                 if (i > 0) sb.append(".*");
@@ -93,6 +129,7 @@ public class GenerateTree {
         }
     }
 
+    // 开始生成树形结构
     public void execute() throws IOException {
         StringBuilder tree = new StringBuilder();
         tree.append(repoRoot.getFileName().toString()).append("/\n");
@@ -105,8 +142,10 @@ public class GenerateTree {
         System.out.println("目录结构已更新到 README.md");
     }
 
+    // 递归生成树形文本
     private void appendTree(Path node, String prefix, boolean isLast, StringBuilder sb) throws IOException {
         if (isIgnored(node)) return;
+
         sb.append(prefix).append(isLast ? "└── " : "├── ").append(node.getFileName().toString());
         if (Files.isDirectory(node)) {
             sb.append("/\n");
@@ -121,6 +160,7 @@ public class GenerateTree {
         }
     }
 
+    // 获取排序后的子项（目录优先，字母不区分大小写）
     private List<Path> getSortedChildren(Path dir) throws IOException {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
             List<Path> children = new ArrayList<>();
@@ -136,6 +176,7 @@ public class GenerateTree {
         }
     }
 
+    // 更新 README.md，将树形结构插入标记之间
     private void updateReadme(String tree) throws IOException {
         Path readmePath = repoRoot.resolve("README.md");
         List<String> lines = Files.exists(readmePath) ?

@@ -17,33 +17,6 @@
 <!-- TREE START -->
 ```
 Markdown/
-├── .obsidian/
-│   ├── plugins/
-│   │   ├── file-cleaner-redux/
-│   │   │   ├── data.json
-│   │   │   ├── main.js
-│   │   │   └── manifest.json
-│   │   ├── obsidian-custom-attachment-location/
-│   │   │   ├── data.json
-│   │   │   ├── main.js
-│   │   │   ├── manifest.json
-│   │   │   └── styles.css
-│   │   └── obsidian-git/
-│   │       ├── data.json
-│   │       ├── main.js
-│   │       ├── manifest.json
-│   │       ├── obsidian_askpass.sh
-│   │       └── styles.css
-│   ├── themes/
-│   │   └── Dracula for Obsidian/
-│   │       ├── manifest.json
-│   │       └── theme.css
-│   ├── app.json
-│   ├── appearance.json
-│   ├── community-plugins.json
-│   ├── core-plugins.json
-│   ├── graph.json
-│   ├── workspace-mobile.json
 ├── assets/
 │   ├── DeepSeek提示词技巧/
 │   │   ├── file-20260510111421325.png
