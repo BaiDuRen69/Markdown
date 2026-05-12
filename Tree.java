@@ -88,7 +88,6 @@ public class GenerateReadmeTree {
             if (dirOnly) line = line.substring(0, line.length() - 1);
 
             String glob = gitignoreToGlob(line);
-            System.out.println(glob);
             try {
                 PathMatcher matcher = root.getFileSystem().getPathMatcher("glob:" + glob);
                 rules.add(new IgnoreRule(matcher, dirOnly));
@@ -139,6 +138,7 @@ public class GenerateReadmeTree {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(root)) {
             for (Path p : stream) {
                 if (!isExcluded(p, excludeNames, ignoreRules)) {
+                    System.out.println(p);
                     entries.add(p);
                 }
             }
