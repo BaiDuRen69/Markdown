@@ -53,7 +53,9 @@ public class GenerateReadmeTree {
 
         // 逐行读取.gitignore
         for (String line : Files.readAllLines(gitignorePath, StandardCharsets.UTF_8)) {
+            // 去除当前字符串首尾的空白字符（空格、制表符、全角空格等不可见字符）
             line = line.trim();
+            // 跳过空行和注释行,
             if (line.isEmpty() || line.startsWith("#")) continue;
             if (line.endsWith("/")) line = line.substring(0, line.length() - 1);
             names.add(line);
