@@ -15,15 +15,27 @@
 ## 2.规则
 
 - 忽略某个文件
+> config.json
+> secret.key
 
->config.json
->secret.key
 - 忽略某个目录
->logs/
->temp/
+> logs/
+> temp/
+
 - 忽略某种类型的文件
->*.log
->*.tem
+> \*.log
+> \*.tmp
+> \*.swp
+
 - 忽略某个目录中的所有文件，当保留部分文件
+> logs/\*
+> !logs/important.log
+
 - 忽略所有`node_modules`目录（递归）
+> node_modules/
+
 - 忽略某个特定路径的文件，但允许其他路径的相同文件
+> /config/\*.json    # 忽略config目录下的所有.json文件
+> !/config/keep.json    # 当保留keep.json
+
+
