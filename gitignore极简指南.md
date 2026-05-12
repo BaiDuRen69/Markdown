@@ -42,4 +42,11 @@
 > /config/\*.json    # 忽略config目录下的所有.json文件
 > !/config/keep.json    # 当保留keep.json
 
+- 忽略一个任意字符
+> ?.log    # 忽略a.log，b.log，不忽略ab.log
 
+- 忽略括号中的单个字符
+> [abc].log    # 忽略a.log，b.log，c.log
+
+- 忽略范围内的单个字符
+> file[0-]
