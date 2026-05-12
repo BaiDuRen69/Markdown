@@ -8,17 +8,17 @@
         "type": "tabs",
         "children": [
           {
-            "id": "5565c61a213e3349",
+            "id": "90a7b8c2cbbfc687",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
+                "file": "gitignore极简指南.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "gitignore极简指南"
             }
           }
         ],
@@ -79,7 +79,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "721aa54a66fa4a93",
@@ -193,7 +194,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 394.5
+    "width": 394.5,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -208,12 +210,16 @@
       "file-cleaner-redux:Clean files": false
     }
   },
-  "active": "607d4905b7a1b539",
+  "active": "90a7b8c2cbbfc687",
   "lastOpenFiles": [
+    "豆瓣电影Top250.md",
+    "gitignore极简指南.md",
+    "DeepSeek提示词技巧.md",
+    "IDEA快捷键.md",
+    "Markdown基础.md",
+    "README.md",
     "test",
     "GenerateTree.java~",
-    "IDEA快捷键.md",
-    "README.md",
     "tree1.java",
     "一键运行Generate.java.bat",
     "deepseek_batch_20260512_8c097c.txt",
@@ -224,10 +230,6 @@
     "新建 文本文档.txt",
     "1.java",
     "GeneratrTree.java~",
-    "GeneratrTree.java",
-    "未命名.md",
-    "Markdown基础.md",
-    "DeepSeek提示词技巧.md",
     "out/production/Markdown/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/PixPin_2026-04-24_20-02-26.png",
     "out/production/Markdown/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260424205055431.png",
     "out/production/Markdown/题目/assets/大学物理单选题/file-20260503150239221.png",
@@ -248,7 +250,6 @@
     "out/production/Markdown/Markdown基础.md",
     "out/production/Markdown/DeepSeek提示词技巧.md",
     "tree.md",
-    "豆瓣电影Top250.md",
     "1~25.md",
     "随记/未命名.md",
     "随记/碎片化信息的驯化与注意力困境.md",
