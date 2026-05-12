@@ -193,8 +193,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 394.5,
-    "collapsed": true
+    "width": 394.5
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -209,8 +208,9 @@
       "file-cleaner-redux:Clean files": false
     }
   },
-  "active": "5565c61a213e3349",
+  "active": "607d4905b7a1b539",
   "lastOpenFiles": [
+    "test",
     "GenerateTree.java~",
     "IDEA快捷键.md",
     "README.md",
