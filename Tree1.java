@@ -17,10 +17,10 @@ public class Tree1 {
 
     public static void main(String[] args) throws IOException {
         Path root = Paths.get(args.length > 0 ? args[0] : "").toAbsolutePath().normalize();
-        new GenerateTree(root).execute();
+        new Tree1(root).execute();
     }
 
-    public GenerateTree(Path repoRoot) throws IOException {
+    public Tree1(Path repoRoot) throws IOException {
         this.repoRoot = repoRoot;
         this.ignoreRules = loadIgnoreRules();
     }
