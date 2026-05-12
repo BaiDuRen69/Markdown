@@ -19,7 +19,9 @@ public class GenerateReadmeTree {
     private static final String BASE_DIR = "D:/programme/GitHub/Markdown";
 
     public static void main(String[] args) throws Exception {
+        //
         Path root = Paths.get(BASE_DIR).toAbsolutePath();
+
         Path readmePath = root.resolve("README.md");
         Path gitignorePath = root.resolve(".gitignore");
 
