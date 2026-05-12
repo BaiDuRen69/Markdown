@@ -194,7 +194,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 394.5
+    "width": 394.5,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -211,13 +212,13 @@
   },
   "active": "b01ea3cd624c282e",
   "lastOpenFiles": [
+    "GenerateTree.java~",
     "tree1.java",
     "一键运行Generate.java.bat",
     "deepseek_batch_20260512_8c097c.txt",
     "[Issues.md",
     "README.md",
     "().md",
-    "GenerateTree.java~",
     "GenerateTree.java",
     "GenegateTree.java",
     "新建 文本文档.txt",
