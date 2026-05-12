@@ -194,8 +194,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 394.5,
-    "collapsed": true
+    "width": 394.5
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -212,6 +211,7 @@
   },
   "active": "b01ea3cd624c282e",
   "lastOpenFiles": [
+    "GenerateTree.java",
     "GeneratrTree.java~",
     "GeneratrTree.java",
     "Tree1.java~",
@@ -223,7 +223,6 @@
     "GenerateReadmeTree.java~",
     "test.txt",
     "test/test/aa.txt",
-    "test/test/新建 文本文档.txt",
     "README.md",
     "Markdown基础.md",
     "DeepSeek提示词技巧.md",
