@@ -110,7 +110,8 @@ public class GenerateReadmeTree {
 
     private static boolean isExcluded(Path entry, Set<String> excludeNames,
                                       List<IgnoreRule> ignoreRules) {
-        //
+        //entry.getFileName().toString() 用于从一个 Path 对象
+        // 中提取纯文件/目录名（不含上级路径），并转为字符串。
         String name = entry.getFileName().toString();
 
         // 1. 精确名称匹配
