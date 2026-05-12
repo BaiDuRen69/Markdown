@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "未命名.md",
+                "file": "README.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "未命名"
+              "title": "README"
             }
           }
         ],
@@ -212,6 +212,10 @@
   },
   "active": "b01ea3cd624c282e",
   "lastOpenFiles": [
+    "未命名.md",
+    "Tree1.java~",
+    "Tree1.java",
+    "新建 文本文档.txt",
     "Tree.java~",
     "Tree.java",
     "GenerateReadmeTree.java~",
@@ -219,12 +223,7 @@
     "test/test/aa.txt",
     "test/test/新建 文本文档.txt",
     "test/test",
-    "test/新建文件夹",
-    "test",
-    "新建文件夹",
-    "gitignore.txt",
     "README.md",
-    "未命名.md",
     "Markdown基础.md",
     "DeepSeek提示词技巧.md",
     "out/production/Markdown/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/PixPin_2026-04-24_20-02-26.png",

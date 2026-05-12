@@ -14,6 +14,8 @@
 ## 目录结构
 
 ```text
+<!-- TREE START -->
+
 Markdown/
 ├── assets/
 ├── test/
@@ -26,6 +28,8 @@ Markdown/
 ├── Tree.java
 ├── 未命名.md
 └── 豆瓣电影Top250.md
+
+<!-- TREE END -->
 ```
 
 > 各目录下另有 `assets/` 文件夹存放对应图片，结构同上。
