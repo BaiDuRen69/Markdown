@@ -29,8 +29,10 @@ public class GenerateReadmeTree {
         //读取 .gitignore，返回需要排除的纯文件名集合（快速匹配用）
         Set<String> excludeNames = loadGitignoreNames(gitignorePath);
         System.out.println(excludeNames);
-        List<IgnoreRule> ignoreRules = loadGitignoreRules(root, gitignorePath);
 
+        List<IgnoreRule> ignoreRules = loadGitignoreRules(root, gitignorePath);
+        System.out.println(ignoreRules);
+        
         String treeBlock = buildTreeBlock(root, excludeNames, ignoreRules);
 
         if (Files.exists(readmePath)) {
@@ -55,8 +57,12 @@ public class GenerateReadmeTree {
         for (String line : Files.readAllLines(gitignorePath, StandardCharsets.UTF_8)) {
             // 去除当前字符串首尾的空白字符（空格、制表符、全角空格等不可见字符）
             line = line.trim();
-            // 跳过空行和注释行,
+
+            // 跳过空行和注释行
+            //在 .gitignore 文件里，以 # 开头的行是注释，这是 Git 官方的语法规定。
             if (line.isEmpty() || line.startsWith("#")) continue;
+
+            // 如果以 / 结尾，则表示目录；则需要去除末尾的 /
             if (line.endsWith("/")) line = line.substring(0, line.length() - 1);
             names.add(line);
         }
@@ -69,12 +75,15 @@ public class GenerateReadmeTree {
      */
     private static List<IgnoreRule> loadGitignoreRules(Path root, Path gitignorePath) throws IOException {
         List<IgnoreRule> rules = new ArrayList<>();
+        // 如果.gitignore不存在则返回空列表
         if (!Files.exists(gitignorePath)) return rules;
 
+        // 逐行读取.gitignore
         for (String line : Files.readAllLines(gitignorePath, StandardCharsets.UTF_8)) {
             line = line.trim();
             if (line.isEmpty() || line.startsWith("#")) continue;
 
+            // 如果以 / 结尾，则表示目录
             boolean dirOnly = line.endsWith("/");
             if (dirOnly) line = line.substring(0, line.length() - 1);
 
@@ -91,6 +100,7 @@ public class GenerateReadmeTree {
 
     /** 将 .gitignore 通配符转换为 Java glob 语法 */
     private static String gitignoreToGlob(String pattern) {
+        // 开头的 / 表示从根目录开始，
         if (pattern.startsWith("/")) return pattern.substring(1);
         if (pattern.contains("/")) return pattern;
         return "**/" + pattern;
