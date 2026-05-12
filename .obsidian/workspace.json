@@ -194,8 +194,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 394.5,
-    "collapsed": true
+    "width": 394.5
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -212,8 +211,9 @@
   },
   "active": "90a7b8c2cbbfc687",
   "lastOpenFiles": [
-    "aa.txt",
+    "bb.txt",
     "新建 文本文档.txt",
+    "aa.txt",
     "aa",
     "新建文件夹",
     "豆瓣电影Top250.md",
@@ -230,7 +230,6 @@
     "[Issues.md",
     "().md",
     "GenerateTree.java",
-    "GenegateTree.java",
     "out/production/Markdown/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/PixPin_2026-04-24_20-02-26.png",
     "out/production/Markdown/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260424205055431.png",
     "out/production/Markdown/题目/assets/大学物理单选题/file-20260503150239221.png",
