@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "IDEA快捷键.md",
+                "file": "README.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "IDEA快捷键"
+              "title": "README"
             }
           }
         ],
@@ -212,9 +212,9 @@
   },
   "active": "5565c61a213e3349",
   "lastOpenFiles": [
-    "README.md",
     "IDEA快捷键.md",
     "GenerateTree.java~",
+    "README.md",
     "tree1.java",
     "一键运行Generate.java.bat",
     "deepseek_batch_20260512_8c097c.txt",
@@ -258,7 +258,6 @@
     "题目/大学物理单选题.md",
     "三体全集（全三册）.md",
     "未命名 1.canvas",
-    "未命名.canvas",
-    "2026-05-03.md"
+    "未命名.canvas"
   ]
 }

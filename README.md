@@ -23,6 +23,7 @@ Markdown/
 │   ├── 大学物理单选题-无答案.md
 │   └── 大学物理单选题.md
 ├── DeepSeek提示词技巧.md
+├── IDEA快捷键.md
 ├── Markdown基础.md
 ├── README.md
 ├── 未命名.md
