@@ -50,7 +50,7 @@ Markdown/
 
 ## 📬 联系 & 反馈
 
-如有错漏或建议，欢迎通过 [GitHub Issues]([Issues · BaiDuRen69/Markdown](https://github.com/BaiDuRen69/Markdown/issues)) 或邮件联系（注明出处）。
+如有错漏或建议，欢迎通过 [GitHub Issues](https://github.com/BaiDuRen69/Markdown/issues)或邮件联系（注明出处）。
 
 ---
 
