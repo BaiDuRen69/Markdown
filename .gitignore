@@ -1,5 +1,8 @@
+# 这是一个 Git 忽略文件，列出了不需要被 Git 版本控制的文件和目录。
+# 你可以根据需要添加或删除条目。
+# 忽略 Obsidian 的工作区配置文件
 .obsidian/workspace.json
+# 忽略 Obsidian 的工作区备份文件
 .obsidian/workspace-backup.json
 .idea/
 out/
-GenerateTree.java
