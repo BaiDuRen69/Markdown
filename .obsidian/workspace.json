@@ -194,7 +194,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 394.5
+    "width": 394.5,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -211,6 +212,9 @@
   },
   "active": "b01ea3cd624c282e",
   "lastOpenFiles": [
+    "[Issues.md",
+    "README.md",
+    "().md",
     "GenerateTree.java~",
     "GenerateTree.java",
     "GenegateTree.java",
@@ -222,8 +226,6 @@
     "Tree1.java~",
     "未命名.md",
     "Tree1.java",
-    "Tree.java~",
-    "README.md",
     "Markdown基础.md",
     "DeepSeek提示词技巧.md",
     "out/production/Markdown/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/PixPin_2026-04-24_20-02-26.png",
@@ -257,7 +259,6 @@
     "未命名 1.canvas",
     "未命名.canvas",
     "2026-05-03.md",
-    "被讨厌的勇气：“自我启发之父”阿德勒的哲学课.md",
-    "社会心理学（第11版）.md"
+    "被讨厌的勇气：“自我启发之父”阿德勒的哲学课.md"
   ]
 }
