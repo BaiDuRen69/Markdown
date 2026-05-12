@@ -19,13 +19,16 @@ public class GenerateReadmeTree {
     private static final String BASE_DIR = "D:/programme/GitHub/Markdown";
 
     public static void main(String[] args) throws Exception {
-        //
+        //把这BASE_DIR个路径转成绝对路径
         Path root = Paths.get(BASE_DIR).toAbsolutePath();
 
+        //把括号内的相对路径拼接到 root 后面，形成一个新的完整路径返回。
         Path readmePath = root.resolve("README.md");
         Path gitignorePath = root.resolve(".gitignore");
-
+        
+        //读取 .gitignore，返回需要排除的纯文件名集合（快速匹配用）
         Set<String> excludeNames = loadGitignoreNames(gitignorePath);
+        System.out.println(excludeNames);
         List<IgnoreRule> ignoreRules = loadGitignoreRules(root, gitignorePath);
 
         String treeBlock = buildTreeBlock(root, excludeNames, ignoreRules);
