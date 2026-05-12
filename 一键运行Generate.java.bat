@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0"
-java GenerateTree
+java GenerateTree.java
 pause
