@@ -194,7 +194,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 394.5
+    "width": 394.5,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -211,6 +212,7 @@
   },
   "active": "b01ea3cd624c282e",
   "lastOpenFiles": [
+    "deepseek_batch_20260512_8c097c.txt",
     "[Issues.md",
     "README.md",
     "().md",
@@ -257,7 +259,6 @@
     "三体全集（全三册）.md",
     "未命名 1.canvas",
     "未命名.canvas",
-    "2026-05-03.md",
-    "被讨厌的勇气：“自我启发之父”阿德勒的哲学课.md"
+    "2026-05-03.md"
   ]
 }
