@@ -48,8 +48,10 @@ public class GenerateReadmeTree {
     /** 读取 .gitignore，返回需要排除的纯文件名集合（快速匹配用） */
     private static Set<String> loadGitignoreNames(Path gitignorePath) throws IOException {
         Set<String> names = new HashSet<>();
+        // 如果.gitignore不存在则返回空集合
         if (!Files.exists(gitignorePath)) return names;
 
+        // 逐行读取.gitignore
         for (String line : Files.readAllLines(gitignorePath, StandardCharsets.UTF_8)) {
             line = line.trim();
             if (line.isEmpty() || line.startsWith("#")) continue;
