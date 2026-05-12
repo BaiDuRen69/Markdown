@@ -110,6 +110,7 @@ public class GenerateReadmeTree {
 
     private static boolean isExcluded(Path entry, Set<String> excludeNames,
                                       List<IgnoreRule> ignoreRules) {
+        //
         String name = entry.getFileName().toString();
 
         // 1. 精确名称匹配
@@ -138,7 +139,6 @@ public class GenerateReadmeTree {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(root)) {
             for (Path p : stream) {
                 if (!isExcluded(p, excludeNames, ignoreRules)) {
-                    System.out.println(p);
                     entries.add(p);
                 }
             }
