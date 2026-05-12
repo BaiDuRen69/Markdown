@@ -49,4 +49,8 @@
 > [abc].log    # 忽略a.log，b.log，c.log
 
 - 忽略范围内的单个字符
-> file[0-]
+> file[0-9].text    # 忽略file0.txt，file1.txt……file9.txt
+
+- 忽略任意多级目录（0层或多层）
+> \*\*/node_modules    # 等效于不带前缀的情况
+
