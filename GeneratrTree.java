@@ -1,15 +1,9 @@
 import java.io.IOException;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-/**
- * 自动生成仓库目录结构树并更新到 README.md 中。
- * 用法: java GenerateTree [仓库路径，默认为当前目录]
- */
-public class Tree1 {
+public class GenerateTree {
     private final Path repoRoot;
     private final List<IgnoreRule> ignoreRules;
     private static final String START_MARK = "<!-- TREE START -->";
@@ -17,10 +11,10 @@ public class Tree1 {
 
     public static void main(String[] args) throws IOException {
         Path root = Paths.get(args.length > 0 ? args[0] : "").toAbsolutePath().normalize();
-        new Tree1(root).execute();
+        new GenerateTree(root).execute();
     }
 
-    public Tree1(Path repoRoot) throws IOException {
+    public GenerateTree(Path repoRoot) throws IOException {
         this.repoRoot = repoRoot;
         this.ignoreRules = loadIgnoreRules();
     }
@@ -28,8 +22,7 @@ public class Tree1 {
     private List<IgnoreRule> loadIgnoreRules() throws IOException {
         Path gitignoreFile = repoRoot.resolve(".gitignore");
         List<IgnoreRule> rules = new ArrayList<>();
-        // 始终忽略 .git 目录
-        rules.add(new IgnoreRule(".git", true, false));
+        rules.add(new IgnoreRule(".git", true, false)); // 始终忽略 .git
         if (Files.exists(gitignoreFile)) {
             for (String line : Files.readAllLines(gitignoreFile)) {
                 String trimmed = line.trim();
@@ -49,16 +42,14 @@ public class Tree1 {
     }
 
     private boolean isIgnored(Path absolutePath) {
-        // 必须是仓库内的相对路径
         if (!absolutePath.startsWith(repoRoot)) return true;
         Path relative = repoRoot.relativize(absolutePath);
         String pathStr = relative.toString().replace('\\', '/');
-        if (Files.isDirectory(absolutePath)) pathStr += "/";
+        boolean isDir = Files.isDirectory(absolutePath);
 
         boolean ignored = false;
-        // 规则按顺序应用，后出现的否定可能取消忽略
         for (IgnoreRule rule : ignoreRules) {
-            if (rule.matches(pathStr)) {
+            if (rule.matches(pathStr, isDir)) {
                 ignored = !rule.negate;
             }
         }
@@ -76,30 +67,25 @@ public class Tree1 {
             this.regex = buildRegex(pattern);
         }
 
-        boolean matches(String relativePath) {
-            if (dirOnly && !relativePath.endsWith("/")) return false;
+        boolean matches(String relativePath, boolean isDir) {
+            if (dirOnly && !isDir) return false;
             return regex.matcher(relativePath).matches();
         }
 
         private static Pattern buildRegex(String pattern) {
             StringBuilder sb = new StringBuilder();
-            // 如果 pattern 不含 / (除了开头的 /)，则匹配任意目录层级
             boolean hasSlash = pattern.contains("/");
             if (pattern.startsWith("/")) {
-                pattern = pattern.substring(1); // 根目录相对路径
+                pattern = pattern.substring(1);
                 sb.append("^");
             } else if (!hasSlash) {
-                // 匹配任何路径下的该名称，比如 *.log 匹配 a/b/c.log
                 sb.append("^(.*/)?");
             } else {
                 sb.append("^");
             }
-
-            // 处理 **
             String[] parts = pattern.split("\\*\\*", -1);
             for (int i = 0; i < parts.length; i++) {
                 if (i > 0) sb.append(".*");
-                // 转义单个部分
                 sb.append(Pattern.quote(parts[i]).replace("\\*", "[^/]*").replace("\\?", "[^/]"));
             }
             sb.append("$");
@@ -115,14 +101,12 @@ public class Tree1 {
             boolean last = (i == children.size() - 1);
             appendTree(children.get(i), "", last, tree);
         }
-
         updateReadme(tree.toString());
         System.out.println("目录结构已更新到 README.md");
     }
 
     private void appendTree(Path node, String prefix, boolean isLast, StringBuilder sb) throws IOException {
         if (isIgnored(node)) return;
-
         sb.append(prefix).append(isLast ? "└── " : "├── ").append(node.getFileName().toString());
         if (Files.isDirectory(node)) {
             sb.append("/\n");
@@ -140,10 +124,7 @@ public class Tree1 {
     private List<Path> getSortedChildren(Path dir) throws IOException {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
             List<Path> children = new ArrayList<>();
-            for (Path p : stream) {
-                children.add(p);
-            }
-            // 目录优先，然后按名称排序
+            for (Path p : stream) children.add(p);
             children.sort((a, b) -> {
                 boolean aDir = Files.isDirectory(a);
                 boolean bDir = Files.isDirectory(b);
@@ -166,14 +147,11 @@ public class Tree1 {
             if (lines.get(i).trim().equals(END_MARK)) endIdx = i;
         }
 
-        // 构建要插入的内容
         String codeBlock = "```\n" + tree + "```";
         if (startIdx >= 0 && endIdx > startIdx) {
-            // 替换标记之间的内容
             lines.subList(startIdx + 1, endIdx).clear();
             lines.add(startIdx + 1, codeBlock);
         } else {
-            // 不存在标记则添加到文件末尾
             lines.add("");
             lines.add(START_MARK);
             lines.add(codeBlock);
