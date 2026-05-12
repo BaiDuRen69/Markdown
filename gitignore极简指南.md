@@ -56,5 +56,12 @@
 
 ## 3.如何使.gitignore规则生效？
 
-1. 新文件huo忽略
+1. 新文件或目录忽略
 如果.gitignore文件在提交之前已经存在，那么Git会自动忽略匹配的文件或目录
+2. 已被Git追踪的文件
+如果某个文件已经被Git追踪（即已经被git add过，现在正在git仓库里），即使你在.gitignore中添加它，Git仍然不会忽略它，你需要手动移除该文件：
+```
+git rm -r --cached .
+git add .
+git comm
+```
