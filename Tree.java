@@ -31,8 +31,8 @@ public class GenerateReadmeTree {
         System.out.println(excludeNames);
 
         List<IgnoreRule> ignoreRules = loadGitignoreRules(root, gitignorePath);
-        System.out.println(ignoreRules);
-        
+//        System.out.println(ignoreRules);
+
         String treeBlock = buildTreeBlock(root, excludeNames, ignoreRules);
 
         if (Files.exists(readmePath)) {
@@ -88,6 +88,7 @@ public class GenerateReadmeTree {
             if (dirOnly) line = line.substring(0, line.length() - 1);
 
             String glob = gitignoreToGlob(line);
+            System.out.println(glob);
             try {
                 PathMatcher matcher = root.getFileSystem().getPathMatcher("glob:" + glob);
                 rules.add(new IgnoreRule(matcher, dirOnly));
@@ -100,8 +101,10 @@ public class GenerateReadmeTree {
 
     /** 将 .gitignore 通配符转换为 Java glob 语法 */
     private static String gitignoreToGlob(String pattern) {
-        // 开头的 / 表示从根目录开始，
+        // 开头的 / 表示从根目录开始，去除第一个 /
         if (pattern.startsWith("/")) return pattern.substring(1);
+
+        //如果包含 / 则表示文件
         if (pattern.contains("/")) return pattern;
         return "**/" + pattern;
     }
