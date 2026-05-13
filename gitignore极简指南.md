@@ -188,3 +188,5 @@ git config --global core.excludesFile ~/.gitignore_global
 - [ ] 用 `git rm --cached` 前，是否已通知团队？
 - [ ] 批量刷新前，是否已确认 `.gitignore` 万无一失且 `git status` 干净？
 - [ ] 全局忽略是否已经配置，避免个人系统垃圾混入仓库？
+
+
