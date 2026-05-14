@@ -1,5 +1,6 @@
 [
   "obsidian-git",
   "obsidian-custom-attachment-location",
-  "file-cleaner-redux"
+  "file-cleaner-redux",
+  "obsidian-local-rest-api"
 ]
