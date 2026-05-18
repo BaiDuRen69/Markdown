@@ -1,7 +1,7 @@
 {
   "strictLineBreaks": true,
   "showLineNumber": true,
-  "readableLineLength": false,
+  "readableLineLength": true,
   "promptDelete": false,
   "newLinkFormat": "relative",
   "useMarkdownLinks": true
