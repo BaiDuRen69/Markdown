@@ -231,6 +231,12 @@ public class GenerateTree {
                 return;
             }
 
+            // 跳过符号链接：符号链接可能指向祖先目录，递归进去会造成无限循环或重复遍历
+            if (Files.isSymbolicLink(node)) {
+                // 仍然显示为目录，但不进入内部
+                return;
+            }
+
             List<Path> children = getSortedChildren(node);
             for (int i = 0; i < children.size(); i++) {
                 boolean last = (i == children.size() - 1);
@@ -255,25 +261,6 @@ public class GenerateTree {
     }
 
     // ---------- 排序子项（目录优先，字母不区分大小写） ----------
-//    private List<Path> getSortedChildren(Path dir) throws IOException {
-//        //Files.newDirectoryStream(dir) 是 Java NIO 提供的一个方法，用来打开一个目录，
-//        // 并逐个读取目录里的条目（文件和子目录）,按需加载（懒惰流），遍历时才获取下一个条目，内存占用小
-//        //File.listFiles() 一次性返回整个数组，如果目录下有几万个文件，会消耗较大内存
-//        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
-//            List<Path> children = new ArrayList<>();
-//            for (Path p : stream) children.add(p);
-//            children.sort((a, b) -> {
-//                boolean aDir = Files.isDirectory(a);
-//                boolean bDir = Files.isDirectory(b);
-//                if (aDir && !bDir) return -1;
-//                if (!aDir && bDir) return 1;
-//                //都是文件夹时忽略大小写按字母顺序排序
-//                return a.getFileName().toString().compareToIgnoreCase(b.getFileName().toString());
-//            });
-//            return children;
-//        }
-//    }
-    // ---------- 排序子项（目录优先，字母不区分大小写） ----------
     private List<Path> getSortedChildren(Path dir) throws IOException {
         //Files.newDirectoryStream(dir) 是 Java NIO 提供的一个方法，用来打开一个目录，
         // 并逐个读取目录里的条目（文件和子目录）,按需加载（懒惰流），遍历时才获取下一个条目，内存占用小
@@ -281,7 +268,8 @@ public class GenerateTree {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
             List<Path> children = new ArrayList<>();
             for (Path p : stream) {
-                if (!isIgnored(p)) {          // ← 只添加不被忽略的项
+                // 过滤掉被忽略的文件/目录，确保符号判断基于实际会展示的条目
+                if (!isIgnored(p)) {
                     children.add(p);
                 }
             }
@@ -291,12 +279,12 @@ public class GenerateTree {
                 if (aDir && !bDir) return -1;
                 if (!aDir && bDir) return 1;
                 //都是文件夹时忽略大小写按字母顺序排序
-                return a.getFileName().toString()
-                        .compareToIgnoreCase(b.getFileName().toString());
+                return a.getFileName().toString().compareToIgnoreCase(b.getFileName().toString());
             });
             return children;
         }
     }
+
     // ---------- 更新 README.md ----------
     private void updateReadme(String tree) throws IOException {
         Path readmePath = repoRoot.resolve("README.md");
