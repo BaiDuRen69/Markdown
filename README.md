@@ -11,22 +11,25 @@
 <!-- TREE START -->
 ```
 Markdown/
-├── assets/
+├── 学习/
+│   ├── assets/
+│   ├── DeepSeek提示词技巧.md
+│   ├── gitignore极简指南.md
+│   ├── IDEA快捷键.md
+│   └── Markdown基础.md
 ├── 讲座/
 │   ├── assets/
 │   └── 越过废人陷阱——AI时代，教育将如何被改写？.md
 ├── 随记/
-│   ├── 未命名.md
-│   └── 碎片化信息的驯化与注意力困境.md
+│   ├── 碎片化信息的驯化与注意力困境.md
+│   └── 荒诞.md
 ├── 题目/
 │   ├── assets/
 │   ├── 大学物理单选题-无答案.md
 │   └── 大学物理单选题.md
-├── DeepSeek提示词技巧.md
-├── IDEA快捷键.md
-├── Markdown基础.md
+├── GenerateTree.java
 ├── README.md
-├── 未命名.md
+├── 我对读书的思考.md
 └── 豆瓣电影Top250.md
 ```
 <!-- TREE END -->
