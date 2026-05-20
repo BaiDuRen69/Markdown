@@ -217,10 +217,11 @@ eg.~~这是添加了删除线的文本~~
 >`我喜欢逛 *[b站番剧](https://www.bilibili.com/anime/?spm_id_from=333.1007.0.0)*`  
 >我喜欢逛 *[b站番剧](https://www.bilibili.com/anime/?spm_id_from=333.1007.0.0)*
 >`我喜欢逛 **[b站国创](https://www.bilibili.com/guochuang/?spm_id_from=333.1007.0.0)**`  
->
-我喜欢逛 **[b站国创](https://www.bilibili.com/guochuang/?spm_id_from=333.1007.0.0)**  
-我喜欢逛 ***[b站热门](https://www.bilibili.com/v/popular/all?spm_id_from=333.1007.0.0)***  
-我喜欢逛 ***[`b站电影`](https://www.bilibili.com/movie/?spm_id_from=333.1007.0.0)***
+>我喜欢逛 **[b站国创](https://www.bilibili.com/guochuang/?spm_id_from=333.1007.0.0)**    
+>`我喜欢逛 ***[b站热门](https://www.bilibili.com/v/popular/all?spm_id_from=333.1007.0.0)***`  
+>我喜欢逛 ***[b站热门](https://www.bilibili.com/v/popular/all?spm_id_from=333.1007.0.0)***
+>`我喜欢逛 ***[`b站电影`](https://www.bilibili.com/movie/?spm_id_from=333.1007.0.0)***`  
+>我喜欢逛 ***[`b站电影`](https://www.bilibili.com/movie/?spm_id_from=333.1007.0.0)***
 
 #### 引用类型链接
 
@@ -252,8 +253,6 @@ eg.~~这是添加了删除线的文本~~
 [1]: https://www.bilibili.com/
 
 ##### 简化写法
-
->
 
 当参考标签与链接文字相同时，可以省略第二个方括号：  
 我喜欢用` [github][] `来管理代码  
@@ -433,7 +432,7 @@ Tip：使用连字符和竖线创建表格可能很麻烦。为了加快该过�
 
 ### 脚注
 
-脚注是对文本的补充说明  
+脚注是对文本的补充说明()  
 格式：  
 `[^要注明的文本]`  
 `[^要注明的文本]: 文本`  
