@@ -1,6 +1,16 @@
 # 我的第一个Markdown
 
+> **免责声明**
 >
+> 1. **创作方式说明**：本文内容在整理时使用了 AI 工具辅助生成草稿，但所有技术要点均经过本人实际操作环境下的验证与编辑，不代表 AI 的原始输出。
+   > 
+> 2. **准确性与时效性**：Markdown 语法可能会随着解析器或平台更新而变化，本文无法保证所有语法在您当前使用环境下完全一致，请以官方文档或实际测试为准。
+    >
+> 3. **非专业建议**：本文仅为个人学习记录，不构成任何形式的技术指导或职业建议。因参考本文而导致的格式错误、兼容性问题或其他损失，作者不承担责任。
+   > 
+> 4. **第三方链接与商标**：文中出现的网站链接（如 B站、GitHub）仅作为语法示例，不代表推荐或认可其全部内容。所有商标和品牌归各自权利人所有。
+    >
+> 5. **版权与转载**：本文由本人原创整理，如果您觉得有用欢迎带链接分享，禁止未经授权的商业使用。
 
 ---
 这是我学习Markdown的开始（我会在以下文档中只写入我觉得好的内容）
@@ -195,13 +205,19 @@ eg.~~这是添加了删除线的文本~~
 #### 网址和Email地址
 
 使用尖括号可以很方便地把URL或者email地址变成可点击的链接  
-<https://www.bilibili.com/>  
-<dzb@hutb.edu.cn>
+例如：  
+>`<https://www.bilibili.com/>`    
+>`<dzb@hutb.edu.cn>`  
+><https://www.bilibili.com/>  
+><dzb@hutb.edu.cn>
 
 #### 带格式化的链接
 
 强调链接，在链接语法前后添加星号,并且第一个星号与前面的内容要有空格。要将链接表示为代码，请在方括号中添加反引号  
-我喜欢逛 *[b站番剧](https://www.bilibili.com/anime/?spm_id_from=333.1007.0.0)*  
+>`我喜欢逛 *[b站番剧](https://www.bilibili.com/anime/?spm_id_from=333.1007.0.0)*`  
+>我喜欢逛 *[b站番剧](https://www.bilibili.com/anime/?spm_id_from=333.1007.0.0)*
+>`我喜欢逛 **[b站国创](https://www.bilibili.com/guochuang/?spm_id_from=333.1007.0.0)**`  
+>
 我喜欢逛 **[b站国创](https://www.bilibili.com/guochuang/?spm_id_from=333.1007.0.0)**  
 我喜欢逛 ***[b站热门](https://www.bilibili.com/v/popular/all?spm_id_from=333.1007.0.0)***  
 我喜欢逛 ***[`b站电影`](https://www.bilibili.com/movie/?spm_id_from=333.1007.0.0)***
