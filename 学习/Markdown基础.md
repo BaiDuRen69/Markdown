@@ -293,6 +293,7 @@ eg.~~这是添加了删除线的文本~~
 感叹号后接方括号和圆括号，方括号中放图片名，圆括号中放图片相对路径和图片标题（可有可无），图片标题用英文双引号包围并且双引号前要有空格  
 相对路径要用`/`而不是`\`
 
+>
 > ![](assets/Markdown基础/file-20260520164409026.jpg)
 #### 链接图片
 
@@ -341,8 +342,12 @@ alt文本最佳实践：
 将图片作为链接的可点击元素  
 基本语法：
 `[![图片alt文本](图片URL)](链接URL)`  
-示例：  
-[![B站网址](https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/2f/1b/44/2f1b4404-bd84-ecf7-b58a-26345e7b99ec/Placeholder.mill/400x400bb-75.webp)](https://www.bilibili.com/ "快来一起刷B站啊")
+
+>示例：  
+>`[![B站网址|400](https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/2f/1b/44/2f1b4404-bd84-ecf7-b58a-26345e7b99ec/Placeholder.mill/400x400bb-75.webp)](https://www.bilibili.com/ "快来一起刷B站啊")`  
+>
+
+[![B站网址|400](https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/2f/1b/44/2f1b4404-bd84-ecf7-b58a-26345e7b99ec/Placeholder.mill/400x400bb-75.webp)](https://www.bilibili.com/ "快来一起刷B站啊")
 
 ### 转义字符语法
 
