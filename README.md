@@ -30,7 +30,6 @@ Markdown/
 │   ├── assets/
 │   ├── 大学物理单选题-无答案.md
 │   └── 大学物理单选题.md
-├── GenerateTree.java
 ├── README.md
 ```
 <!-- TREE END -->

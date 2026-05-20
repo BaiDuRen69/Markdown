@@ -61,7 +61,8 @@ public class GenerateTree {
             // "/build/",      // 示例：忽略根目录下的 build 目录
             ".gitignore",
             "/.obsidian/",
-            "一键运行Generate.java.bat"
+            "一键运行Generate.java.bat",
+            "GenerateTree.java"
     };
 
     // ============================================================
