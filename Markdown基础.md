@@ -429,6 +429,11 @@ HTML替代方案：
 >这是==高亮==文本  
 >这是<mark>高亮文本</mark>
 
+### 下划线
+
+下划线不是标准Markdown语法<u>sdfhosu<u>
+
+
 ### 支持的HTML元素
 
 不在 Markdown 涵盖范围之内的标签，都可以直接在文档里面用 HTML 撰写。目前支持的 HTML 元素有：`<kbd> <b> <i> <em> <sup> <sub> <br>`等。  
