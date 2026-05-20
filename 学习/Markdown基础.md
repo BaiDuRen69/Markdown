@@ -14,6 +14,7 @@
 
 ---
 这是我学习Markdown的开始（我会在以下文档中只写入我觉得好的内容）
+部分内容可能难以体现，可移步至[Github](https://github.com/BaiDuRen69/Markdown)
 
 ## 基本语法
 
@@ -293,14 +294,19 @@ eg.~~这是添加了删除线的文本~~
 感叹号后接方括号和圆括号，方括号中放图片名，圆括号中放图片相对路径和图片标题（可有可无），图片标题用英文双引号包围并且双引号前要有空格  
 相对路径要用`/`而不是`\`
 
->
+>`![](assets/Markdown基础/file-20260520164409026.jpg)`
 > ![](assets/Markdown基础/file-20260520164409026.jpg)
 #### 链接图片
 
-> 直接引用网络图片，将相对路径替换为网址即可：  
+ 直接引用网络图片，将相对路径替换为网址即可：  
+>  `![bilibili](https://i2.hdslb.com/bfs/archive/af6c03332d5fabf7a306e21d3f4aac7d7c18f12e.png)`
 > ![bilibili](https://i2.hdslb.com/bfs/archive/af6c03332d5fabf7a306e21d3f4aac7d7c18f12e.png)
 
 也可以像使用网址那样对图片网址使用变量：
+
+>`这是App Store上的 [B站图标][2]`  
+>
+>`[2]: https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/2f/1b/44/2f1b4404-bd84-ecf7-b58a-26345e7b99ec/Placeholder.mill/400x400bb-75.webp`
 
 > 这是App Store上的 [B站图标][2]
 >
@@ -430,7 +436,7 @@ Tip：使用连字符和竖线创建表格可能很麻烦。为了加快该过�
 `[^要注明的文本]: 文本`  
 >具体实现：
 >创建脚注格式类似这样 [^RUNOOB]
-
+>
 >[^RUNOOB]: 菜鸟教程 -- 学的不仅是技术，更是梦想！！！
 
 ### 文本高亮
