@@ -431,7 +431,14 @@ HTML替代方案：
 
 ### 下划线
 
-下划线不是标准Markdown语法<u>sdfhosu<u>
+下划线不是标准Markdown语法
+格式：`<u>这个句子将被划线</u>`
+> 示例：
+> <u>这个句子将被划线</u>
+> <span style="text-decoration: underline; text-decoration-style: dashed;">持续禁欲</span>
+> <span style="text-decoration: underline; text-decoration-style: wavy;">持续禁欲</span>
+
+
 
 
 ### 支持的HTML元素
