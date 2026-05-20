@@ -12,7 +12,7 @@
 
 这是我学习 Markdown 的开始，以下是我认为实用的知识点总结。
 
-部分语法效果可能难以直接体现，建议移步至 [GitHub](https://github.com/BaiDuRen69/Markdown) 查看源文件。
+部分语法效果可能难以直接体现，建议移步至 [GitHub](https://github.com/BaiDuRen69/Markdown/blob/main/%E5%AD%A6%E4%B9%A0/Markdown%E5%9F%BA%E7%A1%80.md)查看源文件。
 
 ## 基本语法
 
