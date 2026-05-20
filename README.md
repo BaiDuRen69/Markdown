@@ -11,6 +11,8 @@
 <!-- TREE START -->
 ```
 Markdown/
+├── 其他/
+│   └── 豆瓣电影Top250.md
 ├── 学习/
 │   ├── assets/
 │   ├── DeepSeek提示词技巧.md
@@ -21,6 +23,7 @@ Markdown/
 │   ├── assets/
 │   └── 越过废人陷阱——AI时代，教育将如何被改写？.md
 ├── 随记/
+│   ├── 我对读书的思考.md
 │   ├── 碎片化信息的驯化与注意力困境.md
 │   └── 荒诞.md
 ├── 题目/
@@ -29,8 +32,6 @@ Markdown/
 │   └── 大学物理单选题.md
 ├── GenerateTree.java
 ├── README.md
-├── 我对读书的思考.md
-└── 豆瓣电影Top250.md
 ```
 <!-- TREE END -->
 
