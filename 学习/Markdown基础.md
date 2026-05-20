@@ -14,7 +14,7 @@
 
 ---
 这是我学习Markdown的开始（我会在以下文档中只写入我觉得好的内容）
-部分内容可能难以体现，可移步至[Github](https://github.com/BaiDuRen69/Markdown)
+部分内容可能难以体现，可移步至[Github](https://github.com/BaiDuRen69/Markdown)查看源码
 
 ## 基本语法
 
