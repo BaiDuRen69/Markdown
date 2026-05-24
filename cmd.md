@@ -1,5 +1,5 @@
 
-
+打开cmd进入指定目录普通方法：
 打开cmd：  
 1. `Win`+`R`打开“运行”对话框
 2. 运行框输入`cmd`回车即可
@@ -22,3 +22,5 @@ D:\>cd programme
 
 D:\programme>cd D:\programme\GitHub\Python
 ```
+在指定目录打开cmd简单方法：  
+在`文件资源管理器地址栏`输入`cmd`回车即可
