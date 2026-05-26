@@ -52,7 +52,8 @@ EXTRA_IGNORES = [
     ".gitignore",
     "/.obsidian/",
     "一键运行Generate.java.bat",
-    "GenerateTree.java",
+    "GenerateTree.java"
+    "一键运行Generate.py.bat",
     "GenerateTree.py",  # 忽略自身
 ]
 
@@ -418,21 +419,15 @@ def main():
         # 加载忽略规则
         rules = load_ignore_rules(root)
 
-        # 构建目录树
-        tree_lines = []
-        # 根目录名称
-        tree_lines.append(root.name + "/")
-
-        # 获取根目录下的子项并递归生成树
+        # 构建目录树（直接用字符串拼接，append_tree 返回的每行已自带 \n）
+        tree = root.name + "/\n"
         children = get_sorted_children(root, root, rules)
         for i, child in enumerate(children):
             is_last = (i == len(children) - 1)
-            tree_lines.append(append_tree(child, "", is_last, root, rules, COLLAPSE_DIRS))
-
-        tree_text = "\n".join(tree_lines)
+            tree += append_tree(child, "", is_last, root, rules, COLLAPSE_DIRS)
 
         # 更新 README.md
-        update_readme(root, tree_text)
+        update_readme(root, tree)
         print("目录结构已更新到 README.md")
 
     except Exception as e:
