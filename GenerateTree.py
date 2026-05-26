@@ -1,6 +1,6 @@
 """
 ============================================================
-📖 GenerateTree.py — 目录树生成器（已彻底优化）
+📖 GenerateTree.py — 目录树生成器（assets 默认折叠版）
 ============================================================
 
 使用方法：
@@ -21,8 +21,11 @@
 
 自定义配置：
     EXTRA_IGNORES  - 额外忽略规则（.gitignore 语法）
-    COLLAPSE_DIRS  - 不展开的文件夹（相对于项目根的路径片段）
+    COLLAPSE_DIRS  - 需要折叠的其他文件夹（相对于项目根的路径片段）
     START_MARK / END_MARK - README 中目录树的占位标记
+
+注意：
+    所有名为 assets 的目录（不区分大小写）默认会被折叠，无需加入 COLLAPSE_DIRS。
 
 ============================================================
 """
@@ -34,9 +37,7 @@ from pathlib import Path
 try:
     import pathspec
 except ImportError:
-    sys.exit(
-        "错误：需要 pathspec 库，请运行：pip install pathspec"
-    )
+    sys.exit("错误：需要 pathspec 库，请运行：pip install pathspec")
 
 # ============================================================
 # 配置区域
@@ -48,14 +49,13 @@ EXTRA_IGNORES = [
     "GenerateTree.py",
 ]
 
-# 折叠目录：传入相对路径的各个部分（自动处理跨平台）
-# 例如 ["assets", "build/output"] 表示不展开 assets 和 build/output
 COLLAPSE_DIRS = [
-    "assets",
+    # 这里只需填写 assets 以外的折叠目录
 ]
 
 START_MARK = "<!-- TREE START -->"
 END_MARK = "<!-- TREE END -->"
+
 
 # ============================================================
 # 辅助函数
@@ -70,8 +70,6 @@ def _parse_gitignore_lines(repo_root: Path) -> list[str]:
             line = raw.strip()
             if not line or line.startswith("#"):
                 continue
-            # 去除行内注释 (简单处理：找到第一个 # 且不在转义后)
-            # .gitignore 规范没有转义注释，所以直接去掉 # 及之后即可
             comment_pos = line.find("#")
             if comment_pos != -1:
                 line = line[:comment_pos].strip()
@@ -89,9 +87,14 @@ def load_ignore_spec(repo_root: Path) -> pathspec.PathSpec:
 
 def should_collapse(rel_path: Path) -> bool:
     """
-    用路径的各个部分精确匹配 COLLAPSE_DIRS。
-    COLLAPSE_DIRS 中的每一项会被按 '/' 拆分成序列，与 rel_path.parts 的前缀比较。
+    判断目录是否应折叠。
+    默认规则：所有名为 assets 的目录（不区分大小写）自动折叠。
+    COLLAPSE_DIRS 中的项按路径前缀精确匹配。
     """
+    # 默认折叠所有 assets 目录
+    if rel_path.name.lower() == "assets":
+        return True
+
     parts = rel_path.parts
     for pattern in COLLAPSE_DIRS:
         pattern_parts = tuple(Path(pattern).parts)
@@ -105,7 +108,6 @@ def get_children(dir_path: Path, spec: pathspec.PathSpec, repo_root: Path) -> li
     children = []
     for entry in dir_path.iterdir():
         rel = entry.relative_to(repo_root).as_posix()
-        # pathspec 要求目录以 '/' 结尾
         match_path = rel + "/" if entry.is_dir() else rel
         if not spec.match_file(match_path):
             children.append(entry)
@@ -114,8 +116,7 @@ def get_children(dir_path: Path, spec: pathspec.PathSpec, repo_root: Path) -> li
 
 
 def generate_tree(root: Path, spec: pathspec.PathSpec, repo_root: Path) -> str:
-    """返回完整目录树字符串（使用生成器避免大量临时字符串拼接）。"""
-    # 内部递归生成器
+    """返回完整目录树字符串。"""
     def walk(node: Path, prefix: str, is_last: bool):
         connector = "└── " if is_last else "├── "
         line = prefix + connector + node.name
@@ -166,7 +167,6 @@ def main():
     target = sys.argv[1] if len(sys.argv) > 1 else "."
     root = Path(target).resolve()
 
-    # 分层错误处理
     try:
         if not root.exists():
             raise FileNotFoundError(f"路径不存在: {root}")
