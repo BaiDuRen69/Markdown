@@ -52,7 +52,7 @@ EXTRA_IGNORES = [
     ".gitignore",
     "/.obsidian/",
     "一键运行Generate.java.bat",
-    "GenerateTree.java"
+    "GenerateTree.java",
     "一键运行Generate.py.bat",
     "GenerateTree.py",  # 忽略自身
 ]
