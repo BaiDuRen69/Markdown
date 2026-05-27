@@ -39,7 +39,10 @@ EXTRA_IGNORES = [
     "/.git/",
     ".gitignore",
     "/.obsidian/",
+    "GenerateTree.java",
     "GenerateTree.py",
+    "一键运行Generate.java.bat",
+    "一键运行Generate.py.bat",
 ]
 
 DEFAULT_COLLAPSE_NAMES = {"assets"}

@@ -32,10 +32,7 @@ Markdown/
 │   ├── assets/
 │   ├── 大学物理单选题-无答案.md
 │   └── 大学物理单选题.md
-├── GenerateTree.java
 ├── README.md
-├── 一键运行Generate.java.bat
-├── 一键运行Generate.py.bat
 └── 未命名 1.md
 ```
 <!-- TREE END -->
