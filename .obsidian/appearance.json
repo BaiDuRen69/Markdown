@@ -4,5 +4,6 @@
   "monospaceFontFamily": "JetBrains Mono",
   "baseFontSizeAction": true,
   "baseFontSize": 16,
-  "interfaceFontFamily": "微软雅黑"
+  "interfaceFontFamily": "微软雅黑",
+  "accentColor": ""
 }
