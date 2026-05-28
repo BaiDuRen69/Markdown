@@ -115,7 +115,7 @@
     "maxSize": "30 MB"
   },
   "realtimeSync": false,
-  "startupSyncDelaySeconds": 0,
+  "startupSyncDelaySeconds": 5,
   "autoSyncIntervalSeconds": 300,
   "ai": {
     "providers": {},

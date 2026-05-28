@@ -15,14 +15,17 @@ Markdown/
 │   └── 豆瓣电影Top250.md
 ├── 学习/
 │   ├── assets/
-│   ├── cmd.md
-│   ├── DeepSeek提示词技巧.md
-│   ├── gitignore极简指南.md
+│   ├── AI提示词.md
 │   ├── IDEA快捷键（鸽了）.md
-│   └── Markdown基础.md
+│   ├── Markdown基础.md
+│   ├── cmd.md
+│   ├── gitignore极简指南.md
+│   └── 提示词技巧.md
 ├── 讲座/
 │   ├── assets/
 │   └── 越过废人陷阱——AI时代，教育将如何被改写？.md
+├── 读后感/
+│   └── 《平面国》.md
 ├── 随记/
 │   ├── 与辅导员谈AI就业之后.md
 │   ├── 我对读书的思考.md
@@ -31,8 +34,11 @@ Markdown/
 ├── 题目/
 │   ├── assets/
 │   ├── 大学物理单选题-无答案.md
-│   └── 大学物理单选题.md
+│   ├── 大学物理单选题.md
+│   ├── 高等数学试卷-无答案.md
+│   └── 高等数学试卷.md
 ├── README.md
+├── test.py
 └── 未命名 1.md
 ```
 <!-- TREE END -->
