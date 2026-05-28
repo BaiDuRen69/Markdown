@@ -115,11 +115,11 @@
     "maxSize": "30 MB"
   },
   "realtimeSync": false,
-  "startupSyncDelaySeconds": 5,
+  "startupSyncDelaySeconds": 3,
   "autoSyncIntervalSeconds": 300,
   "ai": {
     "providers": {},
     "yolo": false
   },
-  "configDirSyncMode": "none"
+  "configDirSyncMode": "bookmarks"
 }

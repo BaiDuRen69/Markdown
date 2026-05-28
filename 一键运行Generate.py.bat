@@ -1,4 +1,4 @@
 @echo off
         cd /d "%~dp0"
-        python test.py
+        python GenerateTree.py
         pause

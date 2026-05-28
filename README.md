@@ -15,8 +15,10 @@ Markdown/
 │   └── 豆瓣电影Top250.md
 ├── 学习/
 │   ├── assets/
+│   ├── 鸽了/
+│   │   ├── IDEA快捷键（鸽了）.md
+│   │   └── 软件预想（鸽了）.md
 │   ├── AI提示词.md
-│   ├── IDEA快捷键（鸽了）.md
 │   ├── Markdown基础.md
 │   ├── cmd.md
 │   ├── gitignore极简指南.md
@@ -37,9 +39,7 @@ Markdown/
 │   ├── 大学物理单选题.md
 │   ├── 高等数学试卷-无答案.md
 │   └── 高等数学试卷.md
-├── README.md
-├── test.py
-└── 未命名 1.md
+└── README.md
 ```
 <!-- TREE END -->
 
