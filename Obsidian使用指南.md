@@ -12,10 +12,25 @@ created: 2026-05-28
 我便找了一种新方法——用坚果云同步、github备份  
 ## 坚果云同步
 
+当然在使用坚果云之前，或许你要知道
+
+| 版本    | 价格      | 空间   | 特点                            |
+| ----- | ------- | ---- | ----------------------------- |
+| 免费版   |         |      | 上传流量1GB/月，下载流量3GB/月           |
+| 专业版   | 199.9/年 | 42GB | 上传下载流量不限；保留3个月历史版本；误删恢复；全平台搜索 |
+| 高级专业版 | 399.9/年 | 96GB | 包含专业版所有功能，空间更大，适合重度同步用户       |
+当然还有API请求限制，免费版每30分钟限600次请求，付费版限1500次。Obsidian 的自动保存机制非常频繁（打几个字就保存一次），极易在短时间内耗尽额度  
+当然你可以试试 **PC用坚果云客户端 + 手机用插件**
 十分简单，[官宣！坚果云 x Obsidian 官方同步插件，正式上架！](https://mp.weixin.qq.com/s/5wRWhsgler12xMU6mVzybg)  
 设置→第三方插件→关闭安全模式→浏览→Nutstore Sync→安装→启用→选项→登录  
 
 ## Github备份
 
-如果你并非开发者，且对备份没有这么高的追求，你或许可以去试试其他的备份方式。请不必将别人的方案da
-[Git](https://git-scm.com/)这个网站有关于安装、使用的方式，如果你不愿看文字可以[git-bilibili](https://search.bilibili.com/all?keyword=git&from_source=web_search&spm_id_from=333.1007&search_source=5)去找视频看。
+如果你并非开发者，且对备份没有这么高的追求，你或许可以去试试其他的备份方式，在这[Obsidian 同步、备份与进阶技巧 | 菜鸟教程](https://www.runoob.com/obsidian/obsidian-sync-backup-tips.html)提到了不少的方案。请不必将别人的方案当做自己的真理。
+[Git](https://git-scm.com/)这个网站有关于安装、使用的方式，如果你不愿看文字可以[git-bilibili](https://search.bilibili.com/all?keyword=git&from_source=web_search&spm_id_from=333.1007&search_source=5)去找视频看。  
+接着你可以试着去找一些git和obsidian综合使用的视频或文章。  
+接着你可能会遇到在手机上使用git插件同步的教程，但是我认为大可不必如此，手机只需用坚果云同步即可：
+
+| 电脑         | 手机  |
+| ---------- | --- |
+| github+坚果云 | 坚果云 |
