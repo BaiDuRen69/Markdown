@@ -1,13 +1,15 @@
 ---
-title: "Obsidian邪修用法，免费云同步，AI，手机端，进阶技巧"
-url: "https://www.bilibili.com/video/BV1fZCyBYEuT/?spm_id_from=333.1007.top_right_bar_window_custom_collection.content.click&vd_source=a0ae2f9638f63e280dd3406cd1f8433e"
-bvid: "BV1fZCyBYEuT"
+title: Obsidian邪修用法，免费云同步，AI，手机端，进阶技巧
+url: https://www.bilibili.com/video/BV1fZCyBYEuT/?spm_id_from=333.1007.top_right_bar_window_custom_collection.content.click&vd_source=a0ae2f9638f63e280dd3406cd1f8433e
+bvid: BV1fZCyBYEuT
 cid: "34024720903"
-author: "技术爬爬虾"
-upload_date: "2025-11-15"
-subtitle_lang: "中文"
-created: "2026-05-28"
-tags: ["clippings", "bilibili"]
+author: 技术爬爬虾
+upload_date: 2025-11-15
+subtitle_lang: 中文
+created: 2026-05-28
+tags:
+  - clippings
+  - bilibili
 ---
 
 <iframe src="https://player.bilibili.com/player.html?aid=115553561739950&bvid=BV1fZCyBYEuT&cid=34024720903&page=1&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allow="fullscreen; picture-in-picture" allowfullscreen="true" style="height:100%;width:100%; aspect-ratio: 16 / 9;"> </iframe>
