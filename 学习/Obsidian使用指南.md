@@ -47,6 +47,24 @@ created: 2026-05-28
 
 ### 1. Custom Attachment Location
 
-这款免费插件让您能够通过变量（如`${noteFileName}`, `${date:format}`等）完全自定义附件的存储位置，就像Typora那样灵活高效
-
+这款插件让您能够通过变量（如`${noteFileName}`, `${date:format}`等）完全自定义附件的存储位置，就像Typora那样灵活高效  
 具体的我并不明白，可以去看[Obsidian邪修用法，免费云同步，AI，手机端，进阶技巧_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1fZCyBYEuT/?spm_id_from=333.1007.top_right_bar_window_custom_collection.content.click&vd_source=a0ae2f9638f63e280dd3406cd1f8433e)的**章节：图像**跟随设置
+
+### 2. File Cleaner Redux
+
+这款插件可以帮助用户清理空文件和未使用附件的工具
+
+### 3.Local REST API
+
+它是一个辅助插件帮助浏览器插件完成导入。  
+
+edge插件：[Bilibili Obsidian Clipper｜一键保存B站字幕](https://microsoftedge.microsoft.com/addons/detail/bilibili-obsidian-clipper/fbeeapnjdjgacilaobonekidbfjcmdjo)  
+它可以在B站视频页面直接获取字幕内容，支持作者字幕和 AI 字幕，多语言可选，还能复制 Markdown、下载 txt / srt，一键写入 Obsidian 指定目录。这样就可以把收藏的内容沉淀到本地知识库里，再交给 AI 继续整理、总结和搜索。
+前往作者教程[视频内容一键保存到 Obsidian：打通本地知识库_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV15qQwB4EZ9/?spm_id_from=333.1387.homepage.video_card.click&vd_source=040bc5ea7866b419558ec2682a2ccb59)
+
+再讲一个浏览器插件，它能够剪藏浏览器上的内容保存到本地
+[Obsidian Web Clipper - Microsoft Edge Addons](https://microsoftedge.microsoft.com/addons/detail/obsidian-web-clipper/eigdjhmgnaaeaonimdklocfekkaanfme)  
+这或许可以防止原内容被删除、修改，同时也能更好的在自己的电脑上使用AI调用  
+
+## 怎么使用AI
+
