@@ -68,3 +68,27 @@ edge插件：[Bilibili Obsidian Clipper｜一键保存B站字幕](https://micros
 
 ## 怎么使用AI
 
+网上有很多教Obsidian接入AI，感兴趣的可以去了解  
+
+但是大多都只是调用AI来完成一些任务，并没有实现用自己的笔记来训练AI让它能够和自己同步，当然也有本地部署的方式，但那就仁者见仁，智者见智了   
+哪些调用API的方式或许只不过让我们少了一些复制粘贴的步骤而已，当然如果你认为花一些钱来省事那自然可行  
+
+### WorkBuddy
+
+WorkBuddy 是腾讯推出的全场景职场 AI 智能体桌面工作台，面向各类职能角色设计。您只需用一句话描述需求，WorkBuddy 便能像同事一样自主规划和执行任务，并交付可验收的结果。  
+
+感兴趣的可以去了解[WorkBuddy](https://www.codebuddy.cn/docs/workbuddy/Overview)
+
+作为腾讯开发的🦞，我认为还不错  
+
+虽然不能直接接入Obsidian，没有那么高的适配度，但是作为白嫖已经很不错了  
+
+**当然我建议你在使用时进行备份或者告诉它不要直接修改原文件**
+
+### ima
+
+如果你需要自己的知识库
+
+你或许可以试试[ima.copilot-腾讯AI工作台](https://ima.qq.com/download)
+
+jiang'zi
