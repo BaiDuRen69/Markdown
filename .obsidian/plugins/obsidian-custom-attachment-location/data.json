@@ -13,7 +13,7 @@
   "excludePathsFromAttachmentCollecting": [],
   "generatedAttachmentFileName": "file-${date:{momentJsFormat:'YYYYMMDDHHmmssSSS'}}",
   "includePaths": [],
-  "jpegQuality": 0.8,
+  "jpegQuality": 1,
   "markdownUrlFormat": "assets/${noteFileName}/${generatedAttachmentFileName}",
   "moveAttachmentToProperFolderUsedByMultipleNotesMode": "CopyAll",
   "renamedAttachmentFileName": "",

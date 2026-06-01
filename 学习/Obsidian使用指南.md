@@ -4,7 +4,7 @@ created: 2026-05-28
 
 可能让你失望了，这里没有什么从零开始的Obsidian教程，不过是我踩过的一部分坑。如果你想要从零开始具体学怎么使用Obsidian，可以去这里[Obsidian 教程 | 菜鸟教程](https://www.runoob.com/obsidian/obsidian-tutorial.html)。
 
-当然我通过B站视频入坑的[B站Obsidian入门](B站Obsidian入门.md)，感兴趣的可以看看。
+当然我通过B站视频入坑的[Obsidian入门_B站技术爬爬虾](Obsidian入门_B站技术爬爬虾.md)，感兴趣的可以看看。
 
 ## 同步方案——坚果云同步、github备份  
 
@@ -45,3 +45,8 @@ created: 2026-05-28
 
 ## 插件推荐
 
+### 1. Custom Attachment Location
+
+这款免费插件让您能够通过变量（如`${noteFileName}`, `${date:format}`等）完全自定义附件的存储位置，就像Typora那样灵活高效
+
+具体的我并不明白，可以去看[Obsidian邪修用法，免费云同步，AI，手机端，进阶技巧_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1fZCyBYEuT/?spm_id_from=333.1007.top_right_bar_window_custom_collection.content.click&vd_source=a0ae2f9638f63e280dd3406cd1f8433e)的**章节：图像**跟随设置
