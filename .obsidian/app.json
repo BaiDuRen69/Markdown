@@ -4,5 +4,5 @@
   "readableLineLength": true,
   "promptDelete": false,
   "newLinkFormat": "relative",
-  "useMarkdownLinks": true
+  "useMarkdownLinks": false
 }
