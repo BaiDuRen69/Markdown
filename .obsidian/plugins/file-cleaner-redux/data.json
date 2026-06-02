@@ -3,14 +3,12 @@
   "obsidianTrashCleanupAge": -1,
   "notifications": "showAll",
   "excludeInclude": 0,
-  "excludedFolders": [
-    "Bilibili"
-  ],
+  "excludedFolders": [],
   "attachmentsExcludeInclude": 1,
   "attachmentExtensions": [],
   "deletionConfirmation": true,
-  "runOnStartup": true,
-  "removeFolders": true,
+  "runOnStartup": false,
+  "removeFolders": false,
   "ignoredFrontmatter": [],
   "ignoreAllFrontmatter": false,
   "codeblockTypes": [],
