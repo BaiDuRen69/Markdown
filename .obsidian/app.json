@@ -1,8 +1,8 @@
 {
   "strictLineBreaks": true,
   "showLineNumber": true,
-  "readableLineLength": true,
-  "promptDelete": false,
+  "showIndentGuide": true,
   "newLinkFormat": "relative",
-  "useMarkdownLinks": true
+  "useMarkdownLinks": true,
+  "newFileLocation": "root"
 }

@@ -1,9 +1,4 @@
 {
   "cssTheme": "Dracula for Obsidian",
-  "textFontFamily": "微软雅黑",
-  "monospaceFontFamily": "JetBrains Mono",
-  "baseFontSizeAction": true,
-  "baseFontSize": 22,
-  "interfaceFontFamily": "微软雅黑",
-  "accentColor": ""
+  "baseFontSizeAction": true
 }
