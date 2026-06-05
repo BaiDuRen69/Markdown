@@ -4,5 +4,7 @@
   "showIndentGuide": true,
   "newLinkFormat": "relative",
   "useMarkdownLinks": true,
-  "newFileLocation": "root"
+  "newFileLocation": "root",
+  "promptDelete": false,
+  "showInlineTitle": false
 }

@@ -121,5 +121,5 @@
     "providers": {},
     "yolo": false
   },
-  "configDirSyncMode": "bookmarks"
+  "configDirSyncMode": "all"
 }
