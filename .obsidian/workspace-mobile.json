@@ -1,52 +1,37 @@
 {
   "main": {
-    "id": "37c8b345abc21d0f",
+    "id": "3e0c7ef90a1be2eb",
     "type": "split",
     "children": [
       {
-        "id": "04ffafbde40a9d46",
+        "id": "c772bfd0af6bb04f",
         "type": "tabs",
         "children": [
           {
-            "id": "4be940fd3bb5ca97",
+            "id": "2a9f2c1467e55173",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "随记/碎片化信息的驯化与注意力困境.md",
-                "mode": "source",
+                "file": "学习资料/Python-100-Days-master/Day01-20/06.循环结构.md",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "碎片化信息的驯化与注意力困境"
-            }
-          },
-          {
-            "id": "5a13bb1dfdf7d838",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "未命名.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "未命名"
+              "title": "06.循环结构"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
   },
   "left": {
-    "id": "e0246aee1e5f83e0",
+    "id": "8fae8de5c762ed62",
     "type": "mobile-drawer",
     "children": [
       {
-        "id": "50eae20fbab09bf1",
+        "id": "81d566debe36acd3",
         "type": "leaf",
         "state": {
           "type": "file-explorer",
@@ -59,7 +44,7 @@
         }
       },
       {
-        "id": "e65474d8d53bc4c6",
+        "id": "5f28f9dabdf9f166",
         "type": "leaf",
         "state": {
           "type": "search",
@@ -76,7 +61,7 @@
         }
       },
       {
-        "id": "bb3dab1aa75b9c36",
+        "id": "44836c08bc3f5128",
         "type": "leaf",
         "state": {
           "type": "tag",
@@ -91,7 +76,7 @@
         }
       },
       {
-        "id": "2ae449b3a8b51b9f",
+        "id": "0ed056886069c0d1",
         "type": "leaf",
         "state": {
           "type": "all-properties",
@@ -105,7 +90,7 @@
         }
       },
       {
-        "id": "628e702db731fc90",
+        "id": "98de9a90e21c55b4",
         "type": "leaf",
         "state": {
           "type": "bookmarks",
@@ -118,35 +103,34 @@
     "currentTab": 0
   },
   "right": {
-    "id": "2dafb3291697f5d5",
+    "id": "cdb8daecfe0ca37a",
     "type": "mobile-drawer",
     "children": [
       {
-        "id": "6abc4bbcc78146e5",
+        "id": "14d1fa6974e21e6b",
         "type": "leaf",
         "state": {
           "type": "backlink",
           "state": {
-            "file": "手机测试.md",
+            "file": "学习资料/Python-100-Days-master/Day01-20/01.初识Python.md",
             "collapseAll": false,
-            "extraContext": false,
+            "extraContext": true,
             "sortOrder": "alphabetical",
             "showSearch": false,
             "searchQuery": "",
             "backlinkCollapsed": false,
-            "unlinkedCollapsed": true
+            "unlinkedCollapsed": false
           },
           "icon": "links-coming-in",
           "title": "反向链接"
         }
       },
       {
-        "id": "d8633de70887ae07",
+        "id": "c2ae40fcc26de563",
         "type": "leaf",
         "state": {
           "type": "outgoing-link",
           "state": {
-            "file": "手机测试.md",
             "linksCollapsed": false,
             "unlinkedCollapsed": true
           },
@@ -155,12 +139,11 @@
         }
       },
       {
-        "id": "323d38cb9872eaac",
+        "id": "5e40be7f20098da9",
         "type": "leaf",
         "state": {
           "type": "outline",
           "state": {
-            "file": "手机测试.md",
             "followCursor": false,
             "showSearch": false,
             "searchQuery": ""
@@ -168,80 +151,70 @@
           "icon": "lucide-list",
           "title": "大纲"
         }
-      },
-      {
-        "id": "5ee3f9bad6e96c44",
-        "type": "leaf",
-        "state": {
-          "type": "git-view",
-          "state": {},
-          "icon": "git-pull-request",
-          "title": "Source Control"
-        }
       }
     ],
-    "currentTab": 3
+    "currentTab": 0
   },
   "left-ribbon": {
     "hiddenItems": {
+      "nutstore-sync:Start sync": false,
+      "nutstore-sync:Stop sync": false,
+      "nutstore-sync:Open chatbox": false,
       "switcher:打开快速切换": false,
       "graph:查看关系图谱": false,
       "canvas:新建白板": false,
       "daily-notes:打开/创建今天的日记": false,
       "templates:插入模板": false,
       "command-palette:打开命令面板": false,
-      "bases:新建数据库": false,
-      "file-cleaner-redux:Clean files": false,
-      "obsidian-git:Open Git source control": false
+      "bases:新建数据库": false
     }
   },
-  "active": "5a13bb1dfdf7d838",
+  "active": "2a9f2c1467e55173",
   "lastOpenFiles": [
-    "gitignore极简指南.md",
-    "IDEA快捷键.md",
-    "一键运行Generate.java.bat",
-    "GenerateTree.java",
-    "Clippings/Bilibili/2026-05-14-黑马程序员Java+AI智能辅助编程全套视频教程，java零基础入门到大牛一套通关-P180-10-项目实战3-即时通讯-架构分析-服务端功能分析-架构搭建.md",
-    "Clippings/Bilibili/2026-05-14-黑马程序员Java+AI智能辅助编程全套视频教程，java零基础入门到大牛一套通关-P179-09-项目实战3-即时通讯-通过AI获取客户端界面.md",
-    "/README.md",
-    "/gitignore极简指南.md",
-    "/IDEA快捷键.md",
-    "/一键运行Generate.java.bat",
-    "/GenerateTree.java",
-    "/Clippings/Bilibili/2026-05-14-黑马程序员Java+AI智能辅助编程全套视频教程，java零基础入门到大牛一套通关-P180-10-项目实战3-即时通讯-架构分析-服务端功能分析-架构搭建.md",
-    "/Clippings/Bilibili/2026-05-14-黑马程序员Java+AI智能辅助编程全套视频教程，java零基础入门到大牛一套通关-P179-09-项目实战3-即时通讯-通过AI获取客户端界面.md",
-    "Clippings/Bilibili",
-    "Clippings",
-    "/Clippings/Bilibili",
-    "/Clippings",
-    "随记/碎片化信息的驯化与注意力困境.md",
-    "未命名.md",
-    "随记/荒诞.md",
+    "未命名.base",
+    "学习资料/Python-100-Days-master/Day01-20/06.循环结构.md",
+    "学习资料/Python-100-Days-master/Day01-20/05.分支结构.md",
+    "学习资料/Python-100-Days-master/Day01-20/04.Python语言中的运算符.md",
+    "学习资料/Python-100-Days-master/Day01-20/03.Python语言中的变量.md",
+    "学习资料/Python-100-Days-master/Day01-20/02.第一个Python程序.md",
+    "学习资料/Python-100-Days-master/Day01-20/01.初识Python.md",
+    "学习资料/Python-100-Days-master/README.md",
+    "学习资料/Python-100-Days-master/公开课/年薪50W+的Python程序员如何写代码/年薪50W+的Python程序员如何写代码.md",
+    "学习/常见的Markdown 图标语法.md",
     "README.md",
-    "讲座/越过废人陷阱——AI时代，教育将如何被改写？.md",
-    "DeepSeek提示词技巧.md",
-    "assets/Markdown基础/1.jpg",
-    "讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260424205055431.png",
+    "读后感/《平面国》读后感：我掉进了作者的陷阱，也看见了启蒙者变成刽子手.md",
+    "读后感/《沧浪之水》读后感.md",
+    "读后感/《平面国》读后感.md",
+    "随记/对大学教育的思考.md",
+    "学习/Obsidian入门_B站技术爬爬虾.md",
+    "学习/Obsidian 双链与知识图谱.md",
+    "学习/Obsidian使用指南.md",
+    "Obsidian使用指南.md",
+    "随记/与辅导员谈AI就业之后.md",
+    "学习/assets/AI提示词技巧/file-20260528160410693.png",
+    "学习/assets/AI提示词技巧/file-20260528160410690.png",
+    "学习/assets/AI提示词技巧/file-20260528160410687.png",
+    "学习/assets/AI提示词技巧/file-20260528160410679.png",
+    "学习/鸽了/IDEA快捷键（鸽了）.md",
+    "学习/鸽了/软件预想（鸽了）.md",
+    "学习/邪修用法，免费云同步，AI，手机端，进阶技巧.md",
+    "学习/AI提示词技巧.md",
+    "GenerateTree.py",
+    "Clippings/Bilibili",
+    "学习/assets/AI提示词技巧",
+    "学习/鸽了",
+    "Clippings",
     "题目/大学物理单选题.md",
     "题目/大学物理单选题-无答案.md",
+    "题目/assets/大学物理单选题/file-20260503150239216 1.png",
     "题目/assets/大学物理单选题/file-20260503150239221.png",
     "题目/assets/大学物理单选题/file-20260503150239220.png",
     "题目/assets/大学物理单选题/file-20260503150239216.png",
-    "题目/assets/大学物理单选题/file-20260503150239216 1.png",
     "题目/assets/大学物理单选题/file-20260503150239215.png",
     "题目/assets/大学物理单选题/file-20260503150239214.png",
-    "题目/assets/大学物理单选题/file-20260503150239213.png",
-    "豆瓣电影Top250.md",
-    "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？/file-20260424205055431.png",
-    "/讲座/assets/越过废人陷阱——AI时代，教育将如何被改写？",
-    "/讲座/assets",
-    "/题目/大学物理单选题.md",
-    "/题目/大学物理单选题-无答案.md",
-    "/随记/未命名.md",
-    "/豆瓣电影Top250.md",
-    "/DeepSeek提示词技巧.md",
-    "Markdown基础.md",
-    "/随手记.md",
-    "/讲座/越过废人陷阱——AI时代，教育将如何被改写？.md"
+    "test.py",
+    "读后感",
+    "学习/assets/提示词技巧",
+    "学习/assets/Markdown基础"
   ]
 }

@@ -6,5 +6,6 @@
   "useMarkdownLinks": true,
   "newFileLocation": "root",
   "promptDelete": false,
-  "showInlineTitle": false
+  "showInlineTitle": false,
+  "attachmentFolderPath": "/"
 }
