@@ -13,16 +13,30 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "学习资料/Python-100-Days-master/Day01-20/08.常用数据结构之列表-1.md",
+                "file": "学习资料/Python-100-Days-master/Day01-20/16.函数使用进阶.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "08.常用数据结构之列表-1"
+              "title": "16.函数使用进阶"
             }
           },
           {
             "id": "5fbdbef99a468b60",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "学习资料/Python-100-Days-master/README.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "README"
+            }
+          },
+          {
+            "id": "7fa184b86d6e50a6",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -32,7 +46,7 @@
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -123,9 +137,9 @@
         "state": {
           "type": "backlink",
           "state": {
-            "file": "学习资料/Python-100-Days-master/Day01-20/01.初识Python.md",
-            "collapseAll": false,
-            "extraContext": true,
+            "file": "学习资料/Python-100-Days-master/Day01-20/11.常用数据结构之字符串.md",
+            "collapseAll": true,
+            "extraContext": false,
             "sortOrder": "alphabetical",
             "showSearch": false,
             "searchQuery": "",
@@ -164,7 +178,7 @@
         }
       }
     ],
-    "currentTab": 0
+    "currentTab": 2
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -180,19 +194,27 @@
       "bases:新建数据库": false
     }
   },
-  "active": "5fbdbef99a468b60",
+  "active": "7fa184b86d6e50a6",
   "lastOpenFiles": [
+    "学习资料/Python-100-Days-master/README.md",
+    "学习资料/Python-100-Days-master/Day01-20/16.函数使用进阶.md",
+    "学习资料/Python-100-Days-master/Day01-20/13.常用数据结构之字典.md",
     "学习资料/Python-100-Days-master/Day01-20/08.常用数据结构之列表-1.md",
+    "学习资料/Python-100-Days-master/Day66-80/res/pyecharts_map_chart.png",
+    "学习资料/Python-100-Days-master/Day01-20/14.函数和模块.md",
+    "学习资料/Python-100-Days-master/Day01-20/15.函数应用实战.md",
+    "学习资料/Python-100-Days-master/Day01-20/12.常用数据结构之集合.md",
+    "学习资料/Python-100-Days-master/Day01-20/11.常用数据结构之字符串.md",
+    "学习资料/Python-100-Days-master/Day01-20/10.常用数据结构之元组.md",
     "学习资料/Python-100-Days-master/Day01-20/09.常用数据结构之列表-2.md",
+    "学习资料/Python-100-Days-master/Day01-20/02.第一个Python程序.md",
+    "学习资料/Python-100-Days-master/Day01-20/01.初识Python.md",
     "学习资料/Python-100-Days-master/Day01-20/07.分支和循环结构实战.md",
     "学习资料/Python-100-Days-master/Day01-20/06.循环结构.md",
     "学习资料/Python-100-Days-master/Day01-20/05.分支结构.md",
     "未命名.base",
     "学习资料/Python-100-Days-master/Day01-20/04.Python语言中的运算符.md",
     "学习资料/Python-100-Days-master/Day01-20/03.Python语言中的变量.md",
-    "学习资料/Python-100-Days-master/Day01-20/02.第一个Python程序.md",
-    "学习资料/Python-100-Days-master/Day01-20/01.初识Python.md",
-    "学习资料/Python-100-Days-master/README.md",
     "学习资料/Python-100-Days-master/公开课/年薪50W+的Python程序员如何写代码/年薪50W+的Python程序员如何写代码.md",
     "学习/常见的Markdown 图标语法.md",
     "README.md",
@@ -201,18 +223,10 @@
     "读后感/《平面国》读后感.md",
     "随记/对大学教育的思考.md",
     "学习/Obsidian入门_B站技术爬爬虾.md",
-    "学习/Obsidian 双链与知识图谱.md",
-    "学习/Obsidian使用指南.md",
-    "Obsidian使用指南.md",
-    "随记/与辅导员谈AI就业之后.md",
     "学习/assets/AI提示词技巧/file-20260528160410693.png",
     "学习/assets/AI提示词技巧/file-20260528160410690.png",
     "学习/assets/AI提示词技巧/file-20260528160410687.png",
     "学习/assets/AI提示词技巧/file-20260528160410679.png",
-    "学习/鸽了/IDEA快捷键（鸽了）.md",
-    "学习/鸽了/软件预想（鸽了）.md",
-    "学习/邪修用法，免费云同步，AI，手机端，进阶技巧.md",
-    "学习/AI提示词技巧.md",
     "GenerateTree.py",
     "Clippings/Bilibili",
     "学习/assets/AI提示词技巧",
@@ -223,7 +237,6 @@
     "题目/assets/大学物理单选题/file-20260503150239220.png",
     "题目/assets/大学物理单选题/file-20260503150239216.png",
     "题目/assets/大学物理单选题/file-20260503150239215.png",
-    "题目/assets/大学物理单选题/file-20260503150239214.png",
     "test.py",
     "读后感",
     "学习/assets/提示词技巧",
