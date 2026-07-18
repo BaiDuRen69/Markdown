@@ -8,91 +8,20 @@
         "type": "tabs",
         "children": [
           {
-            "id": "5fbdbef99a468b60",
+            "id": "b53ae407c3aa5d9a",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "学习资料/Python-100-Days-master/README.md",
+                "file": "题目/高等数学试卷.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
-            }
-          },
-          {
-            "id": "4555c5f1769bbcb3",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "学习资料/Python-100-Days-master/Day01-20/08.常用数据结构之列表-1.md",
-                "mode": "preview",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "08.常用数据结构之列表-1"
-            }
-          },
-          {
-            "id": "dbf1d1fa455b68af",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "学习资料/Python-100-Days-master/Day01-20/16.函数使用进阶.md",
-                "mode": "preview",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "16.函数使用进阶"
-            }
-          },
-          {
-            "id": "b949197a6d344ec4",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "理发师悖论.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "理发师悖论"
-            }
-          },
-          {
-            "id": "9c283e080bb92a08",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "麦格克效应.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "麦格克效应"
-            }
-          },
-          {
-            "id": "799f3d24bdad3c4d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "犬儒主义.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "犬儒主义"
+              "title": "高等数学试卷"
             }
           }
-        ],
-        "currentTab": 5
+        ]
       }
     ],
     "direction": "vertical"
@@ -215,7 +144,7 @@
         "state": {
           "type": "outline",
           "state": {
-            "file": "理发师悖论.md",
+            "file": "题目/高等数学试卷.md",
             "followCursor": false,
             "showSearch": false,
             "searchQuery": ""
@@ -241,10 +170,26 @@
       "bases:新建数据库": false
     }
   },
-  "active": "81d566debe36acd3",
+  "active": "b53ae407c3aa5d9a",
   "lastOpenFiles": [
-    "麦格克效应.md",
+    "题目/大学物理单选题.md",
+    "题目/大学物理单选题-无答案.md",
     "犬儒主义.md",
+    "随记/assets/闲已成犯罪/file-20260628210127508.jpg",
+    "学习/碎片信息/肾移植：是加不是换.md",
+    "学习/碎片信息/自由漂浮行星.md",
+    "学习/碎片信息/脸是拼出来的.md",
+    "学习/碎片信息/知识的诅咒.md",
+    "学习/碎片信息/麦格克效应.md",
+    "学习/碎片信息/理发师悖论.md",
+    "学习/碎片信息/虚无主义.md",
+    "学习/碎片信息/犬儒主义.md",
+    "学习/碎片信息/摩尔定律.md",
+    "随记/闲已成犯罪.md",
+    "杜威十进制分类法.md",
+    "随记/assets/闲已成犯罪",
+    "随记/assets",
+    "麦格克效应.md",
     "理发师悖论.md",
     "闲已成犯罪.md",
     "知识的诅咒.md",
@@ -257,21 +202,8 @@
     "有趣的话.md",
     "自由漂浮行星.md",
     "虚无主义.md",
-    "读后感/《吞食者》读后感.md",
     "学习/碎片信息",
-    "学习资料/Python-100-Days-master/Day01-20/17.函数高级应用.md",
-    "学习资料/Python-100-Days-master/Day01-20/08.常用数据结构之列表-1.md",
-    "学习资料/Python-100-Days-master/README.md",
-    "2026-06-11.md",
-    "学习资料/Python-100-Days-master/Day01-20/07.分支和循环结构实战.md",
-    "学习资料/Python-100-Days-master/Day01-20/11.常用数据结构之字符串.md",
-    "学习资料/Python-100-Days-master/Day01-20/15.函数应用实战.md",
-    "学习资料/Python-100-Days-master/Day01-20/13.常用数据结构之字典.md",
     "学习资料/Python-100-Days-master/Day66-80/res/pyecharts_map_chart.png",
-    "学习资料/Python-100-Days-master/Day01-20/14.函数和模块.md",
-    "学习资料/Python-100-Days-master/Day01-20/12.常用数据结构之集合.md",
-    "学习资料/Python-100-Days-master/Day01-20/10.常用数据结构之元组.md",
-    "学习资料/Python-100-Days-master/Day01-20/09.常用数据结构之列表-2.md",
     "未命名.base",
     "学习/assets/AI提示词技巧/file-20260528160410693.png",
     "学习/assets/AI提示词技巧/file-20260528160410690.png",
@@ -285,9 +217,6 @@
     "题目/assets/大学物理单选题/file-20260503150239216 1.png",
     "题目/assets/大学物理单选题/file-20260503150239221.png",
     "题目/assets/大学物理单选题/file-20260503150239220.png",
-    "题目/assets/大学物理单选题/file-20260503150239216.png",
-    "test.py",
-    "读后感",
-    "学习/assets/提示词技巧"
+    "test.py"
   ]
 }
