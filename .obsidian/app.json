@@ -1,11 +1,12 @@
 {
   "strictLineBreaks": true,
-  "showLineNumber": true,
-  "showIndentGuide": true,
+  "showLineNumber": false,
+  "readableLineLength": true,
+  "promptDelete": false,
   "newLinkFormat": "relative",
   "useMarkdownLinks": true,
-  "newFileLocation": "root",
-  "promptDelete": false,
-  "showInlineTitle": false,
-  "attachmentFolderPath": "/"
+  "defaultViewMode": "preview",
+  "foldHeading": true,
+  "foldIndent": true,
+  "showUnsupportedFiles": false
 }
