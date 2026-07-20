@@ -1,4 +1,7 @@
 [
   "obsidian-local-rest-api",
-  "nutstore-sync"
+  "nutstore-sync",
+  "obsidian-git",
+  "file-cleaner-redux",
+  "obsidian-custom-attachment-location"
 ]
