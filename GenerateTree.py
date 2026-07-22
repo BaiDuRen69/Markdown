@@ -47,7 +47,7 @@ EXTRA_IGNORES = [
     "一键运行Generate.py.bat",
 ]
 
-DEFAULT_COLLAPSE_NAMES = {"assets","res"}
+DEFAULT_COLLAPSE_NAMES = {"assets","res","Python-100-Days-master"}
 _COLLAPSE_NAMES_LOWER = {name.lower() for name in DEFAULT_COLLAPSE_NAMES}
 
 COLLAPSE_DIRS = [
