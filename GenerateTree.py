@@ -47,7 +47,7 @@ EXTRA_IGNORES = [
     "一键运行Generate.py.bat",
 ]
 
-DEFAULT_COLLAPSE_NAMES = {"assets"}
+DEFAULT_COLLAPSE_NAMES = {"assets","res"}
 _COLLAPSE_NAMES_LOWER = {name.lower() for name in DEFAULT_COLLAPSE_NAMES}
 
 COLLAPSE_DIRS = [
