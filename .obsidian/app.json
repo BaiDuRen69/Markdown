@@ -8,5 +8,8 @@
   "defaultViewMode": "preview",
   "foldHeading": true,
   "foldIndent": true,
-  "showUnsupportedFiles": false
+  "showUnsupportedFiles": false,
+  "autoPairMarkdown": true,
+  "autoPairBrackets": true,
+  "smartIndentList": true
 }
