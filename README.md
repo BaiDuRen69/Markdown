@@ -15,9 +15,18 @@ Markdown/
 ├── 其他/
 │   └── 豆瓣电影Top250.md
 ├── 学习/
-│   ├── assets/
 │   ├── 学习/
-│   │   └── Obsidian使用指南.md
+│   │   ├── assets/
+│   │   ├── AI提示词.md
+│   │   ├── AI提示词技巧.md
+│   │   ├── Markdown基础.md
+│   │   ├── Obsidian 双链与知识图谱.md
+│   │   ├── Obsidian使用指南.md
+│   │   ├── Obsidian入门_B站技术爬爬虾.md
+│   │   ├── cmd.md
+│   │   ├── gitignore极简指南.md
+│   │   ├── 常见的Markdown 图标语法.md
+│   │   └── 正则表达式30分钟入门教程.md
 │   ├── 碎片信息/
 │   │   ├── 摩尔定律.md
 │   │   ├── 杜威十进制分类法.md
@@ -29,18 +38,9 @@ Markdown/
 │   │   ├── 自由漂浮行星.md
 │   │   ├── 虚无主义.md
 │   │   └── 麦格克效应.md
-│   ├── 鸽了/
-│   │   ├── IDEA快捷键（鸽了）.md
-│   │   └── 软件预想（鸽了）.md
-│   ├── AI提示词.md
-│   ├── AI提示词技巧.md
-│   ├── Markdown基础.md
-│   ├── Obsidian 双链与知识图谱.md
-│   ├── Obsidian使用指南.md
-│   ├── Obsidian入门_B站技术爬爬虾.md
-│   ├── cmd.md
-│   ├── gitignore极简指南.md
-│   └── 常见的Markdown 图标语法.md
+│   └── 鸽了/
+│       ├── IDEA快捷键（鸽了）.md
+│       └── 软件预想（鸽了）.md
 ├── 学习资料/
 │   └── Python-100-Days-master/
 ├── 讲座/
