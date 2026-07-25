@@ -50919,10 +50919,18 @@ var require_map2 = __commonJS({
       return result;
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.getDocumentMap = void 0;
+    exports2.getDocumentMap = exports2.FrontmatterParseError = void 0;
     var marked = __importStar((init_marked_esm(), __toCommonJS(marked_esm_exports)));
     var yaml_1 = require_dist();
     var constants_js_1 = require_constants();
+    var FrontmatterParseError2 = class extends Error {
+      constructor(message) {
+        super(message);
+        this.name = "FrontmatterParseError";
+        Object.setPrototypeOf(this, new.target.prototype);
+      }
+    };
+    exports2.FrontmatterParseError = FrontmatterParseError2;
     function getHeadingPositions(document2, tokens, contentOffset) {
       const positions = {
         "": {
@@ -51050,15 +51058,19 @@ var require_map2 = __commonJS({
       return positions;
     }
     function preProcess(document2) {
-      const frontmatterRegex = /^---(?:\r\n|\r|\n)([\s\S]*?)(?:\r\n|\r|\n)---(?:\r\n|\r|\n|$)/;
+      const frontmatterRegex = /^---(?:\r\n|\r|\n)(?:---(?:\r\n|\r|\n|$)|([\s\S]*?)(?:\r\n|\r|\n)---(?:\r\n|\r|\n|$))/;
       let content;
       let contentOffset = 0;
       let frontmatter;
       const match = frontmatterRegex.exec(document2);
       if (match) {
-        const frontmatterText = match[1].trim();
+        const frontmatterText = (match[1] ?? "").trim();
         contentOffset = match[0].length;
-        frontmatter = (0, yaml_1.parse)(frontmatterText);
+        try {
+          frontmatter = (0, yaml_1.parse)(frontmatterText) ?? {};
+        } catch (e) {
+          throw new FrontmatterParseError2(`Could not parse document frontmatter: ${e.message}`);
+        }
         content = document2.slice(contentOffset);
       } else {
         content = document2;
@@ -51213,7 +51225,7 @@ var require_patch = __commonJS({
           return `Cannot ${op} ${target}: content type is not compatible with merge`;
       }
     };
-    var PatchFailed3 = class extends Error {
+    var PatchFailed2 = class extends Error {
       constructor(reason, instruction, targetMap) {
         super(buildPatchFailedMessage(reason, instruction));
         this.reason = reason;
@@ -51223,7 +51235,7 @@ var require_patch = __commonJS({
         Object.setPrototypeOf(this, new.target.prototype);
       }
     };
-    exports2.PatchFailed = PatchFailed3;
+    exports2.PatchFailed = PatchFailed2;
     var PatchError = class extends Error {
     };
     exports2.PatchError = PatchError;
@@ -51328,12 +51340,12 @@ var require_patch = __commonJS({
         if ((0, typeGuards_js_1.isStringArrayArray)(content)) {
           for (const row of content) {
             if (row.length !== table.token.header.length || typeof row === "string") {
-              throw new PatchFailed3(PatchFailureReason.TableContentIncorrectColumnCount, instruction, target);
+              throw new PatchFailed2(PatchFailureReason.TableContentIncorrectColumnCount, instruction, target);
             }
             tableRows.push("| " + row.join(" | ") + " |" + table.lineEnding);
           }
         } else {
-          throw new PatchFailed3(PatchFailureReason.ContentTypeInvalid, instruction, target);
+          throw new PatchFailed2(PatchFailureReason.ContentTypeInvalid, instruction, target);
         }
         return [
           document2.slice(0, target.content.start),
@@ -51341,7 +51353,7 @@ var require_patch = __commonJS({
           document2.slice(target.content.end)
         ].join("");
       } catch (TablePartsNotFound2) {
-        throw new PatchFailed3(PatchFailureReason.ContentTypeInvalidForTarget, instruction, target);
+        throw new PatchFailed2(PatchFailureReason.ContentTypeInvalidForTarget, instruction, target);
       }
     };
     var prependTable = (document2, instruction, target) => {
@@ -51353,14 +51365,21 @@ var require_patch = __commonJS({
           content = [content];
         }
         if ((0, typeGuards_js_1.isStringArrayArray)(content)) {
+          if (instruction.rejectIfContentPreexists) {
+            const existingRows = table.token.rows.map((row) => row.map((cell) => cell.text));
+            const allPreexist = content.every((incomingRow) => existingRows.some((existingRow) => existingRow.length === incomingRow.length && existingRow.every((cell, i) => cell === incomingRow[i])));
+            if (allPreexist) {
+              throw new PatchFailed2(PatchFailureReason.ContentAlreadyPreexistsInTarget, instruction, target);
+            }
+          }
           for (const row of content) {
             if (row.length !== table.token.header.length || typeof row === "string") {
-              throw new PatchFailed3(PatchFailureReason.TableContentIncorrectColumnCount, instruction, target);
+              throw new PatchFailed2(PatchFailureReason.TableContentIncorrectColumnCount, instruction, target);
             }
             tableRows.push("| " + row.join(" | ") + " |" + table.lineEnding);
           }
         } else {
-          throw new PatchFailed3(PatchFailureReason.ContentTypeInvalid, instruction, target);
+          throw new PatchFailed2(PatchFailureReason.ContentTypeInvalid, instruction, target);
         }
         tableRows.push(table.contentParts);
         return [
@@ -51369,7 +51388,7 @@ var require_patch = __commonJS({
           document2.slice(target.content.end)
         ].join("");
       } catch (TablePartsNotFound2) {
-        throw new PatchFailed3(PatchFailureReason.ContentTypeInvalidForTarget, instruction, target);
+        throw new PatchFailed2(PatchFailureReason.ContentTypeInvalidForTarget, instruction, target);
       }
     };
     var appendTable = (document2, instruction, target) => {
@@ -51381,14 +51400,21 @@ var require_patch = __commonJS({
           content = [content];
         }
         if ((0, typeGuards_js_1.isStringArrayArray)(content)) {
+          if (instruction.rejectIfContentPreexists) {
+            const existingRows = table.token.rows.map((row) => row.map((cell) => cell.text));
+            const allPreexist = content.every((incomingRow) => existingRows.some((existingRow) => existingRow.length === incomingRow.length && existingRow.every((cell, i) => cell === incomingRow[i])));
+            if (allPreexist) {
+              throw new PatchFailed2(PatchFailureReason.ContentAlreadyPreexistsInTarget, instruction, target);
+            }
+          }
           for (const row of content) {
             if (row.length !== table.token.header.length || typeof row === "string") {
-              throw new PatchFailed3(PatchFailureReason.TableContentIncorrectColumnCount, instruction, target);
+              throw new PatchFailed2(PatchFailureReason.TableContentIncorrectColumnCount, instruction, target);
             }
             tableRows.push("| " + row.join(" | ") + " |" + table.lineEnding);
           }
         } else {
-          throw new PatchFailed3(PatchFailureReason.ContentTypeInvalid, instruction, target);
+          throw new PatchFailed2(PatchFailureReason.ContentTypeInvalid, instruction, target);
         }
         return [
           document2.slice(0, target.content.start),
@@ -51396,7 +51422,7 @@ var require_patch = __commonJS({
           document2.slice(target.content.end)
         ].join("");
       } catch (TablePartsNotFound2) {
-        throw new PatchFailed3(PatchFailureReason.ContentTypeInvalidForTarget, instruction, target);
+        throw new PatchFailed2(PatchFailureReason.ContentTypeInvalidForTarget, instruction, target);
       }
     };
     var replace = (document2, instruction, target) => {
@@ -51406,6 +51432,8 @@ var require_patch = __commonJS({
           return replaceText(document2, instruction, target);
         case types_js_1.ContentType.json:
           return replaceTable(document2, instruction, target);
+        default:
+          throw new PatchError(`Unsupported contentType: ${contentType2}`);
       }
     };
     var prepend = (document2, instruction, target) => {
@@ -51415,6 +51443,8 @@ var require_patch = __commonJS({
           return prependText(document2, instruction, target);
         case types_js_1.ContentType.json:
           return prependTable(document2, instruction, target);
+        default:
+          throw new PatchError(`Unsupported contentType: ${contentType2}`);
       }
     };
     var append = (document2, instruction, target) => {
@@ -51424,6 +51454,8 @@ var require_patch = __commonJS({
           return appendText(document2, instruction, target);
         case types_js_1.ContentType.json:
           return appendTable(document2, instruction, target);
+        default:
+          throw new PatchError(`Unsupported contentType: ${contentType2}`);
       }
     };
     var addTargetHeading = (document2, instruction, map) => {
@@ -51483,7 +51515,7 @@ var require_patch = __commonJS({
       } else if ((0, typeGuards_js_1.isString)(obj1) && (0, typeGuards_js_1.isString)(obj2)) {
         return obj1 + obj2;
       }
-      throw new Error(`Cannot merge objects of different types or unsupported types: ${typeof obj1} and ${typeof obj2}`);
+      throw new MergeNotPossible();
     }
     function regenerateDocumentWithFrontmatter(frontmatter, document2, map) {
       const rawFrontmatterText = Object.values(frontmatter).some((value) => value !== void 0) ? `---
@@ -51502,14 +51534,14 @@ ${yaml.stringify(frontmatter).trimEnd()}
           if (instruction.createTargetIfMissing) {
             return addTarget(document2, instruction, map);
           } else {
-            throw new PatchFailed3(PatchFailureReason.InvalidTarget, instruction, null);
+            throw new PatchFailed2(PatchFailureReason.InvalidTarget, instruction, null);
           }
         }
         if (instruction.operation !== "replace" && "rejectIfContentPreexists" in instruction && instruction.rejectIfContentPreexists && typeof instruction.content === "string" && (() => {
           const { start, end } = getEffectiveRange(target, "targetScope" in instruction ? instruction.targetScope : constants_js_1.DEFAULT_TARGET_SCOPE);
           return document2.slice(start, end).includes(instruction.content.trim());
         })()) {
-          throw new PatchFailed3(PatchFailureReason.ContentAlreadyPreexistsInTarget, instruction, target);
+          throw new PatchFailed2(PatchFailureReason.ContentAlreadyPreexistsInTarget, instruction, target);
         }
         switch (instruction.operation) {
           case "append":
@@ -51533,7 +51565,7 @@ ${yaml.stringify(frontmatter).trimEnd()}
             frontmatter[instruction.target] = {};
           }
         } else {
-          throw new PatchFailed3(PatchFailureReason.InvalidTarget, instruction, null);
+          throw new PatchFailed2(PatchFailureReason.InvalidTarget, instruction, null);
         }
       }
       try {
@@ -51557,7 +51589,7 @@ ${yaml.stringify(frontmatter).trimEnd()}
         return regenerateDocumentWithFrontmatter(frontmatter, document2, map);
       } catch (error2) {
         if (error2 instanceof MergeNotPossible) {
-          throw new PatchFailed3(PatchFailureReason.ContentNotMergeable, instruction, null);
+          throw new PatchFailed2(PatchFailureReason.ContentNotMergeable, instruction, null);
         }
         throw error2;
       }
@@ -51587,7 +51619,7 @@ var require_dist2 = __commonJS({
       for (var p in m2) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding(exports3, m2, p);
     };
     Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.getDocumentMap = exports2.applyPatch = exports2.TablePartsNotFound = exports2.PatchError = exports2.PatchFailed = exports2.PatchFailureReason = void 0;
+    exports2.FrontmatterParseError = exports2.getDocumentMap = exports2.applyPatch = exports2.TablePartsNotFound = exports2.PatchError = exports2.PatchFailed = exports2.PatchFailureReason = void 0;
     var patch_js_1 = require_patch();
     Object.defineProperty(exports2, "PatchFailureReason", { enumerable: true, get: function() {
       return patch_js_1.PatchFailureReason;
@@ -51608,602 +51640,6035 @@ var require_dist2 = __commonJS({
     Object.defineProperty(exports2, "getDocumentMap", { enumerable: true, get: function() {
       return map_js_1.getDocumentMap;
     } });
+    Object.defineProperty(exports2, "FrontmatterParseError", { enumerable: true, get: function() {
+      return map_js_1.FrontmatterParseError;
+    } });
     __exportStar(require_types2(), exports2);
   }
 });
 
-// node_modules/obsidian-daily-notes-interface/dist/main.js
-var require_main = __commonJS({
-  "node_modules/obsidian-daily-notes-interface/dist/main.js"(exports2) {
+// node_modules/markdown-patch-2/dist/constants.js
+var require_constants2 = __commonJS({
+  "node_modules/markdown-patch-2/dist/constants.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var obsidian = require("obsidian");
-    var DEFAULT_DAILY_NOTE_FORMAT = "YYYY-MM-DD";
-    var DEFAULT_WEEKLY_NOTE_FORMAT = "gggg-[W]ww";
-    var DEFAULT_MONTHLY_NOTE_FORMAT = "YYYY-MM";
-    var DEFAULT_QUARTERLY_NOTE_FORMAT = "YYYY-[Q]Q";
-    var DEFAULT_YEARLY_NOTE_FORMAT = "YYYY";
-    function shouldUsePeriodicNotesSettings(periodicity) {
-      const periodicNotes2 = window.app.plugins.getPlugin("periodic-notes");
-      return periodicNotes2 && periodicNotes2.settings?.[periodicity]?.enabled;
-    }
-    function getDailyNoteSettings2() {
-      try {
-        const { internalPlugins, plugins } = window.app;
-        if (shouldUsePeriodicNotesSettings("daily")) {
-          const { format: format2, folder: folder2, template: template2 } = plugins.getPlugin("periodic-notes")?.settings?.daily || {};
-          return {
-            format: format2 || DEFAULT_DAILY_NOTE_FORMAT,
-            folder: folder2?.trim() || "",
-            template: template2?.trim() || ""
+    exports2.DUPLICATE_MARKER_SUFFIX = exports2.DUPLICATE_DIGITS = exports2.DUPLICATE_MARKER = exports2.DEFAULT_TARGET_SCOPE = exports2.CAN_INCLUDE_BLOCK_REFERENCE = exports2.TARGETABLE_BY_ISOLATED_BLOCK_REFERENCE = void 0;
+    exports2.TARGETABLE_BY_ISOLATED_BLOCK_REFERENCE = [
+      "code",
+      "heading",
+      "table",
+      "blockquote",
+      "list",
+      "paragraph",
+      "image"
+    ];
+    exports2.CAN_INCLUDE_BLOCK_REFERENCE = ["paragraph", "list_item", "table"];
+    exports2.DEFAULT_TARGET_SCOPE = "content";
+    exports2.DUPLICATE_MARKER = String.fromCodePoint(1034064);
+    exports2.DUPLICATE_DIGITS = Array.from({ length: 16 }, (_2, index) => String.fromCodePoint(1008704 + index));
+    exports2.DUPLICATE_MARKER_SUFFIX = new RegExp(`${exports2.DUPLICATE_MARKER}[${exports2.DUPLICATE_DIGITS.join("")}]+$`, "u");
+  }
+});
+
+// node_modules/markdown-patch-2/dist/instructions.js
+var require_instructions = __commonJS({
+  "node_modules/markdown-patch-2/dist/instructions.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.assertValidCell = exports2.ReservedDuplicateMarkerError = exports2.FrontmatterKeyCollisionError = exports2.FrontmatterParseError = exports2.MergeError = exports2.ContentPreexistsError = exports2.PreconditionFailedError = exports2.TargetNotFoundError = exports2.InvalidCellError = exports2.InvalidInstructionError = exports2.EngineError = exports2.isValidCell = exports2.withDefaultScope = exports2.isBlockTableRowInstruction = exports2.isWithinInstruction = void 0;
+    var isWithinInstruction = (instruction) => "within" in instruction && instruction.within !== void 0;
+    exports2.isWithinInstruction = isWithinInstruction;
+    var isBlockTableRowInstruction = (instruction) => instruction.scope === "content" && instruction.operation !== "delete" && "value" in instruction;
+    exports2.isBlockTableRowInstruction = isBlockTableRowInstruction;
+    var withDefaultScope = (input) => {
+      const scope = input.scope ?? "content";
+      return { ...input, scope };
+    };
+    exports2.withDefaultScope = withDefaultScope;
+    var VALID_CELLS = {
+      heading: {
+        content: ["replace", "prepend", "append", "delete"],
+        marker: ["replace", "prepend", "append", "delete"],
+        markerAndContent: ["replace", "prepend", "append", "delete"],
+        parent: ["replace"]
+      },
+      block: {
+        content: ["replace", "prepend", "append", "delete"],
+        marker: ["replace", "delete"],
+        markerAndContent: ["replace", "prepend", "append", "delete"],
+        parent: []
+      },
+      frontmatter: {
+        content: ["replace", "prepend", "append", "delete"],
+        marker: ["replace"],
+        markerAndContent: ["replace", "prepend", "append", "delete"],
+        parent: []
+      }
+    };
+    var isValidCell = (targetType, operation, scope) => VALID_CELLS[targetType][scope].includes(operation);
+    exports2.isValidCell = isValidCell;
+    var EngineError = class extends Error {
+      constructor(message) {
+        super(message);
+        this.name = new.target.name;
+        Object.setPrototypeOf(this, new.target.prototype);
+      }
+    };
+    exports2.EngineError = EngineError;
+    var InvalidInstructionError2 = class extends EngineError {
+    };
+    exports2.InvalidInstructionError = InvalidInstructionError2;
+    var InvalidCellError2 = class extends EngineError {
+      constructor(cell) {
+        super(`Invalid instruction: ${cell.operation} @ ${cell.scope} is not a valid operation for a ${cell.targetType} target`);
+        this.cell = cell;
+      }
+    };
+    exports2.InvalidCellError = InvalidCellError2;
+    var TargetNotFoundError2 = class extends EngineError {
+    };
+    exports2.TargetNotFoundError = TargetNotFoundError2;
+    var PreconditionFailedError2 = class extends EngineError {
+    };
+    exports2.PreconditionFailedError = PreconditionFailedError2;
+    var ContentPreexistsError2 = class extends EngineError {
+    };
+    exports2.ContentPreexistsError = ContentPreexistsError2;
+    var MergeError = class extends EngineError {
+    };
+    exports2.MergeError = MergeError;
+    var FrontmatterParseError2 = class extends EngineError {
+    };
+    exports2.FrontmatterParseError = FrontmatterParseError2;
+    var FrontmatterKeyCollisionError2 = class extends EngineError {
+    };
+    exports2.FrontmatterKeyCollisionError = FrontmatterKeyCollisionError2;
+    var ReservedDuplicateMarkerError2 = class extends EngineError {
+    };
+    exports2.ReservedDuplicateMarkerError = ReservedDuplicateMarkerError2;
+    var assertValidCell = (cell) => {
+      if (!(0, exports2.isValidCell)(cell.targetType, cell.operation, cell.scope)) {
+        throw new InvalidCellError2(cell);
+      }
+    };
+    exports2.assertValidCell = assertValidCell;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/model.js
+var require_model = __commonJS({
+  "node_modules/markdown-patch-2/dist/model.js"(exports2) {
+    "use strict";
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m2, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      var desc = Object.getOwnPropertyDescriptor(m2, k2);
+      if (!desc || ("get" in desc ? !m2.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m2[k2];
+        } };
+      }
+      Object.defineProperty(o, k22, desc);
+    }) : (function(o, m2, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      o[k22] = m2[k2];
+    }));
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? (function(o, v2) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v2 });
+    }) : function(o, v2) {
+      o["default"] = v2;
+    });
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k2 in mod) if (k2 !== "default" && Object.prototype.hasOwnProperty.call(mod, k2)) __createBinding(result, mod, k2);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.serializeModel = exports2.eachSection = exports2.buildModel = void 0;
+    var marked = __importStar((init_marked_esm(), __toCommonJS(marked_esm_exports)));
+    var yaml_1 = require_dist();
+    var crypto_1 = require("crypto");
+    var constants_js_1 = require_constants2();
+    var instructions_js_1 = require_instructions();
+    var FRONTMATTER_REGEX = /^---(?:\r\n|\r|\n)(?:---(?:\r\n|\r|\n|$)|([\s\S]*?)(?:\r\n|\r|\n)---(?:\r\n|\r|\n|$))/;
+    var preProcess = (document2) => {
+      const match = FRONTMATTER_REGEX.exec(document2);
+      if (!match) {
+        return { content: document2, contentOffset: 0, frontmatterText: null };
+      }
+      const contentOffset = match[0].length;
+      return {
+        content: document2.slice(contentOffset),
+        contentOffset,
+        frontmatterText: match[1] ?? ""
+      };
+    };
+    var versionOf = (document2) => (0, crypto_1.createHash)("sha256").update(document2, "utf8").digest("hex").slice(0, 6);
+    var normalizeLineEndings = (input) => {
+      const toOriginal = [];
+      let normalized = "";
+      let i = 0;
+      while (i < input.length) {
+        toOriginal.push(i);
+        if (input[i] === "\r" && input[i + 1] === "\n") {
+          normalized += "\n";
+          i += 2;
+        } else if (input[i] === "\r") {
+          normalized += "\n";
+          i += 1;
+        } else {
+          normalized += input[i];
+          i += 1;
+        }
+      }
+      toOriginal.push(input.length);
+      return { normalized, toOriginal };
+    };
+    var splitTrailingGap = (content, start, end) => {
+      let visibleEnd = end;
+      while (visibleEnd > start && (content[visibleEnd - 1] === "\n" || content[visibleEnd - 1] === "\r")) {
+        visibleEnd--;
+      }
+      if (visibleEnd === start) {
+        return { contentEnd: start };
+      }
+      let contentEnd = visibleEnd;
+      if (content[contentEnd] === "\r" && content[contentEnd + 1] === "\n") {
+        contentEnd += 2;
+      } else if (content[contentEnd] === "\n" || content[contentEnd] === "\r") {
+        contentEnd += 1;
+      }
+      return { contentEnd };
+    };
+    var findHeadings = (content, tokens) => {
+      const headings = [];
+      let offset = 0;
+      for (const token of tokens) {
+        if (token.type === "heading") {
+          const heading = token;
+          const markerStart = offset;
+          let markerEnd = markerStart + heading.raw.trimEnd().length;
+          if (content[markerEnd] === "\r" && content[markerEnd + 1] === "\n") {
+            markerEnd += 2;
+          } else if (content[markerEnd] === "\n" || content[markerEnd] === "\r") {
+            markerEnd += 1;
+          }
+          headings.push({
+            text: heading.text.trim(),
+            level: heading.depth,
+            markerStart,
+            markerEnd
+          });
+        }
+        offset += token.raw.length;
+      }
+      return headings;
+    };
+    var buildSectionTree = (content, abs, headings) => {
+      const contentLength = content.length;
+      const root = {
+        heading: null,
+        marker: null,
+        body: { start: 0, end: 0 },
+        trailingGap: { start: 0, end: 0 },
+        children: [],
+        blocks: [],
+        bodyChildren: [],
+        parent: null
+      };
+      const rootBodyStart = 0;
+      const rootBodyEnd = headings.length ? headings[0].markerStart : contentLength;
+      const rootSplit = splitTrailingGap(content, rootBodyStart, rootBodyEnd);
+      root.body = { start: abs(rootBodyStart), end: abs(rootSplit.contentEnd) };
+      root.trailingGap = { start: abs(rootSplit.contentEnd), end: abs(rootBodyEnd) };
+      const stack = [root];
+      headings.forEach((heading, index) => {
+        const bodyStart = heading.markerEnd;
+        const bodyEnd = index + 1 < headings.length ? headings[index + 1].markerStart : contentLength;
+        const split = splitTrailingGap(content, bodyStart, bodyEnd);
+        const node = {
+          heading: { text: heading.text, level: heading.level },
+          marker: { start: abs(heading.markerStart), end: abs(heading.markerEnd) },
+          body: { start: abs(bodyStart), end: abs(split.contentEnd) },
+          trailingGap: { start: abs(split.contentEnd), end: abs(bodyEnd) },
+          children: [],
+          blocks: [],
+          bodyChildren: [],
+          parent: null
+        };
+        while (stack.length > 1 && stack[stack.length - 1].heading.level >= heading.level) {
+          stack.pop();
+        }
+        const parent = stack[stack.length - 1];
+        node.parent = parent;
+        parent.children.push(node);
+        stack.push(node);
+      });
+      return root;
+    };
+    var forEachSection = (root, visit) => {
+      visit(root);
+      for (const child of root.children) {
+        forEachSection(child, visit);
+      }
+    };
+    var sectionContaining = (root, offset) => {
+      let best = root;
+      forEachSection(root, (node) => {
+        if (offset >= node.body.start && offset < node.trailingGap.end) {
+          if (node.body.start >= best.body.start) {
+            best = node;
+          }
+        }
+      });
+      return best;
+    };
+    var BLOCK_REFERENCE_REGEX = /[^\S\r\n]*\^([a-zA-Z0-9_-]+)\s*$/;
+    var stripTrailingEol = (content, end, start) => {
+      let trimmed = end;
+      while (trimmed > start && content[trimmed - 1] === "\n") {
+        trimmed--;
+      }
+      return trimmed;
+    };
+    var findBlocks = (content, abs, tokens, root) => {
+      const blocks = [];
+      let lastIsolatedTarget = null;
+      const visit = (token, found, rawEnd) => {
+        const match = BLOCK_REFERENCE_REGEX.exec(token.raw);
+        if (match && constants_js_1.CAN_INCLUDE_BLOCK_REFERENCE.includes(token.type)) {
+          const id = match[1];
+          if (id) {
+            const markerStart = found + match.index;
+            const markerEnd = stripTrailingEol(content, rawEnd, found);
+            let contentStart = found;
+            let contentEnd = markerStart;
+            let isolated = false;
+            if (contentStart === contentEnd && lastIsolatedTarget) {
+              contentStart = lastIsolatedTarget.start;
+              contentEnd = lastIsolatedTarget.end;
+              isolated = true;
+            }
+            const section = sectionContaining(root, abs(contentStart));
+            const block = {
+              id,
+              kind: token.type,
+              isolated,
+              content: { start: abs(contentStart), end: abs(contentEnd) },
+              marker: { start: abs(markerStart), end: abs(markerEnd) },
+              trailingGap: { start: abs(markerEnd), end: abs(markerEnd) },
+              section
+            };
+            if (token.type === "table") {
+              block.columns = token.header.map((cell) => cell.text);
+            }
+            blocks.push(block);
+            section.blocks.push(block);
+          }
+        }
+        if (constants_js_1.TARGETABLE_BY_ISOLATED_BLOCK_REFERENCE.includes(token.type)) {
+          lastIsolatedTarget = {
+            start: found,
+            end: stripTrailingEol(content, rawEnd, found)
           };
         }
-        const { folder, format, template } = internalPlugins.getPluginById("daily-notes")?.instance?.options || {};
-        return {
-          format: format || DEFAULT_DAILY_NOTE_FORMAT,
-          folder: folder?.trim() || "",
-          template: template?.trim() || ""
-        };
-      } catch (err) {
-        console.info("No custom daily note settings found!", err);
-      }
-    }
-    function getWeeklyNoteSettings2() {
-      try {
-        const pluginManager = window.app.plugins;
-        const calendarSettings = pluginManager.getPlugin("calendar")?.options;
-        const periodicNotesSettings = pluginManager.getPlugin("periodic-notes")?.settings?.weekly;
-        if (shouldUsePeriodicNotesSettings("weekly")) {
-          return {
-            format: periodicNotesSettings.format || DEFAULT_WEEKLY_NOTE_FORMAT,
-            folder: periodicNotesSettings.folder?.trim() || "",
-            template: periodicNotesSettings.template?.trim() || ""
-          };
+      };
+      const walk = (tokensArray, floor) => {
+        for (const token of tokensArray) {
+          const found = content.indexOf(token.raw, floor);
+          if (found === -1) {
+            continue;
+          }
+          const rawEnd = found + token.raw.length;
+          visit(token, found, rawEnd);
+          let childFloor = found;
+          if (token.type === "table") {
+            const table = token;
+            for (const cell of table.header) {
+              childFloor = walk(cell.tokens, childFloor);
+            }
+            for (const row of table.rows) {
+              for (const cell of row) {
+                childFloor = walk(cell.tokens, childFloor);
+              }
+            }
+          } else if (token.type === "list") {
+            childFloor = walk(token.items, childFloor);
+          } else {
+            const children = token.tokens;
+            if (children) {
+              childFloor = walk(children, childFloor);
+            }
+          }
+          floor = Math.max(rawEnd, childFloor);
         }
-        const settings = calendarSettings || {};
-        return {
-          format: settings.weeklyNoteFormat || DEFAULT_WEEKLY_NOTE_FORMAT,
-          folder: settings.weeklyNoteFolder?.trim() || "",
-          template: settings.weeklyNoteTemplate?.trim() || ""
-        };
-      } catch (err) {
-        console.info("No custom weekly note settings found!", err);
+        return floor;
+      };
+      walk(tokens, 0);
+      return blocks;
+    };
+    var findBodyChildren = (content, abs, tokens, root) => {
+      let offset = 0;
+      for (const token of tokens) {
+        const rawEnd = offset + token.raw.length;
+        if (token.type !== "heading" && token.type !== "space") {
+          const match = BLOCK_REFERENCE_REGEX.exec(token.raw);
+          const isIsolatedMarkerLine = match !== null && match.index === 0;
+          const end = stripTrailingEol(content, rawEnd, offset);
+          if (!isIsolatedMarkerLine && end > offset) {
+            const section = sectionContaining(root, abs(offset));
+            section.bodyChildren.push({
+              kind: token.type,
+              range: { start: abs(offset), end: abs(end) }
+            });
+          }
+        }
+        offset = rawEnd;
       }
-    }
-    function getMonthlyNoteSettings2() {
-      const pluginManager = window.app.plugins;
-      try {
-        const settings = shouldUsePeriodicNotesSettings("monthly") && pluginManager.getPlugin("periodic-notes")?.settings?.monthly || {};
-        return {
-          format: settings.format || DEFAULT_MONTHLY_NOTE_FORMAT,
-          folder: settings.folder?.trim() || "",
-          template: settings.template?.trim() || ""
-        };
-      } catch (err) {
-        console.info("No custom monthly note settings found!", err);
-      }
-    }
-    function getQuarterlyNoteSettings2() {
-      const pluginManager = window.app.plugins;
-      try {
-        const settings = shouldUsePeriodicNotesSettings("quarterly") && pluginManager.getPlugin("periodic-notes")?.settings?.quarterly || {};
-        return {
-          format: settings.format || DEFAULT_QUARTERLY_NOTE_FORMAT,
-          folder: settings.folder?.trim() || "",
-          template: settings.template?.trim() || ""
-        };
-      } catch (err) {
-        console.info("No custom quarterly note settings found!", err);
-      }
-    }
-    function getYearlyNoteSettings2() {
-      const pluginManager = window.app.plugins;
-      try {
-        const settings = shouldUsePeriodicNotesSettings("yearly") && pluginManager.getPlugin("periodic-notes")?.settings?.yearly || {};
-        return {
-          format: settings.format || DEFAULT_YEARLY_NOTE_FORMAT,
-          folder: settings.folder?.trim() || "",
-          template: settings.template?.trim() || ""
-        };
-      } catch (err) {
-        console.info("No custom yearly note settings found!", err);
-      }
-    }
-    function join(...partSegments) {
-      let parts = [];
-      for (let i = 0, l = partSegments.length; i < l; i++) {
-        parts = parts.concat(partSegments[i].split("/"));
-      }
-      const newParts = [];
-      for (let i = 0, l = parts.length; i < l; i++) {
-        const part = parts[i];
-        if (!part || part === ".")
-          continue;
-        else
-          newParts.push(part);
-      }
-      if (parts[0] === "")
-        newParts.unshift("");
-      return newParts.join("/");
-    }
-    function basename(fullPath) {
-      let base = fullPath.substring(fullPath.lastIndexOf("/") + 1);
-      if (base.lastIndexOf(".") != -1)
-        base = base.substring(0, base.lastIndexOf("."));
-      return base;
-    }
-    async function ensureFolderExists(path2) {
-      const dirs = path2.replace(/\\/g, "/").split("/");
-      dirs.pop();
-      if (dirs.length) {
-        const dir = join(...dirs);
-        if (!window.app.vault.getAbstractFileByPath(dir)) {
-          await window.app.vault.createFolder(dir);
+    };
+    var assertNoReservedMarkerCollisions = (headings) => {
+      for (const heading of headings) {
+        if (constants_js_1.DUPLICATE_MARKER_SUFFIX.test(heading.text)) {
+          throw new instructions_js_1.ReservedDuplicateMarkerError(`Heading "${heading.text}" ends with a sequence reserved for addressing duplicate headings; rename it to avoid ambiguous addressing.`);
         }
       }
-    }
-    async function getNotePath(directory, filename) {
-      if (!filename.endsWith(".md")) {
-        filename += ".md";
+    };
+    var findLineEnding = (document2) => document2.indexOf("\r\n") > -1 ? "\r\n" : "\n";
+    var buildFrontmatter = (document2, frontmatterText, contentOffset) => {
+      if (frontmatterText === null) {
+        return { entries: [], block: null };
       }
-      const path2 = obsidian.normalizePath(join(directory, filename));
-      await ensureFolderExists(path2);
-      return path2;
-    }
-    async function getTemplateInfo(template) {
-      const { metadataCache, vault } = window.app;
-      const templatePath = obsidian.normalizePath(template);
-      if (templatePath === "/") {
-        return Promise.resolve(["", null]);
+      const block = { start: 0, end: contentOffset };
+      const doc = (0, yaml_1.parseDocument)(frontmatterText);
+      if (doc.errors.length > 0) {
+        throw new instructions_js_1.FrontmatterParseError(`Could not parse document frontmatter: ${doc.errors[0].message}`);
       }
-      try {
-        const templateFile = metadataCache.getFirstLinkpathDest(templatePath, "");
-        const contents = await vault.cachedRead(templateFile);
-        const IFoldInfo = window.app.foldManager.load(templateFile);
-        return [contents, IFoldInfo];
-      } catch (err) {
-        console.error(`Failed to read the daily note template '${templatePath}'`, err);
-        new obsidian.Notice("Failed to read the daily note template");
-        return ["", null];
+      if (!(0, yaml_1.isMap)(doc.contents)) {
+        return { entries: [], block };
       }
+      const innerStart = /^---(?:\r\n|\r|\n)/.exec(document2)?.[0].length ?? 4;
+      const entries = doc.contents.items.map((item) => {
+        const keyNode = item.key;
+        const valueNode = item.value;
+        const key = String((0, yaml_1.isScalar)(keyNode) ? keyNode.value : keyNode.toJSON());
+        const value = valueNode ? valueNode.toJSON() : null;
+        const keyRange = keyNode.range;
+        const valueRange = valueNode?.range ?? keyRange;
+        return {
+          key,
+          value,
+          entryRange: {
+            start: innerStart + keyRange[0],
+            end: innerStart + valueRange[1]
+          },
+          valueRange: {
+            start: innerStart + (valueNode?.range?.[0] ?? keyRange[1]),
+            end: innerStart + valueRange[1]
+          }
+        };
+      });
+      return { entries, block };
+    };
+    var buildModel2 = (document2) => {
+      const { content, contentOffset, frontmatterText } = preProcess(document2);
+      const { normalized, toOriginal } = normalizeLineEndings(content);
+      const abs = (n) => contentOffset + toOriginal[n];
+      const tokens = new marked.Lexer().lex(normalized);
+      const headings = findHeadings(normalized, tokens);
+      const root = buildSectionTree(normalized, abs, headings);
+      findBlocks(normalized, abs, tokens, root);
+      findBodyChildren(normalized, abs, tokens, root);
+      assertNoReservedMarkerCollisions(headings);
+      return {
+        version: versionOf(document2),
+        lineEnding: findLineEnding(document2),
+        frontmatter: buildFrontmatter(document2, frontmatterText, contentOffset),
+        root
+      };
+    };
+    exports2.buildModel = buildModel2;
+    exports2.eachSection = forEachSection;
+    var serializeModel = (document2, model) => {
+      const frontmatter = model.frontmatter.block ? document2.slice(model.frontmatter.block.start, model.frontmatter.block.end) : "";
+      const parts = [];
+      const emit = (node) => {
+        if (node.marker) {
+          parts.push(document2.slice(node.marker.start, node.marker.end));
+        }
+        parts.push(document2.slice(node.body.start, node.body.end));
+        parts.push(document2.slice(node.trailingGap.start, node.trailingGap.end));
+        for (const child of node.children) {
+          emit(child);
+        }
+      };
+      emit(model.root);
+      return frontmatter + parts.join("");
+    };
+    exports2.serializeModel = serializeModel;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/projection.js
+var require_projection = __commonJS({
+  "node_modules/markdown-patch-2/dist/projection.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.headingTreePaths = exports2.projectMap = exports2.headingPath = exports2.disambiguatedBlockId = exports2.allBlocksInOrder = exports2.disambiguatedHeadingText = void 0;
+    var constants_js_1 = require_constants2();
+    var encodeOccurrenceSuffix = (occurrenceIndex) => occurrenceIndex.toString(16).split("").map((hexChar) => constants_js_1.DUPLICATE_DIGITS[parseInt(hexChar, 16)]).join("");
+    var disambiguatedHeadingText = (node) => {
+      const heading = node.heading;
+      if (!heading) {
+        return "";
+      }
+      if (!node.parent) {
+        return heading.text;
+      }
+      const siblings = node.parent.children.filter((sibling) => sibling.heading?.text === heading.text);
+      const occurrence = siblings.indexOf(node);
+      return occurrence <= 0 ? heading.text : heading.text + constants_js_1.DUPLICATE_MARKER + encodeOccurrenceSuffix(occurrence - 1);
+    };
+    exports2.disambiguatedHeadingText = disambiguatedHeadingText;
+    var allBlocksInOrder = (root) => {
+      const blocks = [];
+      const walk = (node) => {
+        blocks.push(...node.blocks);
+        for (const child of node.children) {
+          walk(child);
+        }
+      };
+      walk(root);
+      return blocks;
+    };
+    exports2.allBlocksInOrder = allBlocksInOrder;
+    var disambiguatedBlockId = (block, allBlocks) => {
+      const sameId = allBlocks.filter((candidate) => candidate.id === block.id);
+      const occurrence = sameId.indexOf(block);
+      return occurrence <= 0 ? block.id : block.id + constants_js_1.DUPLICATE_MARKER + encodeOccurrenceSuffix(occurrence - 1);
+    };
+    exports2.disambiguatedBlockId = disambiguatedBlockId;
+    var headingPath = (node) => {
+      const path2 = [];
+      let current = node;
+      while (current && current.heading) {
+        path2.push((0, exports2.disambiguatedHeadingText)(current));
+        current = current.parent;
+      }
+      return path2.reverse();
+    };
+    exports2.headingPath = headingPath;
+    var projectMap2 = (model) => {
+      const headings = /* @__PURE__ */ Object.create(null);
+      const allBlocks = (0, exports2.allBlocksInOrder)(model.root);
+      const blocks = allBlocks.map((block) => (0, exports2.disambiguatedBlockId)(block, allBlocks));
+      const buildTree = (node, into) => {
+        for (const child of node.children) {
+          if (!child.heading) {
+            continue;
+          }
+          const key = (0, exports2.disambiguatedHeadingText)(child);
+          const subtree = /* @__PURE__ */ Object.create(null);
+          into[key] = subtree;
+          buildTree(child, subtree);
+        }
+      };
+      buildTree(model.root, headings);
+      return {
+        version: model.version,
+        frontmatterFields: model.frontmatter.entries.map((entry) => entry.key),
+        headings,
+        blocks
+      };
+    };
+    exports2.projectMap = projectMap2;
+    var headingTreePaths = (tree) => {
+      const paths = [];
+      const walk = (node, prefix) => {
+        for (const [text, children] of Object.entries(node)) {
+          const path2 = [...prefix, text];
+          paths.push(path2);
+          walk(children, path2);
+        }
+      };
+      walk(tree, []);
+      return paths;
+    };
+    exports2.headingTreePaths = headingTreePaths;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/resolve.js
+var require_resolve = __commonJS({
+  "node_modules/markdown-patch-2/dist/resolve.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.RESOLVABLE_TARGET_TYPES = exports2.resolveTarget = exports2.resolveWithin = exports2.resolveFrontmatter = exports2.resolveBlock = exports2.resolveHeading = void 0;
+    var model_js_1 = require_model();
+    var projection_js_1 = require_projection();
+    var instructions_js_1 = require_instructions();
+    var arrayEquals = (a, b2) => a.length === b2.length && a.every((value, index) => value === b2[index]);
+    var headingSections = (model) => {
+      const sections = [];
+      (0, model_js_1.eachSection)(model.root, (node) => {
+        if (node.heading) {
+          sections.push(node);
+        }
+      });
+      return sections;
+    };
+    var resolveHeading = (model, address) => {
+      const target = address ?? [];
+      if (target.length === 0) {
+        return { kind: "heading", section: model.root };
+      }
+      const sections = headingSections(model);
+      const match = sections.find((section) => arrayEquals((0, projection_js_1.headingPath)(section), target));
+      return match ? { kind: "heading", section: match } : null;
+    };
+    exports2.resolveHeading = resolveHeading;
+    var resolveBlock = (model, id) => {
+      const blocks = (0, projection_js_1.allBlocksInOrder)(model.root);
+      const match = blocks.find((block) => (0, projection_js_1.disambiguatedBlockId)(block, blocks) === id);
+      return match ? { kind: "block", block: match } : null;
+    };
+    exports2.resolveBlock = resolveBlock;
+    var resolveFrontmatter = (model, key) => {
+      const entry = model.frontmatter.entries.find((candidate) => candidate.key === key);
+      return entry ? { kind: "frontmatter", entry } : null;
+    };
+    exports2.resolveFrontmatter = resolveFrontmatter;
+    var resolveWithin = (section, within) => {
+      if (!Number.isInteger(within)) {
+        throw new instructions_js_1.InvalidInstructionError(`\`within\` must be an integer; got ${JSON.stringify(within)}`);
+      }
+      const children = section.bodyChildren;
+      const index = within < 0 ? children.length + within : within;
+      if (index < 0 || index >= children.length) {
+        const sectionName = section.heading ? JSON.stringify((0, projection_js_1.headingPath)(section)) : "the document root";
+        throw new instructions_js_1.TargetNotFoundError(`\`within\` index ${within} is out of range: ${sectionName} has ${children.length} top-level block${children.length === 1 ? "" : "s"}`);
+      }
+      return { kind: "headingChild", section, child: children[index], index };
+    };
+    exports2.resolveWithin = resolveWithin;
+    var resolveTarget = (model, instruction) => {
+      switch (instruction.targetType) {
+        case "heading": {
+          const resolved = (0, exports2.resolveHeading)(model, instruction.target);
+          if (resolved && instruction.within !== void 0) {
+            return (0, exports2.resolveWithin)(resolved.section, instruction.within);
+          }
+          return resolved;
+        }
+        case "block":
+          return (0, exports2.resolveBlock)(model, instruction.target);
+        case "frontmatter":
+          return (0, exports2.resolveFrontmatter)(model, instruction.target);
+      }
+    };
+    exports2.resolveTarget = resolveTarget;
+    exports2.RESOLVABLE_TARGET_TYPES = [
+      "heading",
+      "block",
+      "frontmatter"
+    ];
+  }
+});
+
+// node_modules/markdown-patch-2/dist/ranges.js
+var require_ranges = __commonJS({
+  "node_modules/markdown-patch-2/dist/ranges.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.blockFullRange = exports2.blockMarkerRange = exports2.blockContentRange = exports2.headingMarkerRange = exports2.RootHasNoMarkerError = exports2.subtreeEnd = exports2.headingContentRange = exports2.subtreeContentRange = exports2.lastDescendant = void 0;
+    var lastDescendant = (section) => section.children.length > 0 ? (0, exports2.lastDescendant)(section.children[section.children.length - 1]) : section;
+    exports2.lastDescendant = lastDescendant;
+    var subtreeStart = (section) => section.marker ? section.marker.start : section.body.start;
+    var subtreeContentRange = (section) => ({
+      start: subtreeStart(section),
+      end: (0, exports2.lastDescendant)(section).trailingGap.start
+    });
+    exports2.subtreeContentRange = subtreeContentRange;
+    var headingContentRange = (section) => ({
+      start: section.body.start,
+      end: (0, exports2.lastDescendant)(section).trailingGap.start
+    });
+    exports2.headingContentRange = headingContentRange;
+    var subtreeEnd = (section) => (0, exports2.lastDescendant)(section).trailingGap.end;
+    exports2.subtreeEnd = subtreeEnd;
+    var RootHasNoMarkerError = class extends Error {
+    };
+    exports2.RootHasNoMarkerError = RootHasNoMarkerError;
+    var headingMarkerRange = (section) => {
+      if (!section.marker) {
+        throw new RootHasNoMarkerError("the document root has no marker to address");
+      }
+      return section.marker;
+    };
+    exports2.headingMarkerRange = headingMarkerRange;
+    var blockContentRange = (block) => block.content;
+    exports2.blockContentRange = blockContentRange;
+    var blockMarkerRange = (block) => block.marker;
+    exports2.blockMarkerRange = blockMarkerRange;
+    var blockFullRange = (block) => ({
+      start: Math.min(block.content.start, block.marker.start),
+      end: Math.max(block.content.end, block.marker.end)
+    });
+    exports2.blockFullRange = blockFullRange;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/splice.js
+var require_splice = __commonJS({
+  "node_modules/markdown-patch-2/dist/splice.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.spliceRange = exports2.applyEdits = exports2.OverlappingEditsError = void 0;
+    var OverlappingEditsError = class extends Error {
+    };
+    exports2.OverlappingEditsError = OverlappingEditsError;
+    var applyEdits = (document2, edits) => {
+      const sorted = [...edits].sort((a, b2) => a.range.start - b2.range.start || a.range.end - a.range.start - (b2.range.end - b2.range.start));
+      const parts = [];
+      let cursor = 0;
+      for (const { range, text } of sorted) {
+        if (range.end < range.start) {
+          throw new OverlappingEditsError(`inverted range [${range.start}, ${range.end})`);
+        }
+        if (range.start < cursor) {
+          throw new OverlappingEditsError(`edit at [${range.start}, ${range.end}) overlaps a preceding edit ending at ${cursor}`);
+        }
+        parts.push(document2.slice(cursor, range.start), text);
+        cursor = range.end;
+      }
+      parts.push(document2.slice(cursor));
+      return parts.join("");
+    };
+    exports2.applyEdits = applyEdits;
+    var spliceRange = (document2, range, text) => (0, exports2.applyEdits)(document2, [{ range, text }]);
+    exports2.spliceRange = spliceRange;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/levels.js
+var require_levels = __commonJS({
+  "node_modules/markdown-patch-2/dist/levels.js"(exports2) {
+    "use strict";
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m2, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      var desc = Object.getOwnPropertyDescriptor(m2, k2);
+      if (!desc || ("get" in desc ? !m2.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m2[k2];
+        } };
+      }
+      Object.defineProperty(o, k22, desc);
+    }) : (function(o, m2, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      o[k22] = m2[k2];
+    }));
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? (function(o, v2) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v2 });
+    }) : function(o, v2) {
+      o["default"] = v2;
+    });
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k2 in mod) if (k2 !== "default" && Object.prototype.hasOwnProperty.call(mod, k2)) __createBinding(result, mod, k2);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.rebaseHeadings = void 0;
+    var marked = __importStar((init_marked_esm(), __toCommonJS(marked_esm_exports)));
+    var splice_js_1 = require_splice();
+    var MAX_HEADING_LEVEL = 6;
+    var LEADING_HASHES = /^([ \t]{0,3})(#{1,})/;
+    var rebaseHeadings = (value, baseline) => {
+      const normalized = value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      if (baseline === 0) {
+        return { text: normalized, warnings: [] };
+      }
+      const tokens = new marked.Lexer().lex(normalized);
+      const edits = [];
+      const warnings = [];
+      let offset = 0;
+      for (const token of tokens) {
+        if (token.type === "heading") {
+          const match = LEADING_HASHES.exec(token.raw);
+          if (match) {
+            const hashStart = offset + match[1].length;
+            const hashEnd = hashStart + match[2].length;
+            const absoluteLevel = match[2].length + baseline;
+            edits.push({
+              range: { start: hashStart, end: hashEnd },
+              text: "#".repeat(absoluteLevel)
+            });
+            if (absoluteLevel > MAX_HEADING_LEVEL) {
+              const heading = token;
+              warnings.push({
+                code: "heading-depth-overflow",
+                message: `Heading "${heading.text.trim()}" resolves to level ${absoluteLevel}, beyond Markdown's maximum of ${MAX_HEADING_LEVEL}; it will not be structurally addressable.`
+              });
+            }
+          }
+        }
+        offset += token.raw.length;
+      }
+      return { text: (0, splice_js_1.applyEdits)(normalized, edits), warnings };
+    };
+    exports2.rebaseHeadings = rebaseHeadings;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/text.js
+var require_text2 = __commonJS({
+  "node_modules/markdown-patch-2/dist/text.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.relevelText = exports2.sectionFragment = exports2.ownedGaps = exports2.lineStartGap = exports2.canonicalFragment = exports2.endWithSingleEol = exports2.toLineEnding = exports2.splice = void 0;
+    var levels_js_1 = require_levels();
+    var splice_js_1 = require_splice();
+    var splice = (document2, edits, warnings) => ({ document: (0, splice_js_1.applyEdits)(document2, edits), warnings });
+    exports2.splice = splice;
+    var normalizeToLf = (text) => text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    var toLineEnding = (text, ending) => ending === "\n" ? normalizeToLf(text) : normalizeToLf(text).replace(/\n/g, "\r\n");
+    exports2.toLineEnding = toLineEnding;
+    var endWithSingleEol = (text, ending) => {
+      const stripped = text.replace(/(?:\r\n|\r|\n)+$/, "");
+      return stripped.length === 0 ? "" : stripped + ending;
+    };
+    exports2.endWithSingleEol = endWithSingleEol;
+    var canonicalFragment = (text, ending) => {
+      const stripped = text.replace(/^(?:[^\S\r\n]*(?:\r\n|\r|\n))+/, "").replace(/\s+$/, "");
+      return stripped.length === 0 ? "" : stripped + ending;
+    };
+    exports2.canonicalFragment = canonicalFragment;
+    var eolsBefore = (document2, at) => {
+      let count = 0;
+      let i = at;
+      while (count < 2 && i > 0) {
+        if (document2[i - 1] === "\n") {
+          i -= document2[i - 2] === "\r" ? 2 : 1;
+        } else if (document2[i - 1] === "\r") {
+          i -= 1;
+        } else {
+          break;
+        }
+        count += 1;
+      }
+      return count;
+    };
+    var lineStartGap = (document2, at, ending) => at === 0 || document2[at - 1] === "\n" || document2[at - 1] === "\r" ? "" : ending;
+    exports2.lineStartGap = lineStartGap;
+    var ownedGaps = (document2, range, ending) => {
+      const before = range.start === 0 ? "" : ending.repeat(Math.max(0, 2 - eolsBefore(document2, range.start)));
+      const after = range.end === document2.length || document2[range.end] === "\n" || document2[range.end] === "\r" ? "" : ending;
+      return { before, after };
+    };
+    exports2.ownedGaps = ownedGaps;
+    var sectionFragment = (value, baseline, ending) => {
+      const rebased = (0, levels_js_1.rebaseHeadings)(value, baseline);
+      return {
+        text: (0, exports2.canonicalFragment)((0, exports2.toLineEnding)(rebased.text, ending), ending),
+        warnings: rebased.warnings
+      };
+    };
+    exports2.sectionFragment = sectionFragment;
+    var relevelText = (slice, delta, ending) => {
+      const rebased = (0, levels_js_1.rebaseHeadings)(slice, delta);
+      return { text: (0, exports2.toLineEnding)(rebased.text, ending), warnings: rebased.warnings };
+    };
+    exports2.relevelText = relevelText;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/engine/structural.js
+var require_structural = __commonJS({
+  "node_modules/markdown-patch-2/dist/engine/structural.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.deleteBlock = exports2.consumeTrailingBlank = exports2.structuralHeading = void 0;
+    var resolve_js_1 = require_resolve();
+    var ranges_js_1 = require_ranges();
+    var text_js_1 = require_text2();
+    var instructions_js_1 = require_instructions();
+    var subtreeStart = (section) => section.marker ? section.marker.start : section.body.start;
+    var assertNoCycle = (section, newParent) => {
+      let node = newParent;
+      while (node) {
+        if (node === section) {
+          throw new instructions_js_1.EngineError("cannot move a section beneath itself or one of its descendants");
+        }
+        node = node.parent;
+      }
+    };
+    var childInsertOffset = (model, newParent, place) => {
+      const children = newParent.children;
+      if (place === "first") {
+        return children.length ? subtreeStart(children[0]) : newParent.body.end;
+      }
+      if (place === "last") {
+        return children.length ? (0, ranges_js_1.subtreeEnd)(children[children.length - 1]) : newParent.body.end;
+      }
+      const addr = "before" in place ? place.before : place.after;
+      const sibling = (0, resolve_js_1.resolveHeading)(model, addr)?.section;
+      if (!sibling || sibling.parent !== newParent) {
+        throw new instructions_js_1.TargetNotFoundError(`place anchor ${JSON.stringify(addr)} is not a child of the new parent`);
+      }
+      return "before" in place ? subtreeStart(sibling) : (0, ranges_js_1.subtreeEnd)(sibling);
+    };
+    var moveSection = (document2, model, instruction, section) => {
+      if (!section.heading) {
+        throw new instructions_js_1.EngineError("the document root cannot be moved");
+      }
+      const resolvedParent = (0, resolve_js_1.resolveHeading)(model, instruction.destination.parent);
+      if (!resolvedParent) {
+        throw new instructions_js_1.TargetNotFoundError(`could not resolve new parent ${JSON.stringify(instruction.destination.parent)}`);
+      }
+      const newParent = resolvedParent.section;
+      assertNoCycle(section, newParent);
+      const newParentLevel = newParent.heading?.level ?? 0;
+      const delta = newParentLevel + 1 - section.heading.level;
+      const source = (0, ranges_js_1.subtreeContentRange)(section);
+      const releveled = (0, text_js_1.relevelText)(document2.slice(source.start, source.end), delta, model.lineEnding);
+      const movedText = (0, text_js_1.endWithSingleEol)(releveled.text, model.lineEnding);
+      const removalStart = subtreeStart(section);
+      const removalEnd = (0, ranges_js_1.subtreeEnd)(section);
+      const removal = {
+        range: { start: removalStart, end: removalEnd },
+        text: ""
+      };
+      const at = childInsertOffset(model, newParent, instruction.destination.place);
+      if (at === removalStart || at === removalEnd) {
+        return (0, text_js_1.splice)(document2, [{ range: source, text: releveled.text }], releveled.warnings);
+      }
+      const insertion = {
+        range: { start: at, end: at },
+        text: (0, text_js_1.lineStartGap)(document2, at, model.lineEnding) + movedText
+      };
+      return (0, text_js_1.splice)(document2, [removal, insertion], releveled.warnings);
+    };
+    var dissolveHeading = (document2, model, section) => {
+      const markerRange = (0, ranges_js_1.headingMarkerRange)(section);
+      const parent = section.parent;
+      const index = parent.children.indexOf(section);
+      const hasPrecedingSameLevel = parent.children.slice(0, index).some((sibling) => sibling.heading.level === section.heading.level);
+      const edits = [{ range: markerRange, text: "" }];
+      let warnings = [];
+      if (!hasPrecedingSameLevel && section.children.length > 0) {
+        const start = subtreeStart(section.children[0]);
+        const end = (0, ranges_js_1.subtreeContentRange)(section).end;
+        const releveled = (0, text_js_1.relevelText)(document2.slice(start, end), -1, model.lineEnding);
+        edits.push({ range: { start, end }, text: releveled.text });
+        warnings = releveled.warnings;
+      }
+      return (0, text_js_1.splice)(document2, edits, warnings);
+    };
+    var structuralHeading = (document2, model, instruction, section) => {
+      if (instruction.scope === "parent") {
+        return moveSection(document2, model, instruction, section);
+      }
+      if (instruction.operation !== "delete") {
+        throw new instructions_js_1.EngineError(`structuralHeading received a non-structural instruction (${instruction.operation} @ ${instruction.scope})`);
+      }
+      switch (instruction.scope) {
+        case "content":
+          return (0, text_js_1.splice)(document2, [{ range: (0, ranges_js_1.headingContentRange)(section), text: "" }], []);
+        case "markerAndContent":
+          return (0, text_js_1.splice)(document2, [
+            {
+              range: { start: subtreeStart(section), end: (0, ranges_js_1.subtreeEnd)(section) },
+              text: ""
+            }
+          ], []);
+        case "marker":
+          return dissolveHeading(document2, model, section);
+      }
+    };
+    exports2.structuralHeading = structuralHeading;
+    var consumeTrailingBlank = (document2, from) => {
+      let i = from;
+      const eatEol = () => {
+        if (document2[i] === "\r" && document2[i + 1] === "\n") {
+          i += 2;
+          return true;
+        }
+        if (document2[i] === "\n" || document2[i] === "\r") {
+          i += 1;
+          return true;
+        }
+        return false;
+      };
+      eatEol();
+      eatEol();
+      return i;
+    };
+    exports2.consumeTrailingBlank = consumeTrailingBlank;
+    var deleteBlock = (document2, _model, instruction, block) => {
+      switch (instruction.scope) {
+        case "content":
+          return (0, text_js_1.splice)(document2, [{ range: block.content, text: "" }], []);
+        case "marker":
+          return (0, text_js_1.splice)(document2, [{ range: block.marker, text: "" }], []);
+        case "markerAndContent": {
+          const full = (0, ranges_js_1.blockFullRange)(block);
+          const end = (0, exports2.consumeTrailingBlank)(document2, full.end);
+          return (0, text_js_1.splice)(document2, [{ range: { start: full.start, end }, text: "" }], []);
+        }
+      }
+    };
+    exports2.deleteBlock = deleteBlock;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/typeGuards.js
+var require_typeGuards2 = __commonJS({
+  "node_modules/markdown-patch-2/dist/typeGuards.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.isString = isString;
+    exports2.isDictionary = isDictionary;
+    exports2.isList = isList;
+    exports2.isAppendableFrontmatterType = isAppendableFrontmatterType;
+    function isString(obj) {
+      return typeof obj === "string";
     }
-    function getDateUID(date3, granularity = "day") {
-      const ts = date3.clone().startOf(granularity).format();
-      return `${granularity}-${ts}`;
+    function isDictionary(obj) {
+      return typeof obj === "object" && obj !== null && !Array.isArray(obj);
     }
-    function removeEscapedCharacters(format) {
-      return format.replace(/\[[^\]]*\]/g, "");
+    function isList(obj) {
+      return Array.isArray(obj);
     }
-    function isFormatAmbiguous(format, granularity) {
-      if (granularity === "week") {
-        const cleanFormat = removeEscapedCharacters(format);
-        return /w{1,2}/i.test(cleanFormat) && (/M{1,4}/.test(cleanFormat) || /D{1,4}/.test(cleanFormat));
+    function isAppendableFrontmatterType(obj) {
+      return isString(obj) || isDictionary(obj) || isList(obj);
+    }
+  }
+});
+
+// node_modules/markdown-patch-2/dist/engine/frontmatter.js
+var require_frontmatter = __commonJS({
+  "node_modules/markdown-patch-2/dist/engine/frontmatter.js"(exports2) {
+    "use strict";
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m2, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      var desc = Object.getOwnPropertyDescriptor(m2, k2);
+      if (!desc || ("get" in desc ? !m2.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m2[k2];
+        } };
+      }
+      Object.defineProperty(o, k22, desc);
+    }) : (function(o, m2, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      o[k22] = m2[k2];
+    }));
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? (function(o, v2) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v2 });
+    }) : function(o, v2) {
+      o["default"] = v2;
+    });
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k2 in mod) if (k2 !== "default" && Object.prototype.hasOwnProperty.call(mod, k2)) __createBinding(result, mod, k2);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.patchFrontmatter = void 0;
+    var yaml = __importStar(require_dist());
+    var splice_js_1 = require_splice();
+    var typeGuards_js_1 = require_typeGuards2();
+    var instructions_js_1 = require_instructions();
+    var mergeValues3 = (a, b2) => {
+      if ((0, typeGuards_js_1.isList)(a) && (0, typeGuards_js_1.isList)(b2)) {
+        return [...a, ...b2];
+      }
+      if ((0, typeGuards_js_1.isDictionary)(a) && (0, typeGuards_js_1.isDictionary)(b2)) {
+        return { ...a, ...b2 };
+      }
+      if ((0, typeGuards_js_1.isString)(a) && (0, typeGuards_js_1.isString)(b2)) {
+        return a + b2;
+      }
+      throw new instructions_js_1.MergeError("frontmatter values are not mergeable (need two lists, two dicts, or two strings)");
+    };
+    var serializeBlock = (pairs, lineEnding) => {
+      if (pairs.length === 0) {
+        return "";
+      }
+      const object3 = {};
+      for (const [key, value] of pairs) {
+        object3[key] = value;
+      }
+      const raw = `---
+${yaml.stringify(object3).trimEnd()}
+---
+`;
+      return lineEnding === "\n" ? raw : raw.replaceAll("\n", lineEnding);
+    };
+    var patchFrontmatter = (document2, model, instruction) => {
+      const pairs = model.frontmatter.entries.map((entry) => [
+        entry.key,
+        entry.value
+      ]);
+      const key = instruction.target;
+      let index = pairs.findIndex(([existing]) => existing === key);
+      if (index === -1) {
+        const creatable = instruction.createTargetIfMissing && (instruction.scope === "content" && instruction.operation !== "delete" || instruction.scope === "markerAndContent" && instruction.operation === "replace");
+        if (!creatable) {
+          throw new instructions_js_1.TargetNotFoundError(`frontmatter key "${key}" was not found`);
+        }
+        const content = "value" in instruction ? instruction.value : "";
+        const seed = (0, typeGuards_js_1.isList)(content) ? [] : (0, typeGuards_js_1.isDictionary)(content) ? {} : "";
+        pairs.push([key, seed]);
+        index = pairs.length - 1;
+      }
+      if (instruction.scope === "marker") {
+        const newKey = instruction.content;
+        if (newKey !== key && pairs.some(([existing]) => existing === newKey)) {
+          throw new instructions_js_1.FrontmatterKeyCollisionError(`cannot rename frontmatter key "${key}" to "${newKey}": a key with that name already exists`);
+        }
+        pairs[index] = [newKey, pairs[index][1]];
+      } else if (instruction.operation === "delete") {
+        if (instruction.scope === "content") {
+          pairs[index] = [key, null];
+        } else {
+          pairs.splice(index, 1);
+        }
+      } else {
+        const content = instruction.value;
+        if (instruction.scope === "content") {
+          if (instruction.operation === "replace") {
+            pairs[index] = [key, content];
+          } else {
+            const current = pairs[index][1];
+            if (!(0, typeGuards_js_1.isAppendableFrontmatterType)(content) || !(0, typeGuards_js_1.isAppendableFrontmatterType)(current)) {
+              throw new instructions_js_1.MergeError(`frontmatter key "${key}" cannot be merged with the given value`);
+            }
+            pairs[index] = [
+              key,
+              instruction.operation === "append" ? mergeValues3(current, content) : mergeValues3(content, current)
+            ];
+          }
+        } else if (instruction.operation === "replace") {
+          pairs[index] = [key, content];
+        } else {
+          if (!(0, typeGuards_js_1.isDictionary)(content)) {
+            throw new instructions_js_1.MergeError("inserting frontmatter entries requires a dictionary of key/value pairs");
+          }
+          const incomingKeys = Object.keys(content);
+          const collision = incomingKeys.find((k2) => pairs.some(([existing]) => existing === k2));
+          if (collision) {
+            throw new instructions_js_1.FrontmatterKeyCollisionError(`cannot insert frontmatter key "${collision}": a key with that name already exists`);
+          }
+          const at = instruction.operation === "prepend" ? index : index + 1;
+          pairs.splice(at, 0, ...Object.entries(content));
+        }
+      }
+      const block = model.frontmatter.block ?? { start: 0, end: 0 };
+      return {
+        document: (0, splice_js_1.spliceRange)(document2, block, serializeBlock(pairs, model.lineEnding)),
+        warnings: []
+      };
+    };
+    exports2.patchFrontmatter = patchFrontmatter;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/engine/create.js
+var require_create = __commonJS({
+  "node_modules/markdown-patch-2/dist/engine/create.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.createBlock = exports2.createHeading = void 0;
+    var resolve_js_1 = require_resolve();
+    var ranges_js_1 = require_ranges();
+    var text_js_1 = require_text2();
+    var instructions_js_1 = require_instructions();
+    var MAX_HEADING_LEVEL = 6;
+    var createHeading = (document2, model, instruction) => {
+      if (instruction.operation === "delete" || instruction.scope === "parent") {
+        throw new instructions_js_1.TargetNotFoundError("cannot create a heading for a delete or move instruction");
+      }
+      if (instruction.scope !== "content") {
+        throw new instructions_js_1.EngineError("createTargetIfMissing for headings supports content-scope writes only");
+      }
+      const path2 = instruction.target ?? [];
+      if (path2.length === 0) {
+        throw new instructions_js_1.EngineError("the document root cannot be created");
+      }
+      let ancestor = model.root;
+      let matched = 0;
+      for (let length = path2.length - 1; length >= 1; length--) {
+        const resolved = (0, resolve_js_1.resolveHeading)(model, path2.slice(0, length));
+        if (resolved) {
+          ancestor = resolved.section;
+          matched = length;
+          break;
+        }
+      }
+      const toCreate = path2.slice(matched);
+      const warnings = [];
+      const parts = [];
+      let level = ancestor.heading?.level ?? 0;
+      for (const segment of toCreate) {
+        level += 1;
+        if (level > MAX_HEADING_LEVEL) {
+          warnings.push({
+            code: "heading-depth-overflow",
+            message: `Created heading "${segment}" resolves to level ${level}, beyond Markdown's maximum of ${MAX_HEADING_LEVEL}; it will not be structurally addressable.`
+          });
+        }
+        parts.push("#".repeat(level) + " " + segment + model.lineEnding);
+      }
+      const body = (0, text_js_1.sectionFragment)(instruction.content, level, model.lineEnding);
+      if (body.text) {
+        parts.push(body.text);
+      }
+      warnings.push(...body.warnings);
+      const at = (0, ranges_js_1.subtreeEnd)(ancestor);
+      return (0, text_js_1.splice)(document2, [
+        {
+          range: { start: at, end: at },
+          text: (0, text_js_1.lineStartGap)(document2, at, model.lineEnding) + parts.join("")
+        }
+      ], warnings);
+    };
+    exports2.createHeading = createHeading;
+    var createBlock = (document2, model, instruction) => {
+      if (instruction.operation === "delete" || instruction.scope !== "content") {
+        throw new instructions_js_1.EngineError("createTargetIfMissing for blocks supports content-scope writes only");
+      }
+      if ((0, instructions_js_1.isBlockTableRowInstruction)(instruction)) {
+        throw new instructions_js_1.EngineError("createTargetIfMissing for blocks does not support table-row writes; create the table first, then append/prepend/replace rows");
+      }
+      const value = (0, text_js_1.toLineEnding)(instruction.content, model.lineEnding);
+      const blockText = `${value} ^${instruction.target}`;
+      const le2 = model.lineEnding;
+      const separator = document2.length === 0 ? "" : document2.endsWith(le2 + le2) ? "" : document2.endsWith(le2) ? le2 : le2 + le2;
+      const at = document2.length;
+      return (0, text_js_1.splice)(document2, [{ range: { start: at, end: at }, text: separator + blockText + le2 }], []);
+    };
+    exports2.createBlock = createBlock;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/engine/table.js
+var require_table = __commonJS({
+  "node_modules/markdown-patch-2/dist/engine/table.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.patchTableRows = exports2.InvalidCellContentError = exports2.TableColumnCountError = exports2.NotATableError = void 0;
+    var instructions_js_1 = require_instructions();
+    var text_js_1 = require_text2();
+    var NotATableError = class extends instructions_js_1.EngineError {
+    };
+    exports2.NotATableError = NotATableError;
+    var TableColumnCountError = class extends instructions_js_1.EngineError {
+    };
+    exports2.TableColumnCountError = TableColumnCountError;
+    var InvalidCellContentError2 = class extends instructions_js_1.EngineError {
+    };
+    exports2.InvalidCellContentError = InvalidCellContentError2;
+    var EOL_AT_END = /\r\n$|\r$|\n$/;
+    var parseTable = (text) => {
+      const trailingEol = EOL_AT_END.test(text);
+      const lines = (trailingEol ? text.replace(EOL_AT_END, "") : text).split(/\r\n|\r|\n/);
+      return { header: lines[0] ?? "", separator: lines[1] ?? "", rows: lines.slice(2), trailingEol };
+    };
+    var formatCell = (cell) => {
+      if (/[\r\n]/.test(cell)) {
+        throw new InvalidCellContentError2(`cell ${JSON.stringify(cell)} contains a line break, which cannot appear inside a table row`);
+      }
+      return cell.replace(/\|/g, "\\|");
+    };
+    var formatRow = (row) => "| " + row.map(formatCell).join(" | ") + " |";
+    var patchTableRows = (document2, model, instruction, block) => {
+      if (block.kind !== "table" || !block.columns) {
+        throw new NotATableError(`block "${block.id}" is not a table; row writes require a table block`);
+      }
+      const columnCount = block.columns.length;
+      for (const row of instruction.value) {
+        if (row.length !== columnCount) {
+          throw new TableColumnCountError(`row ${JSON.stringify(row)} has ${row.length} cell(s); table "${block.id}" has ${columnCount} column(s)`);
+        }
+      }
+      const { header, separator, rows: existingRows, trailingEol } = parseTable(document2.slice(block.content.start, block.content.end));
+      const newRows = instruction.value.map(formatRow);
+      const bodyRows = instruction.operation === "replace" ? newRows : instruction.operation === "prepend" ? [...newRows, ...existingRows] : [...existingRows, ...newRows];
+      const text = [header, separator, ...bodyRows].join(model.lineEnding) + (trailingEol ? model.lineEnding : "");
+      return (0, text_js_1.splice)(document2, [{ range: block.content, text }], []);
+    };
+    exports2.patchTableRows = patchTableRows;
+  }
+});
+
+// node_modules/zod/v3/helpers/util.cjs
+var require_util2 = __commonJS({
+  "node_modules/zod/v3/helpers/util.cjs"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.getParsedType = exports2.ZodParsedType = exports2.objectUtil = exports2.util = void 0;
+    var util2;
+    (function(util3) {
+      util3.assertEqual = (_2) => {
+      };
+      function assertIs2(_arg) {
+      }
+      util3.assertIs = assertIs2;
+      function assertNever2(_x) {
+        throw new Error();
+      }
+      util3.assertNever = assertNever2;
+      util3.arrayToEnum = (items) => {
+        const obj = {};
+        for (const item of items) {
+          obj[item] = item;
+        }
+        return obj;
+      };
+      util3.getValidEnumValues = (obj) => {
+        const validKeys = util3.objectKeys(obj).filter((k2) => typeof obj[obj[k2]] !== "number");
+        const filtered = {};
+        for (const k2 of validKeys) {
+          filtered[k2] = obj[k2];
+        }
+        return util3.objectValues(filtered);
+      };
+      util3.objectValues = (obj) => {
+        return util3.objectKeys(obj).map(function(e) {
+          return obj[e];
+        });
+      };
+      util3.objectKeys = typeof Object.keys === "function" ? (obj) => Object.keys(obj) : (object3) => {
+        const keys = [];
+        for (const key in object3) {
+          if (Object.prototype.hasOwnProperty.call(object3, key)) {
+            keys.push(key);
+          }
+        }
+        return keys;
+      };
+      util3.find = (arr, checker) => {
+        for (const item of arr) {
+          if (checker(item))
+            return item;
+        }
+        return void 0;
+      };
+      util3.isInteger = typeof Number.isInteger === "function" ? (val) => Number.isInteger(val) : (val) => typeof val === "number" && Number.isFinite(val) && Math.floor(val) === val;
+      function joinValues2(array2, separator = " | ") {
+        return array2.map((val) => typeof val === "string" ? `'${val}'` : val).join(separator);
+      }
+      util3.joinValues = joinValues2;
+      util3.jsonStringifyReplacer = (_2, value) => {
+        if (typeof value === "bigint") {
+          return value.toString();
+        }
+        return value;
+      };
+    })(util2 || (exports2.util = util2 = {}));
+    var objectUtil2;
+    (function(objectUtil3) {
+      objectUtil3.mergeShapes = (first, second) => {
+        return {
+          ...first,
+          ...second
+          // second overwrites first
+        };
+      };
+    })(objectUtil2 || (exports2.objectUtil = objectUtil2 = {}));
+    exports2.ZodParsedType = util2.arrayToEnum([
+      "string",
+      "nan",
+      "number",
+      "integer",
+      "float",
+      "boolean",
+      "date",
+      "bigint",
+      "symbol",
+      "function",
+      "undefined",
+      "null",
+      "array",
+      "object",
+      "unknown",
+      "promise",
+      "void",
+      "never",
+      "map",
+      "set"
+    ]);
+    var getParsedType3 = (data) => {
+      const t = typeof data;
+      switch (t) {
+        case "undefined":
+          return exports2.ZodParsedType.undefined;
+        case "string":
+          return exports2.ZodParsedType.string;
+        case "number":
+          return Number.isNaN(data) ? exports2.ZodParsedType.nan : exports2.ZodParsedType.number;
+        case "boolean":
+          return exports2.ZodParsedType.boolean;
+        case "function":
+          return exports2.ZodParsedType.function;
+        case "bigint":
+          return exports2.ZodParsedType.bigint;
+        case "symbol":
+          return exports2.ZodParsedType.symbol;
+        case "object":
+          if (Array.isArray(data)) {
+            return exports2.ZodParsedType.array;
+          }
+          if (data === null) {
+            return exports2.ZodParsedType.null;
+          }
+          if (data.then && typeof data.then === "function" && data.catch && typeof data.catch === "function") {
+            return exports2.ZodParsedType.promise;
+          }
+          if (typeof Map !== "undefined" && data instanceof Map) {
+            return exports2.ZodParsedType.map;
+          }
+          if (typeof Set !== "undefined" && data instanceof Set) {
+            return exports2.ZodParsedType.set;
+          }
+          if (typeof Date !== "undefined" && data instanceof Date) {
+            return exports2.ZodParsedType.date;
+          }
+          return exports2.ZodParsedType.object;
+        default:
+          return exports2.ZodParsedType.unknown;
+      }
+    };
+    exports2.getParsedType = getParsedType3;
+  }
+});
+
+// node_modules/zod/v3/ZodError.cjs
+var require_ZodError = __commonJS({
+  "node_modules/zod/v3/ZodError.cjs"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.ZodError = exports2.quotelessJson = exports2.ZodIssueCode = void 0;
+    var util_js_1 = require_util2();
+    exports2.ZodIssueCode = util_js_1.util.arrayToEnum([
+      "invalid_type",
+      "invalid_literal",
+      "custom",
+      "invalid_union",
+      "invalid_union_discriminator",
+      "invalid_enum_value",
+      "unrecognized_keys",
+      "invalid_arguments",
+      "invalid_return_type",
+      "invalid_date",
+      "invalid_string",
+      "too_small",
+      "too_big",
+      "invalid_intersection_types",
+      "not_multiple_of",
+      "not_finite"
+    ]);
+    var quotelessJson2 = (obj) => {
+      const json = JSON.stringify(obj, null, 2);
+      return json.replace(/"([^"]+)":/g, "$1:");
+    };
+    exports2.quotelessJson = quotelessJson2;
+    var ZodError3 = class _ZodError extends Error {
+      get errors() {
+        return this.issues;
+      }
+      constructor(issues) {
+        super();
+        this.issues = [];
+        this.addIssue = (sub) => {
+          this.issues = [...this.issues, sub];
+        };
+        this.addIssues = (subs = []) => {
+          this.issues = [...this.issues, ...subs];
+        };
+        const actualProto = new.target.prototype;
+        if (Object.setPrototypeOf) {
+          Object.setPrototypeOf(this, actualProto);
+        } else {
+          this.__proto__ = actualProto;
+        }
+        this.name = "ZodError";
+        this.issues = issues;
+      }
+      format(_mapper) {
+        const mapper = _mapper || function(issue2) {
+          return issue2.message;
+        };
+        const fieldErrors = { _errors: [] };
+        const processError = (error2) => {
+          for (const issue2 of error2.issues) {
+            if (issue2.code === "invalid_union") {
+              issue2.unionErrors.map(processError);
+            } else if (issue2.code === "invalid_return_type") {
+              processError(issue2.returnTypeError);
+            } else if (issue2.code === "invalid_arguments") {
+              processError(issue2.argumentsError);
+            } else if (issue2.path.length === 0) {
+              fieldErrors._errors.push(mapper(issue2));
+            } else {
+              let curr = fieldErrors;
+              let i = 0;
+              while (i < issue2.path.length) {
+                const el = issue2.path[i];
+                const terminal = i === issue2.path.length - 1;
+                if (!terminal) {
+                  curr[el] = curr[el] || { _errors: [] };
+                } else {
+                  curr[el] = curr[el] || { _errors: [] };
+                  curr[el]._errors.push(mapper(issue2));
+                }
+                curr = curr[el];
+                i++;
+              }
+            }
+          }
+        };
+        processError(this);
+        return fieldErrors;
+      }
+      static assert(value) {
+        if (!(value instanceof _ZodError)) {
+          throw new Error(`Not a ZodError: ${value}`);
+        }
+      }
+      toString() {
+        return this.message;
+      }
+      get message() {
+        return JSON.stringify(this.issues, util_js_1.util.jsonStringifyReplacer, 2);
+      }
+      get isEmpty() {
+        return this.issues.length === 0;
+      }
+      flatten(mapper = (issue2) => issue2.message) {
+        const fieldErrors = {};
+        const formErrors = [];
+        for (const sub of this.issues) {
+          if (sub.path.length > 0) {
+            const firstEl = sub.path[0];
+            fieldErrors[firstEl] = fieldErrors[firstEl] || [];
+            fieldErrors[firstEl].push(mapper(sub));
+          } else {
+            formErrors.push(mapper(sub));
+          }
+        }
+        return { formErrors, fieldErrors };
+      }
+      get formErrors() {
+        return this.flatten();
+      }
+    };
+    exports2.ZodError = ZodError3;
+    ZodError3.create = (issues) => {
+      const error2 = new ZodError3(issues);
+      return error2;
+    };
+  }
+});
+
+// node_modules/zod/v3/locales/en.cjs
+var require_en = __commonJS({
+  "node_modules/zod/v3/locales/en.cjs"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var ZodError_js_1 = require_ZodError();
+    var util_js_1 = require_util2();
+    var errorMap2 = (issue2, _ctx) => {
+      let message;
+      switch (issue2.code) {
+        case ZodError_js_1.ZodIssueCode.invalid_type:
+          if (issue2.received === util_js_1.ZodParsedType.undefined) {
+            message = "Required";
+          } else {
+            message = `Expected ${issue2.expected}, received ${issue2.received}`;
+          }
+          break;
+        case ZodError_js_1.ZodIssueCode.invalid_literal:
+          message = `Invalid literal value, expected ${JSON.stringify(issue2.expected, util_js_1.util.jsonStringifyReplacer)}`;
+          break;
+        case ZodError_js_1.ZodIssueCode.unrecognized_keys:
+          message = `Unrecognized key(s) in object: ${util_js_1.util.joinValues(issue2.keys, ", ")}`;
+          break;
+        case ZodError_js_1.ZodIssueCode.invalid_union:
+          message = `Invalid input`;
+          break;
+        case ZodError_js_1.ZodIssueCode.invalid_union_discriminator:
+          message = `Invalid discriminator value. Expected ${util_js_1.util.joinValues(issue2.options)}`;
+          break;
+        case ZodError_js_1.ZodIssueCode.invalid_enum_value:
+          message = `Invalid enum value. Expected ${util_js_1.util.joinValues(issue2.options)}, received '${issue2.received}'`;
+          break;
+        case ZodError_js_1.ZodIssueCode.invalid_arguments:
+          message = `Invalid function arguments`;
+          break;
+        case ZodError_js_1.ZodIssueCode.invalid_return_type:
+          message = `Invalid function return type`;
+          break;
+        case ZodError_js_1.ZodIssueCode.invalid_date:
+          message = `Invalid date`;
+          break;
+        case ZodError_js_1.ZodIssueCode.invalid_string:
+          if (typeof issue2.validation === "object") {
+            if ("includes" in issue2.validation) {
+              message = `Invalid input: must include "${issue2.validation.includes}"`;
+              if (typeof issue2.validation.position === "number") {
+                message = `${message} at one or more positions greater than or equal to ${issue2.validation.position}`;
+              }
+            } else if ("startsWith" in issue2.validation) {
+              message = `Invalid input: must start with "${issue2.validation.startsWith}"`;
+            } else if ("endsWith" in issue2.validation) {
+              message = `Invalid input: must end with "${issue2.validation.endsWith}"`;
+            } else {
+              util_js_1.util.assertNever(issue2.validation);
+            }
+          } else if (issue2.validation !== "regex") {
+            message = `Invalid ${issue2.validation}`;
+          } else {
+            message = "Invalid";
+          }
+          break;
+        case ZodError_js_1.ZodIssueCode.too_small:
+          if (issue2.type === "array")
+            message = `Array must contain ${issue2.exact ? "exactly" : issue2.inclusive ? `at least` : `more than`} ${issue2.minimum} element(s)`;
+          else if (issue2.type === "string")
+            message = `String must contain ${issue2.exact ? "exactly" : issue2.inclusive ? `at least` : `over`} ${issue2.minimum} character(s)`;
+          else if (issue2.type === "number")
+            message = `Number must be ${issue2.exact ? `exactly equal to ` : issue2.inclusive ? `greater than or equal to ` : `greater than `}${issue2.minimum}`;
+          else if (issue2.type === "bigint")
+            message = `Number must be ${issue2.exact ? `exactly equal to ` : issue2.inclusive ? `greater than or equal to ` : `greater than `}${issue2.minimum}`;
+          else if (issue2.type === "date")
+            message = `Date must be ${issue2.exact ? `exactly equal to ` : issue2.inclusive ? `greater than or equal to ` : `greater than `}${new Date(Number(issue2.minimum))}`;
+          else
+            message = "Invalid input";
+          break;
+        case ZodError_js_1.ZodIssueCode.too_big:
+          if (issue2.type === "array")
+            message = `Array must contain ${issue2.exact ? `exactly` : issue2.inclusive ? `at most` : `less than`} ${issue2.maximum} element(s)`;
+          else if (issue2.type === "string")
+            message = `String must contain ${issue2.exact ? `exactly` : issue2.inclusive ? `at most` : `under`} ${issue2.maximum} character(s)`;
+          else if (issue2.type === "number")
+            message = `Number must be ${issue2.exact ? `exactly` : issue2.inclusive ? `less than or equal to` : `less than`} ${issue2.maximum}`;
+          else if (issue2.type === "bigint")
+            message = `BigInt must be ${issue2.exact ? `exactly` : issue2.inclusive ? `less than or equal to` : `less than`} ${issue2.maximum}`;
+          else if (issue2.type === "date")
+            message = `Date must be ${issue2.exact ? `exactly` : issue2.inclusive ? `smaller than or equal to` : `smaller than`} ${new Date(Number(issue2.maximum))}`;
+          else
+            message = "Invalid input";
+          break;
+        case ZodError_js_1.ZodIssueCode.custom:
+          message = `Invalid input`;
+          break;
+        case ZodError_js_1.ZodIssueCode.invalid_intersection_types:
+          message = `Intersection results could not be merged`;
+          break;
+        case ZodError_js_1.ZodIssueCode.not_multiple_of:
+          message = `Number must be a multiple of ${issue2.multipleOf}`;
+          break;
+        case ZodError_js_1.ZodIssueCode.not_finite:
+          message = "Number must be finite";
+          break;
+        default:
+          message = _ctx.defaultError;
+          util_js_1.util.assertNever(issue2);
+      }
+      return { message };
+    };
+    exports2.default = errorMap2;
+  }
+});
+
+// node_modules/zod/v3/errors.cjs
+var require_errors2 = __commonJS({
+  "node_modules/zod/v3/errors.cjs"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod) {
+      return mod && mod.__esModule ? mod : { "default": mod };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.defaultErrorMap = void 0;
+    exports2.setErrorMap = setErrorMap2;
+    exports2.getErrorMap = getErrorMap2;
+    var en_js_1 = __importDefault(require_en());
+    exports2.defaultErrorMap = en_js_1.default;
+    var overrideErrorMap2 = en_js_1.default;
+    function setErrorMap2(map) {
+      overrideErrorMap2 = map;
+    }
+    function getErrorMap2() {
+      return overrideErrorMap2;
+    }
+  }
+});
+
+// node_modules/zod/v3/helpers/parseUtil.cjs
+var require_parseUtil = __commonJS({
+  "node_modules/zod/v3/helpers/parseUtil.cjs"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod) {
+      return mod && mod.__esModule ? mod : { "default": mod };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.isAsync = exports2.isValid = exports2.isDirty = exports2.isAborted = exports2.OK = exports2.DIRTY = exports2.INVALID = exports2.ParseStatus = exports2.EMPTY_PATH = exports2.makeIssue = void 0;
+    exports2.addIssueToContext = addIssueToContext2;
+    var errors_js_1 = require_errors2();
+    var en_js_1 = __importDefault(require_en());
+    var makeIssue2 = (params) => {
+      const { data, path: path2, errorMaps, issueData } = params;
+      const fullPath = [...path2, ...issueData.path || []];
+      const fullIssue = {
+        ...issueData,
+        path: fullPath
+      };
+      if (issueData.message !== void 0) {
+        return {
+          ...issueData,
+          path: fullPath,
+          message: issueData.message
+        };
+      }
+      let errorMessage = "";
+      const maps = errorMaps.filter((m2) => !!m2).slice().reverse();
+      for (const map of maps) {
+        errorMessage = map(fullIssue, { data, defaultError: errorMessage }).message;
+      }
+      return {
+        ...issueData,
+        path: fullPath,
+        message: errorMessage
+      };
+    };
+    exports2.makeIssue = makeIssue2;
+    exports2.EMPTY_PATH = [];
+    function addIssueToContext2(ctx, issueData) {
+      const overrideMap = (0, errors_js_1.getErrorMap)();
+      const issue2 = (0, exports2.makeIssue)({
+        issueData,
+        data: ctx.data,
+        path: ctx.path,
+        errorMaps: [
+          ctx.common.contextualErrorMap,
+          // contextual error map is first priority
+          ctx.schemaErrorMap,
+          // then schema-bound map if available
+          overrideMap,
+          // then global override map
+          overrideMap === en_js_1.default ? void 0 : en_js_1.default
+          // then global default map
+        ].filter((x2) => !!x2)
+      });
+      ctx.common.issues.push(issue2);
+    }
+    var ParseStatus2 = class _ParseStatus {
+      constructor() {
+        this.value = "valid";
+      }
+      dirty() {
+        if (this.value === "valid")
+          this.value = "dirty";
+      }
+      abort() {
+        if (this.value !== "aborted")
+          this.value = "aborted";
+      }
+      static mergeArray(status, results) {
+        const arrayValue = [];
+        for (const s of results) {
+          if (s.status === "aborted")
+            return exports2.INVALID;
+          if (s.status === "dirty")
+            status.dirty();
+          arrayValue.push(s.value);
+        }
+        return { status: status.value, value: arrayValue };
+      }
+      static async mergeObjectAsync(status, pairs) {
+        const syncPairs = [];
+        for (const pair of pairs) {
+          const key = await pair.key;
+          const value = await pair.value;
+          syncPairs.push({
+            key,
+            value
+          });
+        }
+        return _ParseStatus.mergeObjectSync(status, syncPairs);
+      }
+      static mergeObjectSync(status, pairs) {
+        const finalObject = {};
+        for (const pair of pairs) {
+          const { key, value } = pair;
+          if (key.status === "aborted")
+            return exports2.INVALID;
+          if (value.status === "aborted")
+            return exports2.INVALID;
+          if (key.status === "dirty")
+            status.dirty();
+          if (value.status === "dirty")
+            status.dirty();
+          if (key.value !== "__proto__" && (typeof value.value !== "undefined" || pair.alwaysSet)) {
+            finalObject[key.value] = value.value;
+          }
+        }
+        return { status: status.value, value: finalObject };
+      }
+    };
+    exports2.ParseStatus = ParseStatus2;
+    exports2.INVALID = Object.freeze({
+      status: "aborted"
+    });
+    var DIRTY2 = (value) => ({ status: "dirty", value });
+    exports2.DIRTY = DIRTY2;
+    var OK2 = (value) => ({ status: "valid", value });
+    exports2.OK = OK2;
+    var isAborted2 = (x2) => x2.status === "aborted";
+    exports2.isAborted = isAborted2;
+    var isDirty2 = (x2) => x2.status === "dirty";
+    exports2.isDirty = isDirty2;
+    var isValid2 = (x2) => x2.status === "valid";
+    exports2.isValid = isValid2;
+    var isAsync2 = (x2) => typeof Promise !== "undefined" && x2 instanceof Promise;
+    exports2.isAsync = isAsync2;
+  }
+});
+
+// node_modules/zod/v3/helpers/typeAliases.cjs
+var require_typeAliases = __commonJS({
+  "node_modules/zod/v3/helpers/typeAliases.cjs"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+  }
+});
+
+// node_modules/zod/v3/helpers/errorUtil.cjs
+var require_errorUtil = __commonJS({
+  "node_modules/zod/v3/helpers/errorUtil.cjs"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.errorUtil = void 0;
+    var errorUtil2;
+    (function(errorUtil3) {
+      errorUtil3.errToObj = (message) => typeof message === "string" ? { message } : message || {};
+      errorUtil3.toString = (message) => typeof message === "string" ? message : message?.message;
+    })(errorUtil2 || (exports2.errorUtil = errorUtil2 = {}));
+  }
+});
+
+// node_modules/zod/v3/types.cjs
+var require_types3 = __commonJS({
+  "node_modules/zod/v3/types.cjs"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.discriminatedUnion = exports2.date = exports2.boolean = exports2.bigint = exports2.array = exports2.any = exports2.coerce = exports2.ZodFirstPartyTypeKind = exports2.late = exports2.ZodSchema = exports2.Schema = exports2.ZodReadonly = exports2.ZodPipeline = exports2.ZodBranded = exports2.BRAND = exports2.ZodNaN = exports2.ZodCatch = exports2.ZodDefault = exports2.ZodNullable = exports2.ZodOptional = exports2.ZodTransformer = exports2.ZodEffects = exports2.ZodPromise = exports2.ZodNativeEnum = exports2.ZodEnum = exports2.ZodLiteral = exports2.ZodLazy = exports2.ZodFunction = exports2.ZodSet = exports2.ZodMap = exports2.ZodRecord = exports2.ZodTuple = exports2.ZodIntersection = exports2.ZodDiscriminatedUnion = exports2.ZodUnion = exports2.ZodObject = exports2.ZodArray = exports2.ZodVoid = exports2.ZodNever = exports2.ZodUnknown = exports2.ZodAny = exports2.ZodNull = exports2.ZodUndefined = exports2.ZodSymbol = exports2.ZodDate = exports2.ZodBoolean = exports2.ZodBigInt = exports2.ZodNumber = exports2.ZodString = exports2.ZodType = void 0;
+    exports2.NEVER = exports2.void = exports2.unknown = exports2.union = exports2.undefined = exports2.tuple = exports2.transformer = exports2.symbol = exports2.string = exports2.strictObject = exports2.set = exports2.record = exports2.promise = exports2.preprocess = exports2.pipeline = exports2.ostring = exports2.optional = exports2.onumber = exports2.oboolean = exports2.object = exports2.number = exports2.nullable = exports2.null = exports2.never = exports2.nativeEnum = exports2.nan = exports2.map = exports2.literal = exports2.lazy = exports2.intersection = exports2.instanceof = exports2.function = exports2.enum = exports2.effect = void 0;
+    exports2.datetimeRegex = datetimeRegex2;
+    exports2.custom = custom3;
+    var ZodError_js_1 = require_ZodError();
+    var errors_js_1 = require_errors2();
+    var errorUtil_js_1 = require_errorUtil();
+    var parseUtil_js_1 = require_parseUtil();
+    var util_js_1 = require_util2();
+    var ParseInputLazyPath2 = class {
+      constructor(parent, value, path2, key) {
+        this._cachedPath = [];
+        this.parent = parent;
+        this.data = value;
+        this._path = path2;
+        this._key = key;
+      }
+      get path() {
+        if (!this._cachedPath.length) {
+          if (Array.isArray(this._key)) {
+            this._cachedPath.push(...this._path, ...this._key);
+          } else {
+            this._cachedPath.push(...this._path, this._key);
+          }
+        }
+        return this._cachedPath;
+      }
+    };
+    var handleResult2 = (ctx, result) => {
+      if ((0, parseUtil_js_1.isValid)(result)) {
+        return { success: true, data: result.value };
+      } else {
+        if (!ctx.common.issues.length) {
+          throw new Error("Validation failed but no issues detected.");
+        }
+        return {
+          success: false,
+          get error() {
+            if (this._error)
+              return this._error;
+            const error2 = new ZodError_js_1.ZodError(ctx.common.issues);
+            this._error = error2;
+            return this._error;
+          }
+        };
+      }
+    };
+    function processCreateParams2(params) {
+      if (!params)
+        return {};
+      const { errorMap: errorMap2, invalid_type_error, required_error, description } = params;
+      if (errorMap2 && (invalid_type_error || required_error)) {
+        throw new Error(`Can't use "invalid_type_error" or "required_error" in conjunction with custom error map.`);
+      }
+      if (errorMap2)
+        return { errorMap: errorMap2, description };
+      const customMap = (iss, ctx) => {
+        const { message } = params;
+        if (iss.code === "invalid_enum_value") {
+          return { message: message ?? ctx.defaultError };
+        }
+        if (typeof ctx.data === "undefined") {
+          return { message: message ?? required_error ?? ctx.defaultError };
+        }
+        if (iss.code !== "invalid_type")
+          return { message: ctx.defaultError };
+        return { message: message ?? invalid_type_error ?? ctx.defaultError };
+      };
+      return { errorMap: customMap, description };
+    }
+    var ZodType3 = class {
+      get description() {
+        return this._def.description;
+      }
+      _getType(input) {
+        return (0, util_js_1.getParsedType)(input.data);
+      }
+      _getOrReturnCtx(input, ctx) {
+        return ctx || {
+          common: input.parent.common,
+          data: input.data,
+          parsedType: (0, util_js_1.getParsedType)(input.data),
+          schemaErrorMap: this._def.errorMap,
+          path: input.path,
+          parent: input.parent
+        };
+      }
+      _processInputParams(input) {
+        return {
+          status: new parseUtil_js_1.ParseStatus(),
+          ctx: {
+            common: input.parent.common,
+            data: input.data,
+            parsedType: (0, util_js_1.getParsedType)(input.data),
+            schemaErrorMap: this._def.errorMap,
+            path: input.path,
+            parent: input.parent
+          }
+        };
+      }
+      _parseSync(input) {
+        const result = this._parse(input);
+        if ((0, parseUtil_js_1.isAsync)(result)) {
+          throw new Error("Synchronous parse encountered promise.");
+        }
+        return result;
+      }
+      _parseAsync(input) {
+        const result = this._parse(input);
+        return Promise.resolve(result);
+      }
+      parse(data, params) {
+        const result = this.safeParse(data, params);
+        if (result.success)
+          return result.data;
+        throw result.error;
+      }
+      safeParse(data, params) {
+        const ctx = {
+          common: {
+            issues: [],
+            async: params?.async ?? false,
+            contextualErrorMap: params?.errorMap
+          },
+          path: params?.path || [],
+          schemaErrorMap: this._def.errorMap,
+          parent: null,
+          data,
+          parsedType: (0, util_js_1.getParsedType)(data)
+        };
+        const result = this._parseSync({ data, path: ctx.path, parent: ctx });
+        return handleResult2(ctx, result);
+      }
+      "~validate"(data) {
+        const ctx = {
+          common: {
+            issues: [],
+            async: !!this["~standard"].async
+          },
+          path: [],
+          schemaErrorMap: this._def.errorMap,
+          parent: null,
+          data,
+          parsedType: (0, util_js_1.getParsedType)(data)
+        };
+        if (!this["~standard"].async) {
+          try {
+            const result = this._parseSync({ data, path: [], parent: ctx });
+            return (0, parseUtil_js_1.isValid)(result) ? {
+              value: result.value
+            } : {
+              issues: ctx.common.issues
+            };
+          } catch (err) {
+            if (err?.message?.toLowerCase()?.includes("encountered")) {
+              this["~standard"].async = true;
+            }
+            ctx.common = {
+              issues: [],
+              async: true
+            };
+          }
+        }
+        return this._parseAsync({ data, path: [], parent: ctx }).then((result) => (0, parseUtil_js_1.isValid)(result) ? {
+          value: result.value
+        } : {
+          issues: ctx.common.issues
+        });
+      }
+      async parseAsync(data, params) {
+        const result = await this.safeParseAsync(data, params);
+        if (result.success)
+          return result.data;
+        throw result.error;
+      }
+      async safeParseAsync(data, params) {
+        const ctx = {
+          common: {
+            issues: [],
+            contextualErrorMap: params?.errorMap,
+            async: true
+          },
+          path: params?.path || [],
+          schemaErrorMap: this._def.errorMap,
+          parent: null,
+          data,
+          parsedType: (0, util_js_1.getParsedType)(data)
+        };
+        const maybeAsyncResult = this._parse({ data, path: ctx.path, parent: ctx });
+        const result = await ((0, parseUtil_js_1.isAsync)(maybeAsyncResult) ? maybeAsyncResult : Promise.resolve(maybeAsyncResult));
+        return handleResult2(ctx, result);
+      }
+      refine(check2, message) {
+        const getIssueProperties = (val) => {
+          if (typeof message === "string" || typeof message === "undefined") {
+            return { message };
+          } else if (typeof message === "function") {
+            return message(val);
+          } else {
+            return message;
+          }
+        };
+        return this._refinement((val, ctx) => {
+          const result = check2(val);
+          const setError = () => ctx.addIssue({
+            code: ZodError_js_1.ZodIssueCode.custom,
+            ...getIssueProperties(val)
+          });
+          if (typeof Promise !== "undefined" && result instanceof Promise) {
+            return result.then((data) => {
+              if (!data) {
+                setError();
+                return false;
+              } else {
+                return true;
+              }
+            });
+          }
+          if (!result) {
+            setError();
+            return false;
+          } else {
+            return true;
+          }
+        });
+      }
+      refinement(check2, refinementData) {
+        return this._refinement((val, ctx) => {
+          if (!check2(val)) {
+            ctx.addIssue(typeof refinementData === "function" ? refinementData(val, ctx) : refinementData);
+            return false;
+          } else {
+            return true;
+          }
+        });
+      }
+      _refinement(refinement) {
+        return new ZodEffects2({
+          schema: this,
+          typeName: ZodFirstPartyTypeKind2.ZodEffects,
+          effect: { type: "refinement", refinement }
+        });
+      }
+      superRefine(refinement) {
+        return this._refinement(refinement);
+      }
+      constructor(def) {
+        this.spa = this.safeParseAsync;
+        this._def = def;
+        this.parse = this.parse.bind(this);
+        this.safeParse = this.safeParse.bind(this);
+        this.parseAsync = this.parseAsync.bind(this);
+        this.safeParseAsync = this.safeParseAsync.bind(this);
+        this.spa = this.spa.bind(this);
+        this.refine = this.refine.bind(this);
+        this.refinement = this.refinement.bind(this);
+        this.superRefine = this.superRefine.bind(this);
+        this.optional = this.optional.bind(this);
+        this.nullable = this.nullable.bind(this);
+        this.nullish = this.nullish.bind(this);
+        this.array = this.array.bind(this);
+        this.promise = this.promise.bind(this);
+        this.or = this.or.bind(this);
+        this.and = this.and.bind(this);
+        this.transform = this.transform.bind(this);
+        this.brand = this.brand.bind(this);
+        this.default = this.default.bind(this);
+        this.catch = this.catch.bind(this);
+        this.describe = this.describe.bind(this);
+        this.pipe = this.pipe.bind(this);
+        this.readonly = this.readonly.bind(this);
+        this.isNullable = this.isNullable.bind(this);
+        this.isOptional = this.isOptional.bind(this);
+        this["~standard"] = {
+          version: 1,
+          vendor: "zod",
+          validate: (data) => this["~validate"](data)
+        };
+      }
+      optional() {
+        return ZodOptional3.create(this, this._def);
+      }
+      nullable() {
+        return ZodNullable3.create(this, this._def);
+      }
+      nullish() {
+        return this.nullable().optional();
+      }
+      array() {
+        return ZodArray3.create(this);
+      }
+      promise() {
+        return ZodPromise2.create(this, this._def);
+      }
+      or(option) {
+        return ZodUnion3.create([this, option], this._def);
+      }
+      and(incoming) {
+        return ZodIntersection3.create(this, incoming, this._def);
+      }
+      transform(transform2) {
+        return new ZodEffects2({
+          ...processCreateParams2(this._def),
+          schema: this,
+          typeName: ZodFirstPartyTypeKind2.ZodEffects,
+          effect: { type: "transform", transform: transform2 }
+        });
+      }
+      default(def) {
+        const defaultValueFunc = typeof def === "function" ? def : () => def;
+        return new ZodDefault3({
+          ...processCreateParams2(this._def),
+          innerType: this,
+          defaultValue: defaultValueFunc,
+          typeName: ZodFirstPartyTypeKind2.ZodDefault
+        });
+      }
+      brand() {
+        return new ZodBranded2({
+          typeName: ZodFirstPartyTypeKind2.ZodBranded,
+          type: this,
+          ...processCreateParams2(this._def)
+        });
+      }
+      catch(def) {
+        const catchValueFunc = typeof def === "function" ? def : () => def;
+        return new ZodCatch3({
+          ...processCreateParams2(this._def),
+          innerType: this,
+          catchValue: catchValueFunc,
+          typeName: ZodFirstPartyTypeKind2.ZodCatch
+        });
+      }
+      describe(description) {
+        const This = this.constructor;
+        return new This({
+          ...this._def,
+          description
+        });
+      }
+      pipe(target) {
+        return ZodPipeline2.create(this, target);
+      }
+      readonly() {
+        return ZodReadonly3.create(this);
+      }
+      isOptional() {
+        return this.safeParse(void 0).success;
+      }
+      isNullable() {
+        return this.safeParse(null).success;
+      }
+    };
+    exports2.ZodType = ZodType3;
+    exports2.Schema = ZodType3;
+    exports2.ZodSchema = ZodType3;
+    var cuidRegex2 = /^c[^\s-]{8,}$/i;
+    var cuid2Regex2 = /^[0-9a-z]+$/;
+    var ulidRegex2 = /^[0-9A-HJKMNP-TV-Z]{26}$/i;
+    var uuidRegex2 = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i;
+    var nanoidRegex2 = /^[a-z0-9_-]{21}$/i;
+    var jwtRegex2 = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/;
+    var durationRegex2 = /^[-+]?P(?!$)(?:(?:[-+]?\d+Y)|(?:[-+]?\d+[.,]\d+Y$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:(?:[-+]?\d+W)|(?:[-+]?\d+[.,]\d+W$))?(?:(?:[-+]?\d+D)|(?:[-+]?\d+[.,]\d+D$))?(?:T(?=[\d+-])(?:(?:[-+]?\d+H)|(?:[-+]?\d+[.,]\d+H$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:[-+]?\d+(?:[.,]\d+)?S)?)??$/;
+    var emailRegex2 = /^(?!\.)(?!.*\.\.)([A-Z0-9_'+\-\.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i;
+    var _emojiRegex2 = `^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$`;
+    var emojiRegex3;
+    var ipv4Regex2 = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
+    var ipv4CidrRegex2 = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(3[0-2]|[12]?[0-9])$/;
+    var ipv6Regex2 = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+    var ipv6CidrRegex2 = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\/(12[0-8]|1[01][0-9]|[1-9]?[0-9])$/;
+    var base64Regex2 = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
+    var base64urlRegex2 = /^([0-9a-zA-Z-_]{4})*(([0-9a-zA-Z-_]{2}(==)?)|([0-9a-zA-Z-_]{3}(=)?))?$/;
+    var dateRegexSource2 = `((\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-((0[13578]|1[02])-(0[1-9]|[12]\\d|3[01])|(0[469]|11)-(0[1-9]|[12]\\d|30)|(02)-(0[1-9]|1\\d|2[0-8])))`;
+    var dateRegex2 = new RegExp(`^${dateRegexSource2}$`);
+    function timeRegexSource2(args) {
+      let secondsRegexSource = `[0-5]\\d`;
+      if (args.precision) {
+        secondsRegexSource = `${secondsRegexSource}\\.\\d{${args.precision}}`;
+      } else if (args.precision == null) {
+        secondsRegexSource = `${secondsRegexSource}(\\.\\d+)?`;
+      }
+      const secondsQuantifier = args.precision ? "+" : "?";
+      return `([01]\\d|2[0-3]):[0-5]\\d(:${secondsRegexSource})${secondsQuantifier}`;
+    }
+    function timeRegex2(args) {
+      return new RegExp(`^${timeRegexSource2(args)}$`);
+    }
+    function datetimeRegex2(args) {
+      let regex = `${dateRegexSource2}T${timeRegexSource2(args)}`;
+      const opts = [];
+      opts.push(args.local ? `Z?` : `Z`);
+      if (args.offset)
+        opts.push(`([+-]\\d{2}:?\\d{2})`);
+      regex = `${regex}(${opts.join("|")})`;
+      return new RegExp(`^${regex}$`);
+    }
+    function isValidIP2(ip, version2) {
+      if ((version2 === "v4" || !version2) && ipv4Regex2.test(ip)) {
+        return true;
+      }
+      if ((version2 === "v6" || !version2) && ipv6Regex2.test(ip)) {
+        return true;
       }
       return false;
     }
-    function getDateFromFile(file, granularity) {
-      return getDateFromFilename(file.basename, granularity);
-    }
-    function getDateFromPath(path2, granularity) {
-      return getDateFromFilename(basename(path2), granularity);
-    }
-    function getDateFromFilename(filename, granularity) {
-      const getSettings = {
-        day: getDailyNoteSettings2,
-        week: getWeeklyNoteSettings2,
-        month: getMonthlyNoteSettings2,
-        quarter: getQuarterlyNoteSettings2,
-        year: getYearlyNoteSettings2
-      };
-      const format = getSettings[granularity]().format.split("/").pop();
-      const noteDate = window.moment(filename, format, true);
-      if (!noteDate.isValid()) {
-        return null;
-      }
-      if (isFormatAmbiguous(format, granularity)) {
-        if (granularity === "week") {
-          const cleanFormat = removeEscapedCharacters(format);
-          if (/w{1,2}/i.test(cleanFormat)) {
-            return window.moment(
-              filename,
-              // If format contains week, remove day & month formatting
-              format.replace(/M{1,4}/g, "").replace(/D{1,4}/g, ""),
-              false
-            );
-          }
-        }
-      }
-      return noteDate;
-    }
-    var DailyNotesFolderMissingError = class extends Error {
-    };
-    async function createDailyNote2(date3) {
-      const app = window.app;
-      const { vault } = app;
-      const moment = window.moment;
-      const { template, format, folder } = getDailyNoteSettings2();
-      const [templateContents, IFoldInfo] = await getTemplateInfo(template);
-      const filename = date3.format(format);
-      const normalizedPath = await getNotePath(folder, filename);
+    function isValidJWT3(jwt, alg) {
+      if (!jwtRegex2.test(jwt))
+        return false;
       try {
-        const createdFile = await vault.create(normalizedPath, templateContents.replace(/{{\s*date\s*}}/gi, filename).replace(/{{\s*time\s*}}/gi, moment().format("HH:mm")).replace(/{{\s*title\s*}}/gi, filename).replace(/{{\s*(date|time)\s*(([+-]\d+)([yqmwdhs]))?\s*(:.+?)?}}/gi, (_2, _timeOrDate, calc, timeDelta, unit, momentFormat) => {
-          const now = moment();
-          const currentDate = date3.clone().set({
-            hour: now.get("hour"),
-            minute: now.get("minute"),
-            second: now.get("second")
+        const [header] = jwt.split(".");
+        if (!header)
+          return false;
+        const base642 = header.replace(/-/g, "+").replace(/_/g, "/").padEnd(header.length + (4 - header.length % 4) % 4, "=");
+        const decoded = JSON.parse(atob(base642));
+        if (typeof decoded !== "object" || decoded === null)
+          return false;
+        if ("typ" in decoded && decoded?.typ !== "JWT")
+          return false;
+        if (!decoded.alg)
+          return false;
+        if (alg && decoded.alg !== alg)
+          return false;
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    function isValidCidr2(ip, version2) {
+      if ((version2 === "v4" || !version2) && ipv4CidrRegex2.test(ip)) {
+        return true;
+      }
+      if ((version2 === "v6" || !version2) && ipv6CidrRegex2.test(ip)) {
+        return true;
+      }
+      return false;
+    }
+    var ZodString3 = class _ZodString2 extends ZodType3 {
+      _parse(input) {
+        if (this._def.coerce) {
+          input.data = String(input.data);
+        }
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.string) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx2, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.string,
+            received: ctx2.parsedType
           });
-          if (calc) {
-            currentDate.add(parseInt(timeDelta, 10), unit);
-          }
-          if (momentFormat) {
-            return currentDate.format(momentFormat.substring(1).trim());
-          }
-          return currentDate.format(format);
-        }).replace(/{{\s*yesterday\s*}}/gi, date3.clone().subtract(1, "day").format(format)).replace(/{{\s*tomorrow\s*}}/gi, date3.clone().add(1, "d").format(format)));
-        app.foldManager.save(createdFile, IFoldInfo);
-        return createdFile;
-      } catch (err) {
-        console.error(`Failed to create file: '${normalizedPath}'`, err);
-        new obsidian.Notice("Unable to create new file.");
-      }
-    }
-    function getDailyNote2(date3, dailyNotes) {
-      return dailyNotes[getDateUID(date3, "day")] ?? null;
-    }
-    function getAllDailyNotes2() {
-      const { vault } = window.app;
-      const { folder } = getDailyNoteSettings2();
-      const dailyNotesFolder = vault.getAbstractFileByPath(obsidian.normalizePath(folder));
-      if (!dailyNotesFolder) {
-        throw new DailyNotesFolderMissingError("Failed to find daily notes folder");
-      }
-      const dailyNotes = {};
-      obsidian.Vault.recurseChildren(dailyNotesFolder, (note) => {
-        if (note instanceof obsidian.TFile) {
-          const date3 = getDateFromFile(note, "day");
-          if (date3) {
-            const dateString = getDateUID(date3, "day");
-            dailyNotes[dateString] = note;
+          return parseUtil_js_1.INVALID;
+        }
+        const status = new parseUtil_js_1.ParseStatus();
+        let ctx = void 0;
+        for (const check2 of this._def.checks) {
+          if (check2.kind === "min") {
+            if (input.data.length < check2.value) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.too_small,
+                minimum: check2.value,
+                type: "string",
+                inclusive: true,
+                exact: false,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "max") {
+            if (input.data.length > check2.value) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.too_big,
+                maximum: check2.value,
+                type: "string",
+                inclusive: true,
+                exact: false,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "length") {
+            const tooBig = input.data.length > check2.value;
+            const tooSmall = input.data.length < check2.value;
+            if (tooBig || tooSmall) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              if (tooBig) {
+                (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                  code: ZodError_js_1.ZodIssueCode.too_big,
+                  maximum: check2.value,
+                  type: "string",
+                  inclusive: true,
+                  exact: true,
+                  message: check2.message
+                });
+              } else if (tooSmall) {
+                (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                  code: ZodError_js_1.ZodIssueCode.too_small,
+                  minimum: check2.value,
+                  type: "string",
+                  inclusive: true,
+                  exact: true,
+                  message: check2.message
+                });
+              }
+              status.dirty();
+            }
+          } else if (check2.kind === "email") {
+            if (!emailRegex2.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "email",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "emoji") {
+            if (!emojiRegex3) {
+              emojiRegex3 = new RegExp(_emojiRegex2, "u");
+            }
+            if (!emojiRegex3.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "emoji",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "uuid") {
+            if (!uuidRegex2.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "uuid",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "nanoid") {
+            if (!nanoidRegex2.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "nanoid",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "cuid") {
+            if (!cuidRegex2.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "cuid",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "cuid2") {
+            if (!cuid2Regex2.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "cuid2",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "ulid") {
+            if (!ulidRegex2.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "ulid",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "url") {
+            try {
+              new URL(input.data);
+            } catch {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "url",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "regex") {
+            check2.regex.lastIndex = 0;
+            const testResult = check2.regex.test(input.data);
+            if (!testResult) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "regex",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "trim") {
+            input.data = input.data.trim();
+          } else if (check2.kind === "includes") {
+            if (!input.data.includes(check2.value, check2.position)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                validation: { includes: check2.value, position: check2.position },
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "toLowerCase") {
+            input.data = input.data.toLowerCase();
+          } else if (check2.kind === "toUpperCase") {
+            input.data = input.data.toUpperCase();
+          } else if (check2.kind === "startsWith") {
+            if (!input.data.startsWith(check2.value)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                validation: { startsWith: check2.value },
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "endsWith") {
+            if (!input.data.endsWith(check2.value)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                validation: { endsWith: check2.value },
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "datetime") {
+            const regex = datetimeRegex2(check2);
+            if (!regex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                validation: "datetime",
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "date") {
+            const regex = dateRegex2;
+            if (!regex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                validation: "date",
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "time") {
+            const regex = timeRegex2(check2);
+            if (!regex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                validation: "time",
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "duration") {
+            if (!durationRegex2.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "duration",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "ip") {
+            if (!isValidIP2(input.data, check2.version)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "ip",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "jwt") {
+            if (!isValidJWT3(input.data, check2.alg)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "jwt",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "cidr") {
+            if (!isValidCidr2(input.data, check2.version)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "cidr",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "base64") {
+            if (!base64Regex2.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "base64",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "base64url") {
+            if (!base64urlRegex2.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                validation: "base64url",
+                code: ZodError_js_1.ZodIssueCode.invalid_string,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else {
+            util_js_1.util.assertNever(check2);
           }
         }
+        return { status: status.value, value: input.data };
+      }
+      _regex(regex, validation, message) {
+        return this.refinement((data) => regex.test(data), {
+          validation,
+          code: ZodError_js_1.ZodIssueCode.invalid_string,
+          ...errorUtil_js_1.errorUtil.errToObj(message)
+        });
+      }
+      _addCheck(check2) {
+        return new _ZodString2({
+          ...this._def,
+          checks: [...this._def.checks, check2]
+        });
+      }
+      email(message) {
+        return this._addCheck({ kind: "email", ...errorUtil_js_1.errorUtil.errToObj(message) });
+      }
+      url(message) {
+        return this._addCheck({ kind: "url", ...errorUtil_js_1.errorUtil.errToObj(message) });
+      }
+      emoji(message) {
+        return this._addCheck({ kind: "emoji", ...errorUtil_js_1.errorUtil.errToObj(message) });
+      }
+      uuid(message) {
+        return this._addCheck({ kind: "uuid", ...errorUtil_js_1.errorUtil.errToObj(message) });
+      }
+      nanoid(message) {
+        return this._addCheck({ kind: "nanoid", ...errorUtil_js_1.errorUtil.errToObj(message) });
+      }
+      cuid(message) {
+        return this._addCheck({ kind: "cuid", ...errorUtil_js_1.errorUtil.errToObj(message) });
+      }
+      cuid2(message) {
+        return this._addCheck({ kind: "cuid2", ...errorUtil_js_1.errorUtil.errToObj(message) });
+      }
+      ulid(message) {
+        return this._addCheck({ kind: "ulid", ...errorUtil_js_1.errorUtil.errToObj(message) });
+      }
+      base64(message) {
+        return this._addCheck({ kind: "base64", ...errorUtil_js_1.errorUtil.errToObj(message) });
+      }
+      base64url(message) {
+        return this._addCheck({
+          kind: "base64url",
+          ...errorUtil_js_1.errorUtil.errToObj(message)
+        });
+      }
+      jwt(options) {
+        return this._addCheck({ kind: "jwt", ...errorUtil_js_1.errorUtil.errToObj(options) });
+      }
+      ip(options) {
+        return this._addCheck({ kind: "ip", ...errorUtil_js_1.errorUtil.errToObj(options) });
+      }
+      cidr(options) {
+        return this._addCheck({ kind: "cidr", ...errorUtil_js_1.errorUtil.errToObj(options) });
+      }
+      datetime(options) {
+        if (typeof options === "string") {
+          return this._addCheck({
+            kind: "datetime",
+            precision: null,
+            offset: false,
+            local: false,
+            message: options
+          });
+        }
+        return this._addCheck({
+          kind: "datetime",
+          precision: typeof options?.precision === "undefined" ? null : options?.precision,
+          offset: options?.offset ?? false,
+          local: options?.local ?? false,
+          ...errorUtil_js_1.errorUtil.errToObj(options?.message)
+        });
+      }
+      date(message) {
+        return this._addCheck({ kind: "date", message });
+      }
+      time(options) {
+        if (typeof options === "string") {
+          return this._addCheck({
+            kind: "time",
+            precision: null,
+            message: options
+          });
+        }
+        return this._addCheck({
+          kind: "time",
+          precision: typeof options?.precision === "undefined" ? null : options?.precision,
+          ...errorUtil_js_1.errorUtil.errToObj(options?.message)
+        });
+      }
+      duration(message) {
+        return this._addCheck({ kind: "duration", ...errorUtil_js_1.errorUtil.errToObj(message) });
+      }
+      regex(regex, message) {
+        return this._addCheck({
+          kind: "regex",
+          regex,
+          ...errorUtil_js_1.errorUtil.errToObj(message)
+        });
+      }
+      includes(value, options) {
+        return this._addCheck({
+          kind: "includes",
+          value,
+          position: options?.position,
+          ...errorUtil_js_1.errorUtil.errToObj(options?.message)
+        });
+      }
+      startsWith(value, message) {
+        return this._addCheck({
+          kind: "startsWith",
+          value,
+          ...errorUtil_js_1.errorUtil.errToObj(message)
+        });
+      }
+      endsWith(value, message) {
+        return this._addCheck({
+          kind: "endsWith",
+          value,
+          ...errorUtil_js_1.errorUtil.errToObj(message)
+        });
+      }
+      min(minLength, message) {
+        return this._addCheck({
+          kind: "min",
+          value: minLength,
+          ...errorUtil_js_1.errorUtil.errToObj(message)
+        });
+      }
+      max(maxLength, message) {
+        return this._addCheck({
+          kind: "max",
+          value: maxLength,
+          ...errorUtil_js_1.errorUtil.errToObj(message)
+        });
+      }
+      length(len, message) {
+        return this._addCheck({
+          kind: "length",
+          value: len,
+          ...errorUtil_js_1.errorUtil.errToObj(message)
+        });
+      }
+      /**
+       * Equivalent to `.min(1)`
+       */
+      nonempty(message) {
+        return this.min(1, errorUtil_js_1.errorUtil.errToObj(message));
+      }
+      trim() {
+        return new _ZodString2({
+          ...this._def,
+          checks: [...this._def.checks, { kind: "trim" }]
+        });
+      }
+      toLowerCase() {
+        return new _ZodString2({
+          ...this._def,
+          checks: [...this._def.checks, { kind: "toLowerCase" }]
+        });
+      }
+      toUpperCase() {
+        return new _ZodString2({
+          ...this._def,
+          checks: [...this._def.checks, { kind: "toUpperCase" }]
+        });
+      }
+      get isDatetime() {
+        return !!this._def.checks.find((ch) => ch.kind === "datetime");
+      }
+      get isDate() {
+        return !!this._def.checks.find((ch) => ch.kind === "date");
+      }
+      get isTime() {
+        return !!this._def.checks.find((ch) => ch.kind === "time");
+      }
+      get isDuration() {
+        return !!this._def.checks.find((ch) => ch.kind === "duration");
+      }
+      get isEmail() {
+        return !!this._def.checks.find((ch) => ch.kind === "email");
+      }
+      get isURL() {
+        return !!this._def.checks.find((ch) => ch.kind === "url");
+      }
+      get isEmoji() {
+        return !!this._def.checks.find((ch) => ch.kind === "emoji");
+      }
+      get isUUID() {
+        return !!this._def.checks.find((ch) => ch.kind === "uuid");
+      }
+      get isNANOID() {
+        return !!this._def.checks.find((ch) => ch.kind === "nanoid");
+      }
+      get isCUID() {
+        return !!this._def.checks.find((ch) => ch.kind === "cuid");
+      }
+      get isCUID2() {
+        return !!this._def.checks.find((ch) => ch.kind === "cuid2");
+      }
+      get isULID() {
+        return !!this._def.checks.find((ch) => ch.kind === "ulid");
+      }
+      get isIP() {
+        return !!this._def.checks.find((ch) => ch.kind === "ip");
+      }
+      get isCIDR() {
+        return !!this._def.checks.find((ch) => ch.kind === "cidr");
+      }
+      get isBase64() {
+        return !!this._def.checks.find((ch) => ch.kind === "base64");
+      }
+      get isBase64url() {
+        return !!this._def.checks.find((ch) => ch.kind === "base64url");
+      }
+      get minLength() {
+        let min = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "min") {
+            if (min === null || ch.value > min)
+              min = ch.value;
+          }
+        }
+        return min;
+      }
+      get maxLength() {
+        let max = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "max") {
+            if (max === null || ch.value < max)
+              max = ch.value;
+          }
+        }
+        return max;
+      }
+    };
+    exports2.ZodString = ZodString3;
+    ZodString3.create = (params) => {
+      return new ZodString3({
+        checks: [],
+        typeName: ZodFirstPartyTypeKind2.ZodString,
+        coerce: params?.coerce ?? false,
+        ...processCreateParams2(params)
       });
-      return dailyNotes;
-    }
-    var WeeklyNotesFolderMissingError = class extends Error {
     };
-    function getDaysOfWeek() {
-      const { moment } = window;
-      let weekStart = moment.localeData()._week.dow;
-      const daysOfWeek = [
-        "sunday",
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday"
-      ];
-      while (weekStart) {
-        daysOfWeek.push(daysOfWeek.shift());
-        weekStart--;
+    function floatSafeRemainder3(val, step) {
+      const valDecCount = (val.toString().split(".")[1] || "").length;
+      const stepDecCount = (step.toString().split(".")[1] || "").length;
+      const decCount = valDecCount > stepDecCount ? valDecCount : stepDecCount;
+      const valInt = Number.parseInt(val.toFixed(decCount).replace(".", ""));
+      const stepInt = Number.parseInt(step.toFixed(decCount).replace(".", ""));
+      return valInt % stepInt / 10 ** decCount;
+    }
+    var ZodNumber3 = class _ZodNumber extends ZodType3 {
+      constructor() {
+        super(...arguments);
+        this.min = this.gte;
+        this.max = this.lte;
+        this.step = this.multipleOf;
       }
-      return daysOfWeek;
-    }
-    function getDayOfWeekNumericalValue(dayOfWeekName) {
-      return getDaysOfWeek().indexOf(dayOfWeekName.toLowerCase());
-    }
-    async function createWeeklyNote2(date3) {
-      const { vault } = window.app;
-      const { template, format, folder } = getWeeklyNoteSettings2();
-      const [templateContents, IFoldInfo] = await getTemplateInfo(template);
-      const filename = date3.format(format);
-      const normalizedPath = await getNotePath(folder, filename);
-      try {
-        const createdFile = await vault.create(normalizedPath, templateContents.replace(/{{\s*(date|time)\s*(([+-]\d+)([yqmwdhs]))?\s*(:.+?)?}}/gi, (_2, _timeOrDate, calc, timeDelta, unit, momentFormat) => {
-          const now = window.moment();
-          const currentDate = date3.clone().set({
-            hour: now.get("hour"),
-            minute: now.get("minute"),
-            second: now.get("second")
+      _parse(input) {
+        if (this._def.coerce) {
+          input.data = Number(input.data);
+        }
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.number) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx2, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.number,
+            received: ctx2.parsedType
           });
-          if (calc) {
-            currentDate.add(parseInt(timeDelta, 10), unit);
+          return parseUtil_js_1.INVALID;
+        }
+        let ctx = void 0;
+        const status = new parseUtil_js_1.ParseStatus();
+        for (const check2 of this._def.checks) {
+          if (check2.kind === "int") {
+            if (!util_js_1.util.isInteger(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.invalid_type,
+                expected: "integer",
+                received: "float",
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "min") {
+            const tooSmall = check2.inclusive ? input.data < check2.value : input.data <= check2.value;
+            if (tooSmall) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.too_small,
+                minimum: check2.value,
+                type: "number",
+                inclusive: check2.inclusive,
+                exact: false,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "max") {
+            const tooBig = check2.inclusive ? input.data > check2.value : input.data >= check2.value;
+            if (tooBig) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.too_big,
+                maximum: check2.value,
+                type: "number",
+                inclusive: check2.inclusive,
+                exact: false,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "multipleOf") {
+            if (floatSafeRemainder3(input.data, check2.value) !== 0) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.not_multiple_of,
+                multipleOf: check2.value,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "finite") {
+            if (!Number.isFinite(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.not_finite,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else {
+            util_js_1.util.assertNever(check2);
           }
-          if (momentFormat) {
-            return currentDate.format(momentFormat.substring(1).trim());
+        }
+        return { status: status.value, value: input.data };
+      }
+      gte(value, message) {
+        return this.setLimit("min", value, true, errorUtil_js_1.errorUtil.toString(message));
+      }
+      gt(value, message) {
+        return this.setLimit("min", value, false, errorUtil_js_1.errorUtil.toString(message));
+      }
+      lte(value, message) {
+        return this.setLimit("max", value, true, errorUtil_js_1.errorUtil.toString(message));
+      }
+      lt(value, message) {
+        return this.setLimit("max", value, false, errorUtil_js_1.errorUtil.toString(message));
+      }
+      setLimit(kind, value, inclusive, message) {
+        return new _ZodNumber({
+          ...this._def,
+          checks: [
+            ...this._def.checks,
+            {
+              kind,
+              value,
+              inclusive,
+              message: errorUtil_js_1.errorUtil.toString(message)
+            }
+          ]
+        });
+      }
+      _addCheck(check2) {
+        return new _ZodNumber({
+          ...this._def,
+          checks: [...this._def.checks, check2]
+        });
+      }
+      int(message) {
+        return this._addCheck({
+          kind: "int",
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      positive(message) {
+        return this._addCheck({
+          kind: "min",
+          value: 0,
+          inclusive: false,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      negative(message) {
+        return this._addCheck({
+          kind: "max",
+          value: 0,
+          inclusive: false,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      nonpositive(message) {
+        return this._addCheck({
+          kind: "max",
+          value: 0,
+          inclusive: true,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      nonnegative(message) {
+        return this._addCheck({
+          kind: "min",
+          value: 0,
+          inclusive: true,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      multipleOf(value, message) {
+        return this._addCheck({
+          kind: "multipleOf",
+          value,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      finite(message) {
+        return this._addCheck({
+          kind: "finite",
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      safe(message) {
+        return this._addCheck({
+          kind: "min",
+          inclusive: true,
+          value: Number.MIN_SAFE_INTEGER,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        })._addCheck({
+          kind: "max",
+          inclusive: true,
+          value: Number.MAX_SAFE_INTEGER,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      get minValue() {
+        let min = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "min") {
+            if (min === null || ch.value > min)
+              min = ch.value;
           }
-          return currentDate.format(format);
-        }).replace(/{{\s*title\s*}}/gi, filename).replace(/{{\s*time\s*}}/gi, window.moment().format("HH:mm")).replace(/{{\s*(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s*:(.*?)}}/gi, (_2, dayOfWeek, momentFormat) => {
-          const day = getDayOfWeekNumericalValue(dayOfWeek);
-          return date3.weekday(day).format(momentFormat.trim());
+        }
+        return min;
+      }
+      get maxValue() {
+        let max = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "max") {
+            if (max === null || ch.value < max)
+              max = ch.value;
+          }
+        }
+        return max;
+      }
+      get isInt() {
+        return !!this._def.checks.find((ch) => ch.kind === "int" || ch.kind === "multipleOf" && util_js_1.util.isInteger(ch.value));
+      }
+      get isFinite() {
+        let max = null;
+        let min = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "finite" || ch.kind === "int" || ch.kind === "multipleOf") {
+            return true;
+          } else if (ch.kind === "min") {
+            if (min === null || ch.value > min)
+              min = ch.value;
+          } else if (ch.kind === "max") {
+            if (max === null || ch.value < max)
+              max = ch.value;
+          }
+        }
+        return Number.isFinite(min) && Number.isFinite(max);
+      }
+    };
+    exports2.ZodNumber = ZodNumber3;
+    ZodNumber3.create = (params) => {
+      return new ZodNumber3({
+        checks: [],
+        typeName: ZodFirstPartyTypeKind2.ZodNumber,
+        coerce: params?.coerce || false,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodBigInt2 = class _ZodBigInt extends ZodType3 {
+      constructor() {
+        super(...arguments);
+        this.min = this.gte;
+        this.max = this.lte;
+      }
+      _parse(input) {
+        if (this._def.coerce) {
+          try {
+            input.data = BigInt(input.data);
+          } catch {
+            return this._getInvalidInput(input);
+          }
+        }
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.bigint) {
+          return this._getInvalidInput(input);
+        }
+        let ctx = void 0;
+        const status = new parseUtil_js_1.ParseStatus();
+        for (const check2 of this._def.checks) {
+          if (check2.kind === "min") {
+            const tooSmall = check2.inclusive ? input.data < check2.value : input.data <= check2.value;
+            if (tooSmall) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.too_small,
+                type: "bigint",
+                minimum: check2.value,
+                inclusive: check2.inclusive,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "max") {
+            const tooBig = check2.inclusive ? input.data > check2.value : input.data >= check2.value;
+            if (tooBig) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.too_big,
+                type: "bigint",
+                maximum: check2.value,
+                inclusive: check2.inclusive,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "multipleOf") {
+            if (input.data % check2.value !== BigInt(0)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.not_multiple_of,
+                multipleOf: check2.value,
+                message: check2.message
+              });
+              status.dirty();
+            }
+          } else {
+            util_js_1.util.assertNever(check2);
+          }
+        }
+        return { status: status.value, value: input.data };
+      }
+      _getInvalidInput(input) {
+        const ctx = this._getOrReturnCtx(input);
+        (0, parseUtil_js_1.addIssueToContext)(ctx, {
+          code: ZodError_js_1.ZodIssueCode.invalid_type,
+          expected: util_js_1.ZodParsedType.bigint,
+          received: ctx.parsedType
+        });
+        return parseUtil_js_1.INVALID;
+      }
+      gte(value, message) {
+        return this.setLimit("min", value, true, errorUtil_js_1.errorUtil.toString(message));
+      }
+      gt(value, message) {
+        return this.setLimit("min", value, false, errorUtil_js_1.errorUtil.toString(message));
+      }
+      lte(value, message) {
+        return this.setLimit("max", value, true, errorUtil_js_1.errorUtil.toString(message));
+      }
+      lt(value, message) {
+        return this.setLimit("max", value, false, errorUtil_js_1.errorUtil.toString(message));
+      }
+      setLimit(kind, value, inclusive, message) {
+        return new _ZodBigInt({
+          ...this._def,
+          checks: [
+            ...this._def.checks,
+            {
+              kind,
+              value,
+              inclusive,
+              message: errorUtil_js_1.errorUtil.toString(message)
+            }
+          ]
+        });
+      }
+      _addCheck(check2) {
+        return new _ZodBigInt({
+          ...this._def,
+          checks: [...this._def.checks, check2]
+        });
+      }
+      positive(message) {
+        return this._addCheck({
+          kind: "min",
+          value: BigInt(0),
+          inclusive: false,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      negative(message) {
+        return this._addCheck({
+          kind: "max",
+          value: BigInt(0),
+          inclusive: false,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      nonpositive(message) {
+        return this._addCheck({
+          kind: "max",
+          value: BigInt(0),
+          inclusive: true,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      nonnegative(message) {
+        return this._addCheck({
+          kind: "min",
+          value: BigInt(0),
+          inclusive: true,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      multipleOf(value, message) {
+        return this._addCheck({
+          kind: "multipleOf",
+          value,
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      get minValue() {
+        let min = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "min") {
+            if (min === null || ch.value > min)
+              min = ch.value;
+          }
+        }
+        return min;
+      }
+      get maxValue() {
+        let max = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "max") {
+            if (max === null || ch.value < max)
+              max = ch.value;
+          }
+        }
+        return max;
+      }
+    };
+    exports2.ZodBigInt = ZodBigInt2;
+    ZodBigInt2.create = (params) => {
+      return new ZodBigInt2({
+        checks: [],
+        typeName: ZodFirstPartyTypeKind2.ZodBigInt,
+        coerce: params?.coerce ?? false,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodBoolean3 = class extends ZodType3 {
+      _parse(input) {
+        if (this._def.coerce) {
+          input.data = Boolean(input.data);
+        }
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.boolean) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.boolean,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        return (0, parseUtil_js_1.OK)(input.data);
+      }
+    };
+    exports2.ZodBoolean = ZodBoolean3;
+    ZodBoolean3.create = (params) => {
+      return new ZodBoolean3({
+        typeName: ZodFirstPartyTypeKind2.ZodBoolean,
+        coerce: params?.coerce || false,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodDate2 = class _ZodDate extends ZodType3 {
+      _parse(input) {
+        if (this._def.coerce) {
+          input.data = new Date(input.data);
+        }
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.date) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx2, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.date,
+            received: ctx2.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        if (Number.isNaN(input.data.getTime())) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx2, {
+            code: ZodError_js_1.ZodIssueCode.invalid_date
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        const status = new parseUtil_js_1.ParseStatus();
+        let ctx = void 0;
+        for (const check2 of this._def.checks) {
+          if (check2.kind === "min") {
+            if (input.data.getTime() < check2.value) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.too_small,
+                message: check2.message,
+                inclusive: true,
+                exact: false,
+                minimum: check2.value,
+                type: "date"
+              });
+              status.dirty();
+            }
+          } else if (check2.kind === "max") {
+            if (input.data.getTime() > check2.value) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.too_big,
+                message: check2.message,
+                inclusive: true,
+                exact: false,
+                maximum: check2.value,
+                type: "date"
+              });
+              status.dirty();
+            }
+          } else {
+            util_js_1.util.assertNever(check2);
+          }
+        }
+        return {
+          status: status.value,
+          value: new Date(input.data.getTime())
+        };
+      }
+      _addCheck(check2) {
+        return new _ZodDate({
+          ...this._def,
+          checks: [...this._def.checks, check2]
+        });
+      }
+      min(minDate, message) {
+        return this._addCheck({
+          kind: "min",
+          value: minDate.getTime(),
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      max(maxDate, message) {
+        return this._addCheck({
+          kind: "max",
+          value: maxDate.getTime(),
+          message: errorUtil_js_1.errorUtil.toString(message)
+        });
+      }
+      get minDate() {
+        let min = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "min") {
+            if (min === null || ch.value > min)
+              min = ch.value;
+          }
+        }
+        return min != null ? new Date(min) : null;
+      }
+      get maxDate() {
+        let max = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "max") {
+            if (max === null || ch.value < max)
+              max = ch.value;
+          }
+        }
+        return max != null ? new Date(max) : null;
+      }
+    };
+    exports2.ZodDate = ZodDate2;
+    ZodDate2.create = (params) => {
+      return new ZodDate2({
+        checks: [],
+        coerce: params?.coerce || false,
+        typeName: ZodFirstPartyTypeKind2.ZodDate,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodSymbol2 = class extends ZodType3 {
+      _parse(input) {
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.symbol) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.symbol,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        return (0, parseUtil_js_1.OK)(input.data);
+      }
+    };
+    exports2.ZodSymbol = ZodSymbol2;
+    ZodSymbol2.create = (params) => {
+      return new ZodSymbol2({
+        typeName: ZodFirstPartyTypeKind2.ZodSymbol,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodUndefined2 = class extends ZodType3 {
+      _parse(input) {
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.undefined) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.undefined,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        return (0, parseUtil_js_1.OK)(input.data);
+      }
+    };
+    exports2.ZodUndefined = ZodUndefined2;
+    ZodUndefined2.create = (params) => {
+      return new ZodUndefined2({
+        typeName: ZodFirstPartyTypeKind2.ZodUndefined,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodNull3 = class extends ZodType3 {
+      _parse(input) {
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.null) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.null,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        return (0, parseUtil_js_1.OK)(input.data);
+      }
+    };
+    exports2.ZodNull = ZodNull3;
+    ZodNull3.create = (params) => {
+      return new ZodNull3({
+        typeName: ZodFirstPartyTypeKind2.ZodNull,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodAny2 = class extends ZodType3 {
+      constructor() {
+        super(...arguments);
+        this._any = true;
+      }
+      _parse(input) {
+        return (0, parseUtil_js_1.OK)(input.data);
+      }
+    };
+    exports2.ZodAny = ZodAny2;
+    ZodAny2.create = (params) => {
+      return new ZodAny2({
+        typeName: ZodFirstPartyTypeKind2.ZodAny,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodUnknown3 = class extends ZodType3 {
+      constructor() {
+        super(...arguments);
+        this._unknown = true;
+      }
+      _parse(input) {
+        return (0, parseUtil_js_1.OK)(input.data);
+      }
+    };
+    exports2.ZodUnknown = ZodUnknown3;
+    ZodUnknown3.create = (params) => {
+      return new ZodUnknown3({
+        typeName: ZodFirstPartyTypeKind2.ZodUnknown,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodNever3 = class extends ZodType3 {
+      _parse(input) {
+        const ctx = this._getOrReturnCtx(input);
+        (0, parseUtil_js_1.addIssueToContext)(ctx, {
+          code: ZodError_js_1.ZodIssueCode.invalid_type,
+          expected: util_js_1.ZodParsedType.never,
+          received: ctx.parsedType
+        });
+        return parseUtil_js_1.INVALID;
+      }
+    };
+    exports2.ZodNever = ZodNever3;
+    ZodNever3.create = (params) => {
+      return new ZodNever3({
+        typeName: ZodFirstPartyTypeKind2.ZodNever,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodVoid2 = class extends ZodType3 {
+      _parse(input) {
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.undefined) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.void,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        return (0, parseUtil_js_1.OK)(input.data);
+      }
+    };
+    exports2.ZodVoid = ZodVoid2;
+    ZodVoid2.create = (params) => {
+      return new ZodVoid2({
+        typeName: ZodFirstPartyTypeKind2.ZodVoid,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodArray3 = class _ZodArray extends ZodType3 {
+      _parse(input) {
+        const { ctx, status } = this._processInputParams(input);
+        const def = this._def;
+        if (ctx.parsedType !== util_js_1.ZodParsedType.array) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.array,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        if (def.exactLength !== null) {
+          const tooBig = ctx.data.length > def.exactLength.value;
+          const tooSmall = ctx.data.length < def.exactLength.value;
+          if (tooBig || tooSmall) {
+            (0, parseUtil_js_1.addIssueToContext)(ctx, {
+              code: tooBig ? ZodError_js_1.ZodIssueCode.too_big : ZodError_js_1.ZodIssueCode.too_small,
+              minimum: tooSmall ? def.exactLength.value : void 0,
+              maximum: tooBig ? def.exactLength.value : void 0,
+              type: "array",
+              inclusive: true,
+              exact: true,
+              message: def.exactLength.message
+            });
+            status.dirty();
+          }
+        }
+        if (def.minLength !== null) {
+          if (ctx.data.length < def.minLength.value) {
+            (0, parseUtil_js_1.addIssueToContext)(ctx, {
+              code: ZodError_js_1.ZodIssueCode.too_small,
+              minimum: def.minLength.value,
+              type: "array",
+              inclusive: true,
+              exact: false,
+              message: def.minLength.message
+            });
+            status.dirty();
+          }
+        }
+        if (def.maxLength !== null) {
+          if (ctx.data.length > def.maxLength.value) {
+            (0, parseUtil_js_1.addIssueToContext)(ctx, {
+              code: ZodError_js_1.ZodIssueCode.too_big,
+              maximum: def.maxLength.value,
+              type: "array",
+              inclusive: true,
+              exact: false,
+              message: def.maxLength.message
+            });
+            status.dirty();
+          }
+        }
+        if (ctx.common.async) {
+          return Promise.all([...ctx.data].map((item, i) => {
+            return def.type._parseAsync(new ParseInputLazyPath2(ctx, item, ctx.path, i));
+          })).then((result2) => {
+            return parseUtil_js_1.ParseStatus.mergeArray(status, result2);
+          });
+        }
+        const result = [...ctx.data].map((item, i) => {
+          return def.type._parseSync(new ParseInputLazyPath2(ctx, item, ctx.path, i));
+        });
+        return parseUtil_js_1.ParseStatus.mergeArray(status, result);
+      }
+      get element() {
+        return this._def.type;
+      }
+      min(minLength, message) {
+        return new _ZodArray({
+          ...this._def,
+          minLength: { value: minLength, message: errorUtil_js_1.errorUtil.toString(message) }
+        });
+      }
+      max(maxLength, message) {
+        return new _ZodArray({
+          ...this._def,
+          maxLength: { value: maxLength, message: errorUtil_js_1.errorUtil.toString(message) }
+        });
+      }
+      length(len, message) {
+        return new _ZodArray({
+          ...this._def,
+          exactLength: { value: len, message: errorUtil_js_1.errorUtil.toString(message) }
+        });
+      }
+      nonempty(message) {
+        return this.min(1, message);
+      }
+    };
+    exports2.ZodArray = ZodArray3;
+    ZodArray3.create = (schema, params) => {
+      return new ZodArray3({
+        type: schema,
+        minLength: null,
+        maxLength: null,
+        exactLength: null,
+        typeName: ZodFirstPartyTypeKind2.ZodArray,
+        ...processCreateParams2(params)
+      });
+    };
+    function deepPartialify2(schema) {
+      if (schema instanceof ZodObject3) {
+        const newShape = {};
+        for (const key in schema.shape) {
+          const fieldSchema = schema.shape[key];
+          newShape[key] = ZodOptional3.create(deepPartialify2(fieldSchema));
+        }
+        return new ZodObject3({
+          ...schema._def,
+          shape: () => newShape
+        });
+      } else if (schema instanceof ZodArray3) {
+        return new ZodArray3({
+          ...schema._def,
+          type: deepPartialify2(schema.element)
+        });
+      } else if (schema instanceof ZodOptional3) {
+        return ZodOptional3.create(deepPartialify2(schema.unwrap()));
+      } else if (schema instanceof ZodNullable3) {
+        return ZodNullable3.create(deepPartialify2(schema.unwrap()));
+      } else if (schema instanceof ZodTuple2) {
+        return ZodTuple2.create(schema.items.map((item) => deepPartialify2(item)));
+      } else {
+        return schema;
+      }
+    }
+    var ZodObject3 = class _ZodObject extends ZodType3 {
+      constructor() {
+        super(...arguments);
+        this._cached = null;
+        this.nonstrict = this.passthrough;
+        this.augment = this.extend;
+      }
+      _getCached() {
+        if (this._cached !== null)
+          return this._cached;
+        const shape = this._def.shape();
+        const keys = util_js_1.util.objectKeys(shape);
+        this._cached = { shape, keys };
+        return this._cached;
+      }
+      _parse(input) {
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.object) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx2, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.object,
+            received: ctx2.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        const { status, ctx } = this._processInputParams(input);
+        const { shape, keys: shapeKeys } = this._getCached();
+        const extraKeys = [];
+        if (!(this._def.catchall instanceof ZodNever3 && this._def.unknownKeys === "strip")) {
+          for (const key in ctx.data) {
+            if (!shapeKeys.includes(key)) {
+              extraKeys.push(key);
+            }
+          }
+        }
+        const pairs = [];
+        for (const key of shapeKeys) {
+          const keyValidator = shape[key];
+          const value = ctx.data[key];
+          pairs.push({
+            key: { status: "valid", value: key },
+            value: keyValidator._parse(new ParseInputLazyPath2(ctx, value, ctx.path, key)),
+            alwaysSet: key in ctx.data
+          });
+        }
+        if (this._def.catchall instanceof ZodNever3) {
+          const unknownKeys = this._def.unknownKeys;
+          if (unknownKeys === "passthrough") {
+            for (const key of extraKeys) {
+              pairs.push({
+                key: { status: "valid", value: key },
+                value: { status: "valid", value: ctx.data[key] }
+              });
+            }
+          } else if (unknownKeys === "strict") {
+            if (extraKeys.length > 0) {
+              (0, parseUtil_js_1.addIssueToContext)(ctx, {
+                code: ZodError_js_1.ZodIssueCode.unrecognized_keys,
+                keys: extraKeys
+              });
+              status.dirty();
+            }
+          } else if (unknownKeys === "strip") {
+          } else {
+            throw new Error(`Internal ZodObject error: invalid unknownKeys value.`);
+          }
+        } else {
+          const catchall = this._def.catchall;
+          for (const key of extraKeys) {
+            const value = ctx.data[key];
+            pairs.push({
+              key: { status: "valid", value: key },
+              value: catchall._parse(
+                new ParseInputLazyPath2(ctx, value, ctx.path, key)
+                //, ctx.child(key), value, getParsedType(value)
+              ),
+              alwaysSet: key in ctx.data
+            });
+          }
+        }
+        if (ctx.common.async) {
+          return Promise.resolve().then(async () => {
+            const syncPairs = [];
+            for (const pair of pairs) {
+              const key = await pair.key;
+              const value = await pair.value;
+              syncPairs.push({
+                key,
+                value,
+                alwaysSet: pair.alwaysSet
+              });
+            }
+            return syncPairs;
+          }).then((syncPairs) => {
+            return parseUtil_js_1.ParseStatus.mergeObjectSync(status, syncPairs);
+          });
+        } else {
+          return parseUtil_js_1.ParseStatus.mergeObjectSync(status, pairs);
+        }
+      }
+      get shape() {
+        return this._def.shape();
+      }
+      strict(message) {
+        errorUtil_js_1.errorUtil.errToObj;
+        return new _ZodObject({
+          ...this._def,
+          unknownKeys: "strict",
+          ...message !== void 0 ? {
+            errorMap: (issue2, ctx) => {
+              const defaultError = this._def.errorMap?.(issue2, ctx).message ?? ctx.defaultError;
+              if (issue2.code === "unrecognized_keys")
+                return {
+                  message: errorUtil_js_1.errorUtil.errToObj(message).message ?? defaultError
+                };
+              return {
+                message: defaultError
+              };
+            }
+          } : {}
+        });
+      }
+      strip() {
+        return new _ZodObject({
+          ...this._def,
+          unknownKeys: "strip"
+        });
+      }
+      passthrough() {
+        return new _ZodObject({
+          ...this._def,
+          unknownKeys: "passthrough"
+        });
+      }
+      // const AugmentFactory =
+      //   <Def extends ZodObjectDef>(def: Def) =>
+      //   <Augmentation extends ZodRawShape>(
+      //     augmentation: Augmentation
+      //   ): ZodObject<
+      //     extendShape<ReturnType<Def["shape"]>, Augmentation>,
+      //     Def["unknownKeys"],
+      //     Def["catchall"]
+      //   > => {
+      //     return new ZodObject({
+      //       ...def,
+      //       shape: () => ({
+      //         ...def.shape(),
+      //         ...augmentation,
+      //       }),
+      //     }) as any;
+      //   };
+      extend(augmentation) {
+        return new _ZodObject({
+          ...this._def,
+          shape: () => ({
+            ...this._def.shape(),
+            ...augmentation
+          })
+        });
+      }
+      /**
+       * Prior to zod@1.0.12 there was a bug in the
+       * inferred type of merged objects. Please
+       * upgrade if you are experiencing issues.
+       */
+      merge(merging) {
+        const merged = new _ZodObject({
+          unknownKeys: merging._def.unknownKeys,
+          catchall: merging._def.catchall,
+          shape: () => ({
+            ...this._def.shape(),
+            ...merging._def.shape()
+          }),
+          typeName: ZodFirstPartyTypeKind2.ZodObject
+        });
+        return merged;
+      }
+      // merge<
+      //   Incoming extends AnyZodObject,
+      //   Augmentation extends Incoming["shape"],
+      //   NewOutput extends {
+      //     [k in keyof Augmentation | keyof Output]: k extends keyof Augmentation
+      //       ? Augmentation[k]["_output"]
+      //       : k extends keyof Output
+      //       ? Output[k]
+      //       : never;
+      //   },
+      //   NewInput extends {
+      //     [k in keyof Augmentation | keyof Input]: k extends keyof Augmentation
+      //       ? Augmentation[k]["_input"]
+      //       : k extends keyof Input
+      //       ? Input[k]
+      //       : never;
+      //   }
+      // >(
+      //   merging: Incoming
+      // ): ZodObject<
+      //   extendShape<T, ReturnType<Incoming["_def"]["shape"]>>,
+      //   Incoming["_def"]["unknownKeys"],
+      //   Incoming["_def"]["catchall"],
+      //   NewOutput,
+      //   NewInput
+      // > {
+      //   const merged: any = new ZodObject({
+      //     unknownKeys: merging._def.unknownKeys,
+      //     catchall: merging._def.catchall,
+      //     shape: () =>
+      //       objectUtil.mergeShapes(this._def.shape(), merging._def.shape()),
+      //     typeName: ZodFirstPartyTypeKind.ZodObject,
+      //   }) as any;
+      //   return merged;
+      // }
+      setKey(key, schema) {
+        return this.augment({ [key]: schema });
+      }
+      // merge<Incoming extends AnyZodObject>(
+      //   merging: Incoming
+      // ): //ZodObject<T & Incoming["_shape"], UnknownKeys, Catchall> = (merging) => {
+      // ZodObject<
+      //   extendShape<T, ReturnType<Incoming["_def"]["shape"]>>,
+      //   Incoming["_def"]["unknownKeys"],
+      //   Incoming["_def"]["catchall"]
+      // > {
+      //   // const mergedShape = objectUtil.mergeShapes(
+      //   //   this._def.shape(),
+      //   //   merging._def.shape()
+      //   // );
+      //   const merged: any = new ZodObject({
+      //     unknownKeys: merging._def.unknownKeys,
+      //     catchall: merging._def.catchall,
+      //     shape: () =>
+      //       objectUtil.mergeShapes(this._def.shape(), merging._def.shape()),
+      //     typeName: ZodFirstPartyTypeKind.ZodObject,
+      //   }) as any;
+      //   return merged;
+      // }
+      catchall(index) {
+        return new _ZodObject({
+          ...this._def,
+          catchall: index
+        });
+      }
+      pick(mask) {
+        const shape = {};
+        for (const key of util_js_1.util.objectKeys(mask)) {
+          if (mask[key] && this.shape[key]) {
+            shape[key] = this.shape[key];
+          }
+        }
+        return new _ZodObject({
+          ...this._def,
+          shape: () => shape
+        });
+      }
+      omit(mask) {
+        const shape = {};
+        for (const key of util_js_1.util.objectKeys(this.shape)) {
+          if (!mask[key]) {
+            shape[key] = this.shape[key];
+          }
+        }
+        return new _ZodObject({
+          ...this._def,
+          shape: () => shape
+        });
+      }
+      /**
+       * @deprecated
+       */
+      deepPartial() {
+        return deepPartialify2(this);
+      }
+      partial(mask) {
+        const newShape = {};
+        for (const key of util_js_1.util.objectKeys(this.shape)) {
+          const fieldSchema = this.shape[key];
+          if (mask && !mask[key]) {
+            newShape[key] = fieldSchema;
+          } else {
+            newShape[key] = fieldSchema.optional();
+          }
+        }
+        return new _ZodObject({
+          ...this._def,
+          shape: () => newShape
+        });
+      }
+      required(mask) {
+        const newShape = {};
+        for (const key of util_js_1.util.objectKeys(this.shape)) {
+          if (mask && !mask[key]) {
+            newShape[key] = this.shape[key];
+          } else {
+            const fieldSchema = this.shape[key];
+            let newField = fieldSchema;
+            while (newField instanceof ZodOptional3) {
+              newField = newField._def.innerType;
+            }
+            newShape[key] = newField;
+          }
+        }
+        return new _ZodObject({
+          ...this._def,
+          shape: () => newShape
+        });
+      }
+      keyof() {
+        return createZodEnum2(util_js_1.util.objectKeys(this.shape));
+      }
+    };
+    exports2.ZodObject = ZodObject3;
+    ZodObject3.create = (shape, params) => {
+      return new ZodObject3({
+        shape: () => shape,
+        unknownKeys: "strip",
+        catchall: ZodNever3.create(),
+        typeName: ZodFirstPartyTypeKind2.ZodObject,
+        ...processCreateParams2(params)
+      });
+    };
+    ZodObject3.strictCreate = (shape, params) => {
+      return new ZodObject3({
+        shape: () => shape,
+        unknownKeys: "strict",
+        catchall: ZodNever3.create(),
+        typeName: ZodFirstPartyTypeKind2.ZodObject,
+        ...processCreateParams2(params)
+      });
+    };
+    ZodObject3.lazycreate = (shape, params) => {
+      return new ZodObject3({
+        shape,
+        unknownKeys: "strip",
+        catchall: ZodNever3.create(),
+        typeName: ZodFirstPartyTypeKind2.ZodObject,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodUnion3 = class extends ZodType3 {
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        const options = this._def.options;
+        function handleResults(results) {
+          for (const result of results) {
+            if (result.result.status === "valid") {
+              return result.result;
+            }
+          }
+          for (const result of results) {
+            if (result.result.status === "dirty") {
+              ctx.common.issues.push(...result.ctx.common.issues);
+              return result.result;
+            }
+          }
+          const unionErrors = results.map((result) => new ZodError_js_1.ZodError(result.ctx.common.issues));
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_union,
+            unionErrors
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        if (ctx.common.async) {
+          return Promise.all(options.map(async (option) => {
+            const childCtx = {
+              ...ctx,
+              common: {
+                ...ctx.common,
+                issues: []
+              },
+              parent: null
+            };
+            return {
+              result: await option._parseAsync({
+                data: ctx.data,
+                path: ctx.path,
+                parent: childCtx
+              }),
+              ctx: childCtx
+            };
+          })).then(handleResults);
+        } else {
+          let dirty = void 0;
+          const issues = [];
+          for (const option of options) {
+            const childCtx = {
+              ...ctx,
+              common: {
+                ...ctx.common,
+                issues: []
+              },
+              parent: null
+            };
+            const result = option._parseSync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: childCtx
+            });
+            if (result.status === "valid") {
+              return result;
+            } else if (result.status === "dirty" && !dirty) {
+              dirty = { result, ctx: childCtx };
+            }
+            if (childCtx.common.issues.length) {
+              issues.push(childCtx.common.issues);
+            }
+          }
+          if (dirty) {
+            ctx.common.issues.push(...dirty.ctx.common.issues);
+            return dirty.result;
+          }
+          const unionErrors = issues.map((issues2) => new ZodError_js_1.ZodError(issues2));
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_union,
+            unionErrors
+          });
+          return parseUtil_js_1.INVALID;
+        }
+      }
+      get options() {
+        return this._def.options;
+      }
+    };
+    exports2.ZodUnion = ZodUnion3;
+    ZodUnion3.create = (types, params) => {
+      return new ZodUnion3({
+        options: types,
+        typeName: ZodFirstPartyTypeKind2.ZodUnion,
+        ...processCreateParams2(params)
+      });
+    };
+    var getDiscriminator2 = (type) => {
+      if (type instanceof ZodLazy2) {
+        return getDiscriminator2(type.schema);
+      } else if (type instanceof ZodEffects2) {
+        return getDiscriminator2(type.innerType());
+      } else if (type instanceof ZodLiteral3) {
+        return [type.value];
+      } else if (type instanceof ZodEnum3) {
+        return type.options;
+      } else if (type instanceof ZodNativeEnum2) {
+        return util_js_1.util.objectValues(type.enum);
+      } else if (type instanceof ZodDefault3) {
+        return getDiscriminator2(type._def.innerType);
+      } else if (type instanceof ZodUndefined2) {
+        return [void 0];
+      } else if (type instanceof ZodNull3) {
+        return [null];
+      } else if (type instanceof ZodOptional3) {
+        return [void 0, ...getDiscriminator2(type.unwrap())];
+      } else if (type instanceof ZodNullable3) {
+        return [null, ...getDiscriminator2(type.unwrap())];
+      } else if (type instanceof ZodBranded2) {
+        return getDiscriminator2(type.unwrap());
+      } else if (type instanceof ZodReadonly3) {
+        return getDiscriminator2(type.unwrap());
+      } else if (type instanceof ZodCatch3) {
+        return getDiscriminator2(type._def.innerType);
+      } else {
+        return [];
+      }
+    };
+    var ZodDiscriminatedUnion3 = class _ZodDiscriminatedUnion extends ZodType3 {
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_js_1.ZodParsedType.object) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.object,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        const discriminator = this.discriminator;
+        const discriminatorValue = ctx.data[discriminator];
+        const option = this.optionsMap.get(discriminatorValue);
+        if (!option) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_union_discriminator,
+            options: Array.from(this.optionsMap.keys()),
+            path: [discriminator]
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        if (ctx.common.async) {
+          return option._parseAsync({
+            data: ctx.data,
+            path: ctx.path,
+            parent: ctx
+          });
+        } else {
+          return option._parseSync({
+            data: ctx.data,
+            path: ctx.path,
+            parent: ctx
+          });
+        }
+      }
+      get discriminator() {
+        return this._def.discriminator;
+      }
+      get options() {
+        return this._def.options;
+      }
+      get optionsMap() {
+        return this._def.optionsMap;
+      }
+      /**
+       * The constructor of the discriminated union schema. Its behaviour is very similar to that of the normal z.union() constructor.
+       * However, it only allows a union of objects, all of which need to share a discriminator property. This property must
+       * have a different value for each object in the union.
+       * @param discriminator the name of the discriminator property
+       * @param types an array of object schemas
+       * @param params
+       */
+      static create(discriminator, options, params) {
+        const optionsMap = /* @__PURE__ */ new Map();
+        for (const type of options) {
+          const discriminatorValues = getDiscriminator2(type.shape[discriminator]);
+          if (!discriminatorValues.length) {
+            throw new Error(`A discriminator value for key \`${discriminator}\` could not be extracted from all schema options`);
+          }
+          for (const value of discriminatorValues) {
+            if (optionsMap.has(value)) {
+              throw new Error(`Discriminator property ${String(discriminator)} has duplicate value ${String(value)}`);
+            }
+            optionsMap.set(value, type);
+          }
+        }
+        return new _ZodDiscriminatedUnion({
+          typeName: ZodFirstPartyTypeKind2.ZodDiscriminatedUnion,
+          discriminator,
+          options,
+          optionsMap,
+          ...processCreateParams2(params)
+        });
+      }
+    };
+    exports2.ZodDiscriminatedUnion = ZodDiscriminatedUnion3;
+    function mergeValues3(a, b2) {
+      const aType = (0, util_js_1.getParsedType)(a);
+      const bType = (0, util_js_1.getParsedType)(b2);
+      if (a === b2) {
+        return { valid: true, data: a };
+      } else if (aType === util_js_1.ZodParsedType.object && bType === util_js_1.ZodParsedType.object) {
+        const bKeys = util_js_1.util.objectKeys(b2);
+        const sharedKeys = util_js_1.util.objectKeys(a).filter((key) => bKeys.indexOf(key) !== -1);
+        const newObj = { ...a, ...b2 };
+        for (const key of sharedKeys) {
+          const sharedValue = mergeValues3(a[key], b2[key]);
+          if (!sharedValue.valid) {
+            return { valid: false };
+          }
+          newObj[key] = sharedValue.data;
+        }
+        return { valid: true, data: newObj };
+      } else if (aType === util_js_1.ZodParsedType.array && bType === util_js_1.ZodParsedType.array) {
+        if (a.length !== b2.length) {
+          return { valid: false };
+        }
+        const newArray = [];
+        for (let index = 0; index < a.length; index++) {
+          const itemA = a[index];
+          const itemB = b2[index];
+          const sharedValue = mergeValues3(itemA, itemB);
+          if (!sharedValue.valid) {
+            return { valid: false };
+          }
+          newArray.push(sharedValue.data);
+        }
+        return { valid: true, data: newArray };
+      } else if (aType === util_js_1.ZodParsedType.date && bType === util_js_1.ZodParsedType.date && +a === +b2) {
+        return { valid: true, data: a };
+      } else {
+        return { valid: false };
+      }
+    }
+    var ZodIntersection3 = class extends ZodType3 {
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        const handleParsed = (parsedLeft, parsedRight) => {
+          if ((0, parseUtil_js_1.isAborted)(parsedLeft) || (0, parseUtil_js_1.isAborted)(parsedRight)) {
+            return parseUtil_js_1.INVALID;
+          }
+          const merged = mergeValues3(parsedLeft.value, parsedRight.value);
+          if (!merged.valid) {
+            (0, parseUtil_js_1.addIssueToContext)(ctx, {
+              code: ZodError_js_1.ZodIssueCode.invalid_intersection_types
+            });
+            return parseUtil_js_1.INVALID;
+          }
+          if ((0, parseUtil_js_1.isDirty)(parsedLeft) || (0, parseUtil_js_1.isDirty)(parsedRight)) {
+            status.dirty();
+          }
+          return { status: status.value, value: merged.data };
+        };
+        if (ctx.common.async) {
+          return Promise.all([
+            this._def.left._parseAsync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: ctx
+            }),
+            this._def.right._parseAsync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: ctx
+            })
+          ]).then(([left, right]) => handleParsed(left, right));
+        } else {
+          return handleParsed(this._def.left._parseSync({
+            data: ctx.data,
+            path: ctx.path,
+            parent: ctx
+          }), this._def.right._parseSync({
+            data: ctx.data,
+            path: ctx.path,
+            parent: ctx
+          }));
+        }
+      }
+    };
+    exports2.ZodIntersection = ZodIntersection3;
+    ZodIntersection3.create = (left, right, params) => {
+      return new ZodIntersection3({
+        left,
+        right,
+        typeName: ZodFirstPartyTypeKind2.ZodIntersection,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodTuple2 = class _ZodTuple extends ZodType3 {
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_js_1.ZodParsedType.array) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.array,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        if (ctx.data.length < this._def.items.length) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.too_small,
+            minimum: this._def.items.length,
+            inclusive: true,
+            exact: false,
+            type: "array"
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        const rest = this._def.rest;
+        if (!rest && ctx.data.length > this._def.items.length) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.too_big,
+            maximum: this._def.items.length,
+            inclusive: true,
+            exact: false,
+            type: "array"
+          });
+          status.dirty();
+        }
+        const items = [...ctx.data].map((item, itemIndex) => {
+          const schema = this._def.items[itemIndex] || this._def.rest;
+          if (!schema)
+            return null;
+          return schema._parse(new ParseInputLazyPath2(ctx, item, ctx.path, itemIndex));
+        }).filter((x2) => !!x2);
+        if (ctx.common.async) {
+          return Promise.all(items).then((results) => {
+            return parseUtil_js_1.ParseStatus.mergeArray(status, results);
+          });
+        } else {
+          return parseUtil_js_1.ParseStatus.mergeArray(status, items);
+        }
+      }
+      get items() {
+        return this._def.items;
+      }
+      rest(rest) {
+        return new _ZodTuple({
+          ...this._def,
+          rest
+        });
+      }
+    };
+    exports2.ZodTuple = ZodTuple2;
+    ZodTuple2.create = (schemas, params) => {
+      if (!Array.isArray(schemas)) {
+        throw new Error("You must pass an array of schemas to z.tuple([ ... ])");
+      }
+      return new ZodTuple2({
+        items: schemas,
+        typeName: ZodFirstPartyTypeKind2.ZodTuple,
+        rest: null,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodRecord3 = class _ZodRecord extends ZodType3 {
+      get keySchema() {
+        return this._def.keyType;
+      }
+      get valueSchema() {
+        return this._def.valueType;
+      }
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_js_1.ZodParsedType.object) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.object,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        const pairs = [];
+        const keyType = this._def.keyType;
+        const valueType = this._def.valueType;
+        for (const key in ctx.data) {
+          pairs.push({
+            key: keyType._parse(new ParseInputLazyPath2(ctx, key, ctx.path, key)),
+            value: valueType._parse(new ParseInputLazyPath2(ctx, ctx.data[key], ctx.path, key)),
+            alwaysSet: key in ctx.data
+          });
+        }
+        if (ctx.common.async) {
+          return parseUtil_js_1.ParseStatus.mergeObjectAsync(status, pairs);
+        } else {
+          return parseUtil_js_1.ParseStatus.mergeObjectSync(status, pairs);
+        }
+      }
+      get element() {
+        return this._def.valueType;
+      }
+      static create(first, second, third) {
+        if (second instanceof ZodType3) {
+          return new _ZodRecord({
+            keyType: first,
+            valueType: second,
+            typeName: ZodFirstPartyTypeKind2.ZodRecord,
+            ...processCreateParams2(third)
+          });
+        }
+        return new _ZodRecord({
+          keyType: ZodString3.create(),
+          valueType: first,
+          typeName: ZodFirstPartyTypeKind2.ZodRecord,
+          ...processCreateParams2(second)
+        });
+      }
+    };
+    exports2.ZodRecord = ZodRecord3;
+    var ZodMap2 = class extends ZodType3 {
+      get keySchema() {
+        return this._def.keyType;
+      }
+      get valueSchema() {
+        return this._def.valueType;
+      }
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_js_1.ZodParsedType.map) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.map,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        const keyType = this._def.keyType;
+        const valueType = this._def.valueType;
+        const pairs = [...ctx.data.entries()].map(([key, value], index) => {
+          return {
+            key: keyType._parse(new ParseInputLazyPath2(ctx, key, ctx.path, [index, "key"])),
+            value: valueType._parse(new ParseInputLazyPath2(ctx, value, ctx.path, [index, "value"]))
+          };
+        });
+        if (ctx.common.async) {
+          const finalMap = /* @__PURE__ */ new Map();
+          return Promise.resolve().then(async () => {
+            for (const pair of pairs) {
+              const key = await pair.key;
+              const value = await pair.value;
+              if (key.status === "aborted" || value.status === "aborted") {
+                return parseUtil_js_1.INVALID;
+              }
+              if (key.status === "dirty" || value.status === "dirty") {
+                status.dirty();
+              }
+              finalMap.set(key.value, value.value);
+            }
+            return { status: status.value, value: finalMap };
+          });
+        } else {
+          const finalMap = /* @__PURE__ */ new Map();
+          for (const pair of pairs) {
+            const key = pair.key;
+            const value = pair.value;
+            if (key.status === "aborted" || value.status === "aborted") {
+              return parseUtil_js_1.INVALID;
+            }
+            if (key.status === "dirty" || value.status === "dirty") {
+              status.dirty();
+            }
+            finalMap.set(key.value, value.value);
+          }
+          return { status: status.value, value: finalMap };
+        }
+      }
+    };
+    exports2.ZodMap = ZodMap2;
+    ZodMap2.create = (keyType, valueType, params) => {
+      return new ZodMap2({
+        valueType,
+        keyType,
+        typeName: ZodFirstPartyTypeKind2.ZodMap,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodSet2 = class _ZodSet extends ZodType3 {
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_js_1.ZodParsedType.set) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.set,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        const def = this._def;
+        if (def.minSize !== null) {
+          if (ctx.data.size < def.minSize.value) {
+            (0, parseUtil_js_1.addIssueToContext)(ctx, {
+              code: ZodError_js_1.ZodIssueCode.too_small,
+              minimum: def.minSize.value,
+              type: "set",
+              inclusive: true,
+              exact: false,
+              message: def.minSize.message
+            });
+            status.dirty();
+          }
+        }
+        if (def.maxSize !== null) {
+          if (ctx.data.size > def.maxSize.value) {
+            (0, parseUtil_js_1.addIssueToContext)(ctx, {
+              code: ZodError_js_1.ZodIssueCode.too_big,
+              maximum: def.maxSize.value,
+              type: "set",
+              inclusive: true,
+              exact: false,
+              message: def.maxSize.message
+            });
+            status.dirty();
+          }
+        }
+        const valueType = this._def.valueType;
+        function finalizeSet(elements2) {
+          const parsedSet = /* @__PURE__ */ new Set();
+          for (const element of elements2) {
+            if (element.status === "aborted")
+              return parseUtil_js_1.INVALID;
+            if (element.status === "dirty")
+              status.dirty();
+            parsedSet.add(element.value);
+          }
+          return { status: status.value, value: parsedSet };
+        }
+        const elements = [...ctx.data.values()].map((item, i) => valueType._parse(new ParseInputLazyPath2(ctx, item, ctx.path, i)));
+        if (ctx.common.async) {
+          return Promise.all(elements).then((elements2) => finalizeSet(elements2));
+        } else {
+          return finalizeSet(elements);
+        }
+      }
+      min(minSize, message) {
+        return new _ZodSet({
+          ...this._def,
+          minSize: { value: minSize, message: errorUtil_js_1.errorUtil.toString(message) }
+        });
+      }
+      max(maxSize, message) {
+        return new _ZodSet({
+          ...this._def,
+          maxSize: { value: maxSize, message: errorUtil_js_1.errorUtil.toString(message) }
+        });
+      }
+      size(size, message) {
+        return this.min(size, message).max(size, message);
+      }
+      nonempty(message) {
+        return this.min(1, message);
+      }
+    };
+    exports2.ZodSet = ZodSet2;
+    ZodSet2.create = (valueType, params) => {
+      return new ZodSet2({
+        valueType,
+        minSize: null,
+        maxSize: null,
+        typeName: ZodFirstPartyTypeKind2.ZodSet,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodFunction2 = class _ZodFunction extends ZodType3 {
+      constructor() {
+        super(...arguments);
+        this.validate = this.implement;
+      }
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_js_1.ZodParsedType.function) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.function,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        function makeArgsIssue(args, error2) {
+          return (0, parseUtil_js_1.makeIssue)({
+            data: args,
+            path: ctx.path,
+            errorMaps: [ctx.common.contextualErrorMap, ctx.schemaErrorMap, (0, errors_js_1.getErrorMap)(), errors_js_1.defaultErrorMap].filter((x2) => !!x2),
+            issueData: {
+              code: ZodError_js_1.ZodIssueCode.invalid_arguments,
+              argumentsError: error2
+            }
+          });
+        }
+        function makeReturnsIssue(returns, error2) {
+          return (0, parseUtil_js_1.makeIssue)({
+            data: returns,
+            path: ctx.path,
+            errorMaps: [ctx.common.contextualErrorMap, ctx.schemaErrorMap, (0, errors_js_1.getErrorMap)(), errors_js_1.defaultErrorMap].filter((x2) => !!x2),
+            issueData: {
+              code: ZodError_js_1.ZodIssueCode.invalid_return_type,
+              returnTypeError: error2
+            }
+          });
+        }
+        const params = { errorMap: ctx.common.contextualErrorMap };
+        const fn = ctx.data;
+        if (this._def.returns instanceof ZodPromise2) {
+          const me2 = this;
+          return (0, parseUtil_js_1.OK)(async function(...args) {
+            const error2 = new ZodError_js_1.ZodError([]);
+            const parsedArgs = await me2._def.args.parseAsync(args, params).catch((e) => {
+              error2.addIssue(makeArgsIssue(args, e));
+              throw error2;
+            });
+            const result = await Reflect.apply(fn, this, parsedArgs);
+            const parsedReturns = await me2._def.returns._def.type.parseAsync(result, params).catch((e) => {
+              error2.addIssue(makeReturnsIssue(result, e));
+              throw error2;
+            });
+            return parsedReturns;
+          });
+        } else {
+          const me2 = this;
+          return (0, parseUtil_js_1.OK)(function(...args) {
+            const parsedArgs = me2._def.args.safeParse(args, params);
+            if (!parsedArgs.success) {
+              throw new ZodError_js_1.ZodError([makeArgsIssue(args, parsedArgs.error)]);
+            }
+            const result = Reflect.apply(fn, this, parsedArgs.data);
+            const parsedReturns = me2._def.returns.safeParse(result, params);
+            if (!parsedReturns.success) {
+              throw new ZodError_js_1.ZodError([makeReturnsIssue(result, parsedReturns.error)]);
+            }
+            return parsedReturns.data;
+          });
+        }
+      }
+      parameters() {
+        return this._def.args;
+      }
+      returnType() {
+        return this._def.returns;
+      }
+      args(...items) {
+        return new _ZodFunction({
+          ...this._def,
+          args: ZodTuple2.create(items).rest(ZodUnknown3.create())
+        });
+      }
+      returns(returnType) {
+        return new _ZodFunction({
+          ...this._def,
+          returns: returnType
+        });
+      }
+      implement(func) {
+        const validatedFunc = this.parse(func);
+        return validatedFunc;
+      }
+      strictImplement(func) {
+        const validatedFunc = this.parse(func);
+        return validatedFunc;
+      }
+      static create(args, returns, params) {
+        return new _ZodFunction({
+          args: args ? args : ZodTuple2.create([]).rest(ZodUnknown3.create()),
+          returns: returns || ZodUnknown3.create(),
+          typeName: ZodFirstPartyTypeKind2.ZodFunction,
+          ...processCreateParams2(params)
+        });
+      }
+    };
+    exports2.ZodFunction = ZodFunction2;
+    var ZodLazy2 = class extends ZodType3 {
+      get schema() {
+        return this._def.getter();
+      }
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        const lazySchema = this._def.getter();
+        return lazySchema._parse({ data: ctx.data, path: ctx.path, parent: ctx });
+      }
+    };
+    exports2.ZodLazy = ZodLazy2;
+    ZodLazy2.create = (getter, params) => {
+      return new ZodLazy2({
+        getter,
+        typeName: ZodFirstPartyTypeKind2.ZodLazy,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodLiteral3 = class extends ZodType3 {
+      _parse(input) {
+        if (input.data !== this._def.value) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            received: ctx.data,
+            code: ZodError_js_1.ZodIssueCode.invalid_literal,
+            expected: this._def.value
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        return { status: "valid", value: input.data };
+      }
+      get value() {
+        return this._def.value;
+      }
+    };
+    exports2.ZodLiteral = ZodLiteral3;
+    ZodLiteral3.create = (value, params) => {
+      return new ZodLiteral3({
+        value,
+        typeName: ZodFirstPartyTypeKind2.ZodLiteral,
+        ...processCreateParams2(params)
+      });
+    };
+    function createZodEnum2(values, params) {
+      return new ZodEnum3({
+        values,
+        typeName: ZodFirstPartyTypeKind2.ZodEnum,
+        ...processCreateParams2(params)
+      });
+    }
+    var ZodEnum3 = class _ZodEnum extends ZodType3 {
+      _parse(input) {
+        if (typeof input.data !== "string") {
+          const ctx = this._getOrReturnCtx(input);
+          const expectedValues = this._def.values;
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            expected: util_js_1.util.joinValues(expectedValues),
+            received: ctx.parsedType,
+            code: ZodError_js_1.ZodIssueCode.invalid_type
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        if (!this._cache) {
+          this._cache = new Set(this._def.values);
+        }
+        if (!this._cache.has(input.data)) {
+          const ctx = this._getOrReturnCtx(input);
+          const expectedValues = this._def.values;
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            received: ctx.data,
+            code: ZodError_js_1.ZodIssueCode.invalid_enum_value,
+            options: expectedValues
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        return (0, parseUtil_js_1.OK)(input.data);
+      }
+      get options() {
+        return this._def.values;
+      }
+      get enum() {
+        const enumValues = {};
+        for (const val of this._def.values) {
+          enumValues[val] = val;
+        }
+        return enumValues;
+      }
+      get Values() {
+        const enumValues = {};
+        for (const val of this._def.values) {
+          enumValues[val] = val;
+        }
+        return enumValues;
+      }
+      get Enum() {
+        const enumValues = {};
+        for (const val of this._def.values) {
+          enumValues[val] = val;
+        }
+        return enumValues;
+      }
+      extract(values, newDef = this._def) {
+        return _ZodEnum.create(values, {
+          ...this._def,
+          ...newDef
+        });
+      }
+      exclude(values, newDef = this._def) {
+        return _ZodEnum.create(this.options.filter((opt) => !values.includes(opt)), {
+          ...this._def,
+          ...newDef
+        });
+      }
+    };
+    exports2.ZodEnum = ZodEnum3;
+    ZodEnum3.create = createZodEnum2;
+    var ZodNativeEnum2 = class extends ZodType3 {
+      _parse(input) {
+        const nativeEnumValues = util_js_1.util.getValidEnumValues(this._def.values);
+        const ctx = this._getOrReturnCtx(input);
+        if (ctx.parsedType !== util_js_1.ZodParsedType.string && ctx.parsedType !== util_js_1.ZodParsedType.number) {
+          const expectedValues = util_js_1.util.objectValues(nativeEnumValues);
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            expected: util_js_1.util.joinValues(expectedValues),
+            received: ctx.parsedType,
+            code: ZodError_js_1.ZodIssueCode.invalid_type
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        if (!this._cache) {
+          this._cache = new Set(util_js_1.util.getValidEnumValues(this._def.values));
+        }
+        if (!this._cache.has(input.data)) {
+          const expectedValues = util_js_1.util.objectValues(nativeEnumValues);
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            received: ctx.data,
+            code: ZodError_js_1.ZodIssueCode.invalid_enum_value,
+            options: expectedValues
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        return (0, parseUtil_js_1.OK)(input.data);
+      }
+      get enum() {
+        return this._def.values;
+      }
+    };
+    exports2.ZodNativeEnum = ZodNativeEnum2;
+    ZodNativeEnum2.create = (values, params) => {
+      return new ZodNativeEnum2({
+        values,
+        typeName: ZodFirstPartyTypeKind2.ZodNativeEnum,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodPromise2 = class extends ZodType3 {
+      unwrap() {
+        return this._def.type;
+      }
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_js_1.ZodParsedType.promise && ctx.common.async === false) {
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.promise,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        const promisified = ctx.parsedType === util_js_1.ZodParsedType.promise ? ctx.data : Promise.resolve(ctx.data);
+        return (0, parseUtil_js_1.OK)(promisified.then((data) => {
+          return this._def.type.parseAsync(data, {
+            path: ctx.path,
+            errorMap: ctx.common.contextualErrorMap
+          });
         }));
-        window.app.foldManager.save(createdFile, IFoldInfo);
-        return createdFile;
-      } catch (err) {
-        console.error(`Failed to create file: '${normalizedPath}'`, err);
-        new obsidian.Notice("Unable to create new file.");
       }
-    }
-    function getWeeklyNote2(date3, weeklyNotes) {
-      return weeklyNotes[getDateUID(date3, "week")] ?? null;
-    }
-    function getAllWeeklyNotes2() {
-      const weeklyNotes = {};
-      if (!appHasWeeklyNotesPluginLoaded2()) {
-        return weeklyNotes;
-      }
-      const { vault } = window.app;
-      const { folder } = getWeeklyNoteSettings2();
-      const weeklyNotesFolder = vault.getAbstractFileByPath(obsidian.normalizePath(folder));
-      if (!weeklyNotesFolder) {
-        throw new WeeklyNotesFolderMissingError("Failed to find weekly notes folder");
-      }
-      obsidian.Vault.recurseChildren(weeklyNotesFolder, (note) => {
-        if (note instanceof obsidian.TFile) {
-          const date3 = getDateFromFile(note, "week");
-          if (date3) {
-            const dateString = getDateUID(date3, "week");
-            weeklyNotes[dateString] = note;
-          }
-        }
-      });
-      return weeklyNotes;
-    }
-    var MonthlyNotesFolderMissingError = class extends Error {
     };
-    async function createMonthlyNote2(date3) {
-      const { vault } = window.app;
-      const { template, format, folder } = getMonthlyNoteSettings2();
-      const [templateContents, IFoldInfo] = await getTemplateInfo(template);
-      const filename = date3.format(format);
-      const normalizedPath = await getNotePath(folder, filename);
-      try {
-        const createdFile = await vault.create(normalizedPath, templateContents.replace(/{{\s*(date|time)\s*(([+-]\d+)([yqmwdhs]))?\s*(:.+?)?}}/gi, (_2, _timeOrDate, calc, timeDelta, unit, momentFormat) => {
-          const now = window.moment();
-          const currentDate = date3.clone().set({
-            hour: now.get("hour"),
-            minute: now.get("minute"),
-            second: now.get("second")
-          });
-          if (calc) {
-            currentDate.add(parseInt(timeDelta, 10), unit);
-          }
-          if (momentFormat) {
-            return currentDate.format(momentFormat.substring(1).trim());
-          }
-          return currentDate.format(format);
-        }).replace(/{{\s*date\s*}}/gi, filename).replace(/{{\s*time\s*}}/gi, window.moment().format("HH:mm")).replace(/{{\s*title\s*}}/gi, filename));
-        window.app.foldManager.save(createdFile, IFoldInfo);
-        return createdFile;
-      } catch (err) {
-        console.error(`Failed to create file: '${normalizedPath}'`, err);
-        new obsidian.Notice("Unable to create new file.");
-      }
-    }
-    function getMonthlyNote2(date3, monthlyNotes) {
-      return monthlyNotes[getDateUID(date3, "month")] ?? null;
-    }
-    function getAllMonthlyNotes2() {
-      const monthlyNotes = {};
-      if (!appHasMonthlyNotesPluginLoaded2()) {
-        return monthlyNotes;
-      }
-      const { vault } = window.app;
-      const { folder } = getMonthlyNoteSettings2();
-      const monthlyNotesFolder = vault.getAbstractFileByPath(obsidian.normalizePath(folder));
-      if (!monthlyNotesFolder) {
-        throw new MonthlyNotesFolderMissingError("Failed to find monthly notes folder");
-      }
-      obsidian.Vault.recurseChildren(monthlyNotesFolder, (note) => {
-        if (note instanceof obsidian.TFile) {
-          const date3 = getDateFromFile(note, "month");
-          if (date3) {
-            const dateString = getDateUID(date3, "month");
-            monthlyNotes[dateString] = note;
-          }
-        }
+    exports2.ZodPromise = ZodPromise2;
+    ZodPromise2.create = (schema, params) => {
+      return new ZodPromise2({
+        type: schema,
+        typeName: ZodFirstPartyTypeKind2.ZodPromise,
+        ...processCreateParams2(params)
       });
-      return monthlyNotes;
-    }
-    var QuarterlyNotesFolderMissingError = class extends Error {
     };
-    async function createQuarterlyNote2(date3) {
-      const { vault } = window.app;
-      const { template, format, folder } = getQuarterlyNoteSettings2();
-      const [templateContents, IFoldInfo] = await getTemplateInfo(template);
-      const filename = date3.format(format);
-      const normalizedPath = await getNotePath(folder, filename);
-      try {
-        const createdFile = await vault.create(normalizedPath, templateContents.replace(/{{\s*(date|time)\s*(([+-]\d+)([yqmwdhs]))?\s*(:.+?)?}}/gi, (_2, _timeOrDate, calc, timeDelta, unit, momentFormat) => {
-          const now = window.moment();
-          const currentDate = date3.clone().set({
-            hour: now.get("hour"),
-            minute: now.get("minute"),
-            second: now.get("second")
-          });
-          if (calc) {
-            currentDate.add(parseInt(timeDelta, 10), unit);
+    var ZodEffects2 = class extends ZodType3 {
+      innerType() {
+        return this._def.schema;
+      }
+      sourceType() {
+        return this._def.schema._def.typeName === ZodFirstPartyTypeKind2.ZodEffects ? this._def.schema.sourceType() : this._def.schema;
+      }
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        const effect = this._def.effect || null;
+        const checkCtx = {
+          addIssue: (arg) => {
+            (0, parseUtil_js_1.addIssueToContext)(ctx, arg);
+            if (arg.fatal) {
+              status.abort();
+            } else {
+              status.dirty();
+            }
+          },
+          get path() {
+            return ctx.path;
           }
-          if (momentFormat) {
-            return currentDate.format(momentFormat.substring(1).trim());
-          }
-          return currentDate.format(format);
-        }).replace(/{{\s*date\s*}}/gi, filename).replace(/{{\s*time\s*}}/gi, window.moment().format("HH:mm")).replace(/{{\s*title\s*}}/gi, filename));
-        window.app.foldManager.save(createdFile, IFoldInfo);
-        return createdFile;
-      } catch (err) {
-        console.error(`Failed to create file: '${normalizedPath}'`, err);
-        new obsidian.Notice("Unable to create new file.");
-      }
-    }
-    function getQuarterlyNote2(date3, quarterly) {
-      return quarterly[getDateUID(date3, "quarter")] ?? null;
-    }
-    function getAllQuarterlyNotes2() {
-      const quarterly = {};
-      if (!appHasQuarterlyNotesPluginLoaded2()) {
-        return quarterly;
-      }
-      const { vault } = window.app;
-      const { folder } = getQuarterlyNoteSettings2();
-      const quarterlyFolder = vault.getAbstractFileByPath(obsidian.normalizePath(folder));
-      if (!quarterlyFolder) {
-        throw new QuarterlyNotesFolderMissingError("Failed to find quarterly notes folder");
-      }
-      obsidian.Vault.recurseChildren(quarterlyFolder, (note) => {
-        if (note instanceof obsidian.TFile) {
-          const date3 = getDateFromFile(note, "quarter");
-          if (date3) {
-            const dateString = getDateUID(date3, "quarter");
-            quarterly[dateString] = note;
+        };
+        checkCtx.addIssue = checkCtx.addIssue.bind(checkCtx);
+        if (effect.type === "preprocess") {
+          const processed = effect.transform(ctx.data, checkCtx);
+          if (ctx.common.async) {
+            return Promise.resolve(processed).then(async (processed2) => {
+              if (status.value === "aborted")
+                return parseUtil_js_1.INVALID;
+              const result = await this._def.schema._parseAsync({
+                data: processed2,
+                path: ctx.path,
+                parent: ctx
+              });
+              if (result.status === "aborted")
+                return parseUtil_js_1.INVALID;
+              if (result.status === "dirty")
+                return (0, parseUtil_js_1.DIRTY)(result.value);
+              if (status.value === "dirty")
+                return (0, parseUtil_js_1.DIRTY)(result.value);
+              return result;
+            });
+          } else {
+            if (status.value === "aborted")
+              return parseUtil_js_1.INVALID;
+            const result = this._def.schema._parseSync({
+              data: processed,
+              path: ctx.path,
+              parent: ctx
+            });
+            if (result.status === "aborted")
+              return parseUtil_js_1.INVALID;
+            if (result.status === "dirty")
+              return (0, parseUtil_js_1.DIRTY)(result.value);
+            if (status.value === "dirty")
+              return (0, parseUtil_js_1.DIRTY)(result.value);
+            return result;
           }
         }
-      });
-      return quarterly;
-    }
-    var YearlyNotesFolderMissingError = class extends Error {
+        if (effect.type === "refinement") {
+          const executeRefinement = (acc) => {
+            const result = effect.refinement(acc, checkCtx);
+            if (ctx.common.async) {
+              return Promise.resolve(result);
+            }
+            if (result instanceof Promise) {
+              throw new Error("Async refinement encountered during synchronous parse operation. Use .parseAsync instead.");
+            }
+            return acc;
+          };
+          if (ctx.common.async === false) {
+            const inner = this._def.schema._parseSync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: ctx
+            });
+            if (inner.status === "aborted")
+              return parseUtil_js_1.INVALID;
+            if (inner.status === "dirty")
+              status.dirty();
+            executeRefinement(inner.value);
+            return { status: status.value, value: inner.value };
+          } else {
+            return this._def.schema._parseAsync({ data: ctx.data, path: ctx.path, parent: ctx }).then((inner) => {
+              if (inner.status === "aborted")
+                return parseUtil_js_1.INVALID;
+              if (inner.status === "dirty")
+                status.dirty();
+              return executeRefinement(inner.value).then(() => {
+                return { status: status.value, value: inner.value };
+              });
+            });
+          }
+        }
+        if (effect.type === "transform") {
+          if (ctx.common.async === false) {
+            const base = this._def.schema._parseSync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: ctx
+            });
+            if (!(0, parseUtil_js_1.isValid)(base))
+              return parseUtil_js_1.INVALID;
+            const result = effect.transform(base.value, checkCtx);
+            if (result instanceof Promise) {
+              throw new Error(`Asynchronous transform encountered during synchronous parse operation. Use .parseAsync instead.`);
+            }
+            return { status: status.value, value: result };
+          } else {
+            return this._def.schema._parseAsync({ data: ctx.data, path: ctx.path, parent: ctx }).then((base) => {
+              if (!(0, parseUtil_js_1.isValid)(base))
+                return parseUtil_js_1.INVALID;
+              return Promise.resolve(effect.transform(base.value, checkCtx)).then((result) => ({
+                status: status.value,
+                value: result
+              }));
+            });
+          }
+        }
+        util_js_1.util.assertNever(effect);
+      }
     };
-    async function createYearlyNote2(date3) {
-      const { vault } = window.app;
-      const { template, format, folder } = getYearlyNoteSettings2();
-      const [templateContents, IFoldInfo] = await getTemplateInfo(template);
-      const filename = date3.format(format);
-      const normalizedPath = await getNotePath(folder, filename);
-      try {
-        const createdFile = await vault.create(normalizedPath, templateContents.replace(/{{\s*(date|time)\s*(([+-]\d+)([yqmwdhs]))?\s*(:.+?)?}}/gi, (_2, _timeOrDate, calc, timeDelta, unit, momentFormat) => {
-          const now = window.moment();
-          const currentDate = date3.clone().set({
-            hour: now.get("hour"),
-            minute: now.get("minute"),
-            second: now.get("second")
+    exports2.ZodEffects = ZodEffects2;
+    exports2.ZodTransformer = ZodEffects2;
+    ZodEffects2.create = (schema, effect, params) => {
+      return new ZodEffects2({
+        schema,
+        typeName: ZodFirstPartyTypeKind2.ZodEffects,
+        effect,
+        ...processCreateParams2(params)
+      });
+    };
+    ZodEffects2.createWithPreprocess = (preprocess2, schema, params) => {
+      return new ZodEffects2({
+        schema,
+        effect: { type: "preprocess", transform: preprocess2 },
+        typeName: ZodFirstPartyTypeKind2.ZodEffects,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodOptional3 = class extends ZodType3 {
+      _parse(input) {
+        const parsedType2 = this._getType(input);
+        if (parsedType2 === util_js_1.ZodParsedType.undefined) {
+          return (0, parseUtil_js_1.OK)(void 0);
+        }
+        return this._def.innerType._parse(input);
+      }
+      unwrap() {
+        return this._def.innerType;
+      }
+    };
+    exports2.ZodOptional = ZodOptional3;
+    ZodOptional3.create = (type, params) => {
+      return new ZodOptional3({
+        innerType: type,
+        typeName: ZodFirstPartyTypeKind2.ZodOptional,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodNullable3 = class extends ZodType3 {
+      _parse(input) {
+        const parsedType2 = this._getType(input);
+        if (parsedType2 === util_js_1.ZodParsedType.null) {
+          return (0, parseUtil_js_1.OK)(null);
+        }
+        return this._def.innerType._parse(input);
+      }
+      unwrap() {
+        return this._def.innerType;
+      }
+    };
+    exports2.ZodNullable = ZodNullable3;
+    ZodNullable3.create = (type, params) => {
+      return new ZodNullable3({
+        innerType: type,
+        typeName: ZodFirstPartyTypeKind2.ZodNullable,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodDefault3 = class extends ZodType3 {
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        let data = ctx.data;
+        if (ctx.parsedType === util_js_1.ZodParsedType.undefined) {
+          data = this._def.defaultValue();
+        }
+        return this._def.innerType._parse({
+          data,
+          path: ctx.path,
+          parent: ctx
+        });
+      }
+      removeDefault() {
+        return this._def.innerType;
+      }
+    };
+    exports2.ZodDefault = ZodDefault3;
+    ZodDefault3.create = (type, params) => {
+      return new ZodDefault3({
+        innerType: type,
+        typeName: ZodFirstPartyTypeKind2.ZodDefault,
+        defaultValue: typeof params.default === "function" ? params.default : () => params.default,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodCatch3 = class extends ZodType3 {
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        const newCtx = {
+          ...ctx,
+          common: {
+            ...ctx.common,
+            issues: []
+          }
+        };
+        const result = this._def.innerType._parse({
+          data: newCtx.data,
+          path: newCtx.path,
+          parent: {
+            ...newCtx
+          }
+        });
+        if ((0, parseUtil_js_1.isAsync)(result)) {
+          return result.then((result2) => {
+            return {
+              status: "valid",
+              value: result2.status === "valid" ? result2.value : this._def.catchValue({
+                get error() {
+                  return new ZodError_js_1.ZodError(newCtx.common.issues);
+                },
+                input: newCtx.data
+              })
+            };
           });
-          if (calc) {
-            currentDate.add(parseInt(timeDelta, 10), unit);
-          }
-          if (momentFormat) {
-            return currentDate.format(momentFormat.substring(1).trim());
-          }
-          return currentDate.format(format);
-        }).replace(/{{\s*date\s*}}/gi, filename).replace(/{{\s*time\s*}}/gi, window.moment().format("HH:mm")).replace(/{{\s*title\s*}}/gi, filename));
-        window.app.foldManager.save(createdFile, IFoldInfo);
-        return createdFile;
-      } catch (err) {
-        console.error(`Failed to create file: '${normalizedPath}'`, err);
-        new obsidian.Notice("Unable to create new file.");
+        } else {
+          return {
+            status: "valid",
+            value: result.status === "valid" ? result.value : this._def.catchValue({
+              get error() {
+                return new ZodError_js_1.ZodError(newCtx.common.issues);
+              },
+              input: newCtx.data
+            })
+          };
+        }
       }
-    }
-    function getYearlyNote2(date3, yearlyNotes) {
-      return yearlyNotes[getDateUID(date3, "year")] ?? null;
-    }
-    function getAllYearlyNotes2() {
-      const yearlyNotes = {};
-      if (!appHasYearlyNotesPluginLoaded2()) {
-        return yearlyNotes;
+      removeCatch() {
+        return this._def.innerType;
       }
-      const { vault } = window.app;
-      const { folder } = getYearlyNoteSettings2();
-      const yearlyNotesFolder = vault.getAbstractFileByPath(obsidian.normalizePath(folder));
-      if (!yearlyNotesFolder) {
-        throw new YearlyNotesFolderMissingError("Failed to find yearly notes folder");
+    };
+    exports2.ZodCatch = ZodCatch3;
+    ZodCatch3.create = (type, params) => {
+      return new ZodCatch3({
+        innerType: type,
+        typeName: ZodFirstPartyTypeKind2.ZodCatch,
+        catchValue: typeof params.catch === "function" ? params.catch : () => params.catch,
+        ...processCreateParams2(params)
+      });
+    };
+    var ZodNaN2 = class extends ZodType3 {
+      _parse(input) {
+        const parsedType2 = this._getType(input);
+        if (parsedType2 !== util_js_1.ZodParsedType.nan) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_js_1.addIssueToContext)(ctx, {
+            code: ZodError_js_1.ZodIssueCode.invalid_type,
+            expected: util_js_1.ZodParsedType.nan,
+            received: ctx.parsedType
+          });
+          return parseUtil_js_1.INVALID;
+        }
+        return { status: "valid", value: input.data };
       }
-      obsidian.Vault.recurseChildren(yearlyNotesFolder, (note) => {
-        if (note instanceof obsidian.TFile) {
-          const date3 = getDateFromFile(note, "year");
-          if (date3) {
-            const dateString = getDateUID(date3, "year");
-            yearlyNotes[dateString] = note;
+    };
+    exports2.ZodNaN = ZodNaN2;
+    ZodNaN2.create = (params) => {
+      return new ZodNaN2({
+        typeName: ZodFirstPartyTypeKind2.ZodNaN,
+        ...processCreateParams2(params)
+      });
+    };
+    exports2.BRAND = /* @__PURE__ */ Symbol("zod_brand");
+    var ZodBranded2 = class extends ZodType3 {
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        const data = ctx.data;
+        return this._def.type._parse({
+          data,
+          path: ctx.path,
+          parent: ctx
+        });
+      }
+      unwrap() {
+        return this._def.type;
+      }
+    };
+    exports2.ZodBranded = ZodBranded2;
+    var ZodPipeline2 = class _ZodPipeline extends ZodType3 {
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        if (ctx.common.async) {
+          const handleAsync = async () => {
+            const inResult = await this._def.in._parseAsync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: ctx
+            });
+            if (inResult.status === "aborted")
+              return parseUtil_js_1.INVALID;
+            if (inResult.status === "dirty") {
+              status.dirty();
+              return (0, parseUtil_js_1.DIRTY)(inResult.value);
+            } else {
+              return this._def.out._parseAsync({
+                data: inResult.value,
+                path: ctx.path,
+                parent: ctx
+              });
+            }
+          };
+          return handleAsync();
+        } else {
+          const inResult = this._def.in._parseSync({
+            data: ctx.data,
+            path: ctx.path,
+            parent: ctx
+          });
+          if (inResult.status === "aborted")
+            return parseUtil_js_1.INVALID;
+          if (inResult.status === "dirty") {
+            status.dirty();
+            return {
+              status: "dirty",
+              value: inResult.value
+            };
+          } else {
+            return this._def.out._parseSync({
+              data: inResult.value,
+              path: ctx.path,
+              parent: ctx
+            });
           }
         }
+      }
+      static create(a, b2) {
+        return new _ZodPipeline({
+          in: a,
+          out: b2,
+          typeName: ZodFirstPartyTypeKind2.ZodPipeline
+        });
+      }
+    };
+    exports2.ZodPipeline = ZodPipeline2;
+    var ZodReadonly3 = class extends ZodType3 {
+      _parse(input) {
+        const result = this._def.innerType._parse(input);
+        const freeze = (data) => {
+          if ((0, parseUtil_js_1.isValid)(data)) {
+            data.value = Object.freeze(data.value);
+          }
+          return data;
+        };
+        return (0, parseUtil_js_1.isAsync)(result) ? result.then((data) => freeze(data)) : freeze(result);
+      }
+      unwrap() {
+        return this._def.innerType;
+      }
+    };
+    exports2.ZodReadonly = ZodReadonly3;
+    ZodReadonly3.create = (type, params) => {
+      return new ZodReadonly3({
+        innerType: type,
+        typeName: ZodFirstPartyTypeKind2.ZodReadonly,
+        ...processCreateParams2(params)
       });
-      return yearlyNotes;
+    };
+    function cleanParams2(params, data) {
+      const p = typeof params === "function" ? params(data) : typeof params === "string" ? { message: params } : params;
+      const p2 = typeof p === "string" ? { message: p } : p;
+      return p2;
     }
-    function appHasDailyNotesPluginLoaded2() {
-      const { app } = window;
-      const dailyNotesPlugin = app.internalPlugins.plugins["daily-notes"];
-      if (dailyNotesPlugin && dailyNotesPlugin.enabled) {
-        return true;
+    function custom3(check2, _params = {}, fatal) {
+      if (check2)
+        return ZodAny2.create().superRefine((data, ctx) => {
+          const r = check2(data);
+          if (r instanceof Promise) {
+            return r.then((r2) => {
+              if (!r2) {
+                const params = cleanParams2(_params, data);
+                const _fatal = params.fatal ?? fatal ?? true;
+                ctx.addIssue({ code: "custom", ...params, fatal: _fatal });
+              }
+            });
+          }
+          if (!r) {
+            const params = cleanParams2(_params, data);
+            const _fatal = params.fatal ?? fatal ?? true;
+            ctx.addIssue({ code: "custom", ...params, fatal: _fatal });
+          }
+          return;
+        });
+      return ZodAny2.create();
+    }
+    exports2.late = {
+      object: ZodObject3.lazycreate
+    };
+    var ZodFirstPartyTypeKind2;
+    (function(ZodFirstPartyTypeKind3) {
+      ZodFirstPartyTypeKind3["ZodString"] = "ZodString";
+      ZodFirstPartyTypeKind3["ZodNumber"] = "ZodNumber";
+      ZodFirstPartyTypeKind3["ZodNaN"] = "ZodNaN";
+      ZodFirstPartyTypeKind3["ZodBigInt"] = "ZodBigInt";
+      ZodFirstPartyTypeKind3["ZodBoolean"] = "ZodBoolean";
+      ZodFirstPartyTypeKind3["ZodDate"] = "ZodDate";
+      ZodFirstPartyTypeKind3["ZodSymbol"] = "ZodSymbol";
+      ZodFirstPartyTypeKind3["ZodUndefined"] = "ZodUndefined";
+      ZodFirstPartyTypeKind3["ZodNull"] = "ZodNull";
+      ZodFirstPartyTypeKind3["ZodAny"] = "ZodAny";
+      ZodFirstPartyTypeKind3["ZodUnknown"] = "ZodUnknown";
+      ZodFirstPartyTypeKind3["ZodNever"] = "ZodNever";
+      ZodFirstPartyTypeKind3["ZodVoid"] = "ZodVoid";
+      ZodFirstPartyTypeKind3["ZodArray"] = "ZodArray";
+      ZodFirstPartyTypeKind3["ZodObject"] = "ZodObject";
+      ZodFirstPartyTypeKind3["ZodUnion"] = "ZodUnion";
+      ZodFirstPartyTypeKind3["ZodDiscriminatedUnion"] = "ZodDiscriminatedUnion";
+      ZodFirstPartyTypeKind3["ZodIntersection"] = "ZodIntersection";
+      ZodFirstPartyTypeKind3["ZodTuple"] = "ZodTuple";
+      ZodFirstPartyTypeKind3["ZodRecord"] = "ZodRecord";
+      ZodFirstPartyTypeKind3["ZodMap"] = "ZodMap";
+      ZodFirstPartyTypeKind3["ZodSet"] = "ZodSet";
+      ZodFirstPartyTypeKind3["ZodFunction"] = "ZodFunction";
+      ZodFirstPartyTypeKind3["ZodLazy"] = "ZodLazy";
+      ZodFirstPartyTypeKind3["ZodLiteral"] = "ZodLiteral";
+      ZodFirstPartyTypeKind3["ZodEnum"] = "ZodEnum";
+      ZodFirstPartyTypeKind3["ZodEffects"] = "ZodEffects";
+      ZodFirstPartyTypeKind3["ZodNativeEnum"] = "ZodNativeEnum";
+      ZodFirstPartyTypeKind3["ZodOptional"] = "ZodOptional";
+      ZodFirstPartyTypeKind3["ZodNullable"] = "ZodNullable";
+      ZodFirstPartyTypeKind3["ZodDefault"] = "ZodDefault";
+      ZodFirstPartyTypeKind3["ZodCatch"] = "ZodCatch";
+      ZodFirstPartyTypeKind3["ZodPromise"] = "ZodPromise";
+      ZodFirstPartyTypeKind3["ZodBranded"] = "ZodBranded";
+      ZodFirstPartyTypeKind3["ZodPipeline"] = "ZodPipeline";
+      ZodFirstPartyTypeKind3["ZodReadonly"] = "ZodReadonly";
+    })(ZodFirstPartyTypeKind2 || (exports2.ZodFirstPartyTypeKind = ZodFirstPartyTypeKind2 = {}));
+    var instanceOfType2 = (cls, params = {
+      message: `Input not instance of ${cls.name}`
+    }) => custom3((data) => data instanceof cls, params);
+    exports2.instanceof = instanceOfType2;
+    var stringType2 = ZodString3.create;
+    exports2.string = stringType2;
+    var numberType2 = ZodNumber3.create;
+    exports2.number = numberType2;
+    var nanType2 = ZodNaN2.create;
+    exports2.nan = nanType2;
+    var bigIntType2 = ZodBigInt2.create;
+    exports2.bigint = bigIntType2;
+    var booleanType2 = ZodBoolean3.create;
+    exports2.boolean = booleanType2;
+    var dateType2 = ZodDate2.create;
+    exports2.date = dateType2;
+    var symbolType2 = ZodSymbol2.create;
+    exports2.symbol = symbolType2;
+    var undefinedType2 = ZodUndefined2.create;
+    exports2.undefined = undefinedType2;
+    var nullType2 = ZodNull3.create;
+    exports2.null = nullType2;
+    var anyType2 = ZodAny2.create;
+    exports2.any = anyType2;
+    var unknownType2 = ZodUnknown3.create;
+    exports2.unknown = unknownType2;
+    var neverType2 = ZodNever3.create;
+    exports2.never = neverType2;
+    var voidType2 = ZodVoid2.create;
+    exports2.void = voidType2;
+    var arrayType2 = ZodArray3.create;
+    exports2.array = arrayType2;
+    var objectType2 = ZodObject3.create;
+    exports2.object = objectType2;
+    var strictObjectType2 = ZodObject3.strictCreate;
+    exports2.strictObject = strictObjectType2;
+    var unionType2 = ZodUnion3.create;
+    exports2.union = unionType2;
+    var discriminatedUnionType2 = ZodDiscriminatedUnion3.create;
+    exports2.discriminatedUnion = discriminatedUnionType2;
+    var intersectionType2 = ZodIntersection3.create;
+    exports2.intersection = intersectionType2;
+    var tupleType2 = ZodTuple2.create;
+    exports2.tuple = tupleType2;
+    var recordType2 = ZodRecord3.create;
+    exports2.record = recordType2;
+    var mapType2 = ZodMap2.create;
+    exports2.map = mapType2;
+    var setType2 = ZodSet2.create;
+    exports2.set = setType2;
+    var functionType2 = ZodFunction2.create;
+    exports2.function = functionType2;
+    var lazyType2 = ZodLazy2.create;
+    exports2.lazy = lazyType2;
+    var literalType2 = ZodLiteral3.create;
+    exports2.literal = literalType2;
+    var enumType2 = ZodEnum3.create;
+    exports2.enum = enumType2;
+    var nativeEnumType2 = ZodNativeEnum2.create;
+    exports2.nativeEnum = nativeEnumType2;
+    var promiseType2 = ZodPromise2.create;
+    exports2.promise = promiseType2;
+    var effectsType2 = ZodEffects2.create;
+    exports2.effect = effectsType2;
+    exports2.transformer = effectsType2;
+    var optionalType2 = ZodOptional3.create;
+    exports2.optional = optionalType2;
+    var nullableType2 = ZodNullable3.create;
+    exports2.nullable = nullableType2;
+    var preprocessType2 = ZodEffects2.createWithPreprocess;
+    exports2.preprocess = preprocessType2;
+    var pipelineType2 = ZodPipeline2.create;
+    exports2.pipeline = pipelineType2;
+    var ostring2 = () => stringType2().optional();
+    exports2.ostring = ostring2;
+    var onumber2 = () => numberType2().optional();
+    exports2.onumber = onumber2;
+    var oboolean2 = () => booleanType2().optional();
+    exports2.oboolean = oboolean2;
+    exports2.coerce = {
+      string: ((arg) => ZodString3.create({ ...arg, coerce: true })),
+      number: ((arg) => ZodNumber3.create({ ...arg, coerce: true })),
+      boolean: ((arg) => ZodBoolean3.create({
+        ...arg,
+        coerce: true
+      })),
+      bigint: ((arg) => ZodBigInt2.create({ ...arg, coerce: true })),
+      date: ((arg) => ZodDate2.create({ ...arg, coerce: true }))
+    };
+    exports2.NEVER = parseUtil_js_1.INVALID;
+  }
+});
+
+// node_modules/zod/v3/external.cjs
+var require_external = __commonJS({
+  "node_modules/zod/v3/external.cjs"(exports2) {
+    "use strict";
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m2, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      var desc = Object.getOwnPropertyDescriptor(m2, k2);
+      if (!desc || ("get" in desc ? !m2.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m2[k2];
+        } };
       }
-      const periodicNotes2 = app.plugins.getPlugin("periodic-notes");
-      return periodicNotes2 && periodicNotes2.settings?.daily?.enabled;
-    }
-    function appHasWeeklyNotesPluginLoaded2() {
-      const { app } = window;
-      if (app.plugins.getPlugin("calendar")) {
-        return true;
+      Object.defineProperty(o, k22, desc);
+    }) : (function(o, m2, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      o[k22] = m2[k2];
+    }));
+    var __exportStar = exports2 && exports2.__exportStar || function(m2, exports3) {
+      for (var p in m2) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding(exports3, m2, p);
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    __exportStar(require_errors2(), exports2);
+    __exportStar(require_parseUtil(), exports2);
+    __exportStar(require_typeAliases(), exports2);
+    __exportStar(require_util2(), exports2);
+    __exportStar(require_types3(), exports2);
+    __exportStar(require_ZodError(), exports2);
+  }
+});
+
+// node_modules/zod/index.cjs
+var require_zod = __commonJS({
+  "node_modules/zod/index.cjs"(exports2) {
+    "use strict";
+    var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m2, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      var desc = Object.getOwnPropertyDescriptor(m2, k2);
+      if (!desc || ("get" in desc ? !m2.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m2[k2];
+        } };
       }
-      const periodicNotes2 = app.plugins.getPlugin("periodic-notes");
-      return periodicNotes2 && periodicNotes2.settings?.weekly?.enabled;
-    }
-    function appHasMonthlyNotesPluginLoaded2() {
-      const { app } = window;
-      const periodicNotes2 = app.plugins.getPlugin("periodic-notes");
-      return periodicNotes2 && periodicNotes2.settings?.monthly?.enabled;
-    }
-    function appHasQuarterlyNotesPluginLoaded2() {
-      const { app } = window;
-      const periodicNotes2 = app.plugins.getPlugin("periodic-notes");
-      return periodicNotes2 && periodicNotes2.settings?.quarterly?.enabled;
-    }
-    function appHasYearlyNotesPluginLoaded2() {
-      const { app } = window;
-      const periodicNotes2 = app.plugins.getPlugin("periodic-notes");
-      return periodicNotes2 && periodicNotes2.settings?.yearly?.enabled;
-    }
-    function getPeriodicNoteSettings(granularity) {
-      const getSettings = {
-        day: getDailyNoteSettings2,
-        week: getWeeklyNoteSettings2,
-        month: getMonthlyNoteSettings2,
-        quarter: getQuarterlyNoteSettings2,
-        year: getYearlyNoteSettings2
-      }[granularity];
-      return getSettings();
-    }
-    function createPeriodicNote(granularity, date3) {
-      const createFn = {
-        day: createDailyNote2,
-        month: createMonthlyNote2,
-        week: createWeeklyNote2
+      Object.defineProperty(o, k22, desc);
+    }) : (function(o, m2, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      o[k22] = m2[k2];
+    }));
+    var __setModuleDefault = exports2 && exports2.__setModuleDefault || (Object.create ? (function(o, v2) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v2 });
+    }) : function(o, v2) {
+      o["default"] = v2;
+    });
+    var __importStar = exports2 && exports2.__importStar || function(mod) {
+      if (mod && mod.__esModule) return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k2 in mod) if (k2 !== "default" && Object.prototype.hasOwnProperty.call(mod, k2)) __createBinding(result, mod, k2);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    var __exportStar = exports2 && exports2.__exportStar || function(m2, exports3) {
+      for (var p in m2) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding(exports3, m2, p);
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.z = void 0;
+    var z2 = __importStar(require_external());
+    exports2.z = z2;
+    __exportStar(require_external(), exports2);
+    exports2.default = z2;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/schema.js
+var require_schema4 = __commonJS({
+  "node_modules/markdown-patch-2/dist/schema.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.InstructionInputSchema = exports2.InstructionInputObjectSchema = void 0;
+    var zod_1 = require_zod();
+    var instructions_js_1 = require_instructions();
+    var constants_js_1 = require_constants2();
+    var operationValues = [
+      "replace",
+      "prepend",
+      "append",
+      "delete"
+    ];
+    var scopeValues = [
+      "content",
+      "marker",
+      "markerAndContent",
+      "parent"
+    ];
+    var targetTypeValues = [
+      "heading",
+      "block",
+      "frontmatter"
+    ];
+    var headingAddress = zod_1.z.union([zod_1.z.array(zod_1.z.string()), zod_1.z.null()]).describe(`A heading's containment path: the ancestor heading texts from the top level down (e.g. ["Overview","Details"]), or null/[] for the document root.`);
+    var place = zod_1.z.union([
+      zod_1.z.enum(["first", "last"]),
+      zod_1.z.object({ before: headingAddress }).strict(),
+      zod_1.z.object({ after: headingAddress }).strict()
+    ]).describe(`Position among the new parent's children: "first", "last", or { before } / { after } a sibling heading address.`);
+    var destination = zod_1.z.object({
+      parent: headingAddress.describe("The section's new parent heading address, or null/[] for the document root."),
+      place
+    }).strict().describe("For a heading move (operation `replace`, scope `parent`): where the section is re-parented. Provide exactly one of `content`, `value`, or `destination`.");
+    exports2.InstructionInputObjectSchema = zod_1.z.object({
+      targetType: zod_1.z.enum(targetTypeValues).describe("The kind of node to edit."),
+      target: zod_1.z.union([zod_1.z.array(zod_1.z.string()), zod_1.z.string(), zod_1.z.null()]).describe('The node to edit. For a heading: an array of heading texts from the top level down to the target (e.g. ["Overview","Details"]), or null/[] for the document root. If a heading is a duplicate of an earlier sibling under the same parent, its address carries an extra non-printable marker suffix appended by the server \u2014 copy that address verbatim from wherever the document\'s heading structure was discovered, never retype or reconstruct it. For a block: the bare block id, without the leading `^` (letters, numbers, hyphens, and underscores only) \u2014 a duplicate block id\'s later occurrence carries the same kind of marker suffix, copied verbatim the same way. For a frontmatter field: the key.'),
+      within: zod_1.z.number().int().optional().describe("Refines a heading target to one of the section's direct-body top-level blocks (a paragraph, list, table, code fence, blockquote, \u2026): 0 is the first block in document order, and a negative index counts from the end (-1 = last). Isolated `^id` lines are not counted, so indices match the rendered blocks. With scope `content`, the edit is a literal splice into that block \u2014 you own the joint, so `append` *continues* the block (e.g. content `\\n- item` extends a list) \u2014 and `delete` removes the block. With scope `markerAndContent`, `prepend`/`append` insert a new block immediately before/after it, with library-owned blank-line separators. Heading targets only; cannot be combined with `createTargetIfMissing`."),
+      operation: zod_1.z.enum(operationValues).describe("What happens to the scoped span: replace it, insert before (`prepend`) or after (`append`), or `delete` it."),
+      scope: zod_1.z.enum(scopeValues).default("content").describe("Which part of the target the operation acts on (default `content`). `content`: the node body \u2014 for a heading, its whole subtree below the heading line. `marker`: the label only \u2014 a heading line, a block `^id`, or a frontmatter key (`replace` renames it). `markerAndContent`: the whole node/subtree (`prepend`/`append` insert a sibling). `parent`: a heading's place in the tree \u2014 only with operation `replace`, carrying a `destination` (a move)."),
+      content: zod_1.z.string().describe("String payload: a heading/block body or label, a new block id for a block `marker` rename (letters, numbers, hyphens, and underscores only), or a new frontmatter key name for a frontmatter `marker` rename. Heading levels are relative to the edited span (a leading `#` becomes a direct child). For heading writes, whitespace is library-owned: leading/trailing blank lines here are ignored, and the engine supplies the blank line that keeps inserted content a separate block \u2014 never add newlines to control spacing. (Block-target `content` is the exception: it is spliced literally for inline edits.) A heading `marker` rename may not contain a line break. Provide exactly one of `content`, `value`, or `destination`.").optional(),
+      value: zod_1.z.unknown().describe("Structured JSON payload: a frontmatter value (any JSON \u2014 string, number, boolean, array, object, null; for `prepend`/`append` this merges: list concat, dict merge, string concat), or table rows on a `block` target's `content` cell (a 2-D array of strings, one row per entry \u2014 `replace` swaps the body rows, `prepend`/`append` insert before/after the existing ones; each row's length must match the table's column count). Table cells are content, not table source: a `|` is escaped for you, and a cell containing a line break is rejected, since a row is a single line. Provide exactly one of `content`, `value`, or `destination`.").optional(),
+      destination: destination.optional(),
+      ifMatch: zod_1.z.string().describe("Optimistic-concurrency token (the `version` from a prior document map). If set and the document has changed since, the patch fails with a precondition error without modifying the file.").optional(),
+      createTargetIfMissing: zod_1.z.boolean().default(false).describe("Create the target (heading path, block id, or frontmatter key) if it does not already exist."),
+      rejectIfContentPreexists: zod_1.z.boolean().default(false).describe("Fail a `prepend`/`append` when the string content already appears in the target span (makes those operations idempotent on retry).")
+    }).describe("A single edit expressed as one operation applied to a scope of a target node. The payload rides in exactly one of `content`, `value`, or `destination`, chosen by what it is. Not every operation\xD7scope\xD7targetType combination is valid; invalid ones are rejected.");
+    var expectedCarriers = (targetType, operation, scope) => {
+      if (operation === "delete")
+        return ["none"];
+      if (scope === "parent")
+        return ["destination"];
+      if (targetType === "frontmatter") {
+        return scope === "marker" ? ["content"] : ["value"];
+      }
+      if (targetType === "block" && scope === "content") {
+        return ["content", "value"];
+      }
+      return ["content"];
+    };
+    var carriers = ["content", "value", "destination"];
+    var BLOCK_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
+    var BLOCK_TARGET_PATTERN = new RegExp(`^[A-Za-z0-9_-]+(${constants_js_1.DUPLICATE_MARKER}[${constants_js_1.DUPLICATE_DIGITS.join("")}]+)?$`, "u");
+    var isTableRowValue = (value) => Array.isArray(value) && value.every((row) => Array.isArray(row) && row.every((cell) => typeof cell === "string"));
+    var instructionAlgebra = (input, ctx) => {
+      const { targetType, operation, scope, target } = input;
+      if (targetType === "heading") {
+        if (target !== null && !Array.isArray(target)) {
+          ctx.addIssue({
+            code: zod_1.z.ZodIssueCode.custom,
+            path: ["target"],
+            message: "a heading target must be an array of heading texts, or null for the document root"
+          });
+        }
+      } else if (typeof target !== "string") {
+        ctx.addIssue({
+          code: zod_1.z.ZodIssueCode.custom,
+          path: ["target"],
+          message: `a ${targetType} target must be a string`
+        });
+      } else if (targetType === "block" && !BLOCK_TARGET_PATTERN.test(target)) {
+        ctx.addIssue({
+          code: zod_1.z.ZodIssueCode.custom,
+          path: ["target"],
+          message: "a block id may contain only letters, numbers, hyphens, and underscores"
+        });
+      }
+      if (input.within !== void 0) {
+        if (targetType !== "heading") {
+          ctx.addIssue({
+            code: zod_1.z.ZodIssueCode.custom,
+            path: ["within"],
+            message: "`within` applies only to a heading target"
+          });
+        } else {
+          const withinValid = scope === "content" || scope === "markerAndContent" && (operation === "prepend" || operation === "append");
+          if (!withinValid) {
+            ctx.addIssue({
+              code: zod_1.z.ZodIssueCode.custom,
+              path: ["operation"],
+              message: `${operation} @ ${scope} is not a valid operation for a within-refined heading target`
+            });
+          }
+        }
+        if (input.createTargetIfMissing) {
+          ctx.addIssue({
+            code: zod_1.z.ZodIssueCode.custom,
+            path: ["createTargetIfMissing"],
+            message: "`createTargetIfMissing` cannot be combined with `within`: a positional block cannot be created by its index"
+          });
+        }
+      }
+      if (!(0, instructions_js_1.isValidCell)(targetType, operation, scope)) {
+        ctx.addIssue({
+          code: zod_1.z.ZodIssueCode.custom,
+          path: ["operation"],
+          message: `${operation} @ ${scope} is not a valid operation for a ${targetType} target`
+        });
+        return;
+      }
+      const expected = expectedCarriers(targetType, operation, scope);
+      const present = carriers.filter((carrier) => input[carrier] !== void 0);
+      if (expected[0] === "none") {
+        for (const carrier of present) {
+          ctx.addIssue({
+            code: zod_1.z.ZodIssueCode.custom,
+            path: [carrier],
+            message: `a ${operation} carries no payload; remove \`${carrier}\``
+          });
+        }
+        return;
+      }
+      if (present.length === 0) {
+        ctx.addIssue({
+          code: zod_1.z.ZodIssueCode.custom,
+          path: [expected[0]],
+          message: `${operation} @ ${scope} on a ${targetType} target requires ${expected.length === 1 ? `\`${expected[0]}\`` : expected.map((c) => `\`${c}\``).join(" or ")}`
+        });
+      } else if (present.length > 1) {
+        for (const carrier of present) {
+          ctx.addIssue({
+            code: zod_1.z.ZodIssueCode.custom,
+            path: [carrier],
+            message: `${operation} @ ${scope} on a ${targetType} target carries its payload in exactly one of ${expected.map((c) => `\`${c}\``).join(" or ")}, not both`
+          });
+        }
+      } else if (!expected.includes(present[0])) {
+        ctx.addIssue({
+          code: zod_1.z.ZodIssueCode.custom,
+          path: [present[0]],
+          message: `${operation} @ ${scope} on a ${targetType} target carries its payload in ${expected.length === 1 ? `\`${expected[0]}\`` : expected.map((c) => `\`${c}\``).join(" or ")}, not \`${present[0]}\``
+        });
+      } else if (targetType === "block" && scope === "content" && present[0] === "value" && !isTableRowValue(input.value)) {
+        ctx.addIssue({
+          code: zod_1.z.ZodIssueCode.custom,
+          path: ["value"],
+          message: "value for a block content write must be a 2-D array of strings \u2014 one row per entry, one cell per column"
+        });
+      } else if (targetType === "block" && scope === "marker" && operation === "replace" && !BLOCK_ID_PATTERN.test(input.content)) {
+        ctx.addIssue({
+          code: zod_1.z.ZodIssueCode.custom,
+          path: ["content"],
+          message: "a block id may contain only letters, numbers, hyphens, and underscores"
+        });
+      } else if (targetType === "heading" && scope === "marker" && /[\r\n]/.test(input.content)) {
+        ctx.addIssue({
+          code: zod_1.z.ZodIssueCode.custom,
+          path: ["content"],
+          message: "a heading marker rename cannot contain a line break"
+        });
+      }
+    };
+    exports2.InstructionInputSchema = exports2.InstructionInputObjectSchema.superRefine(instructionAlgebra);
+  }
+});
+
+// node_modules/markdown-patch-2/dist/engine.js
+var require_engine = __commonJS({
+  "node_modules/markdown-patch-2/dist/engine.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.patch = void 0;
+    var model_js_1 = require_model();
+    var resolve_js_1 = require_resolve();
+    var ranges_js_1 = require_ranges();
+    var text_js_1 = require_text2();
+    var levels_js_1 = require_levels();
+    var structural_js_1 = require_structural();
+    var frontmatter_js_1 = require_frontmatter();
+    var create_js_1 = require_create();
+    var table_js_1 = require_table();
+    var instructions_js_1 = require_instructions();
+    var schema_js_1 = require_schema4();
+    var cellOf = (instruction) => ({
+      targetType: instruction.targetType,
+      operation: instruction.operation,
+      scope: instruction.scope
+    });
+    var parentLevel = (section) => section.parent?.heading?.level ?? 0;
+    var scopeSpanText = (document2, resolved, scope) => {
+      if (resolved.kind === "heading") {
+        const section = resolved.section;
+        const range = scope === "content" ? (0, ranges_js_1.headingContentRange)(section) : scope === "marker" ? section.marker : (0, ranges_js_1.subtreeContentRange)(section);
+        return range ? document2.slice(range.start, range.end) : null;
+      }
+      if (resolved.kind === "block") {
+        const block = resolved.block;
+        const range = scope === "content" ? block.content : scope === "marker" ? block.marker : (0, ranges_js_1.blockFullRange)(block);
+        return document2.slice(range.start, range.end);
+      }
+      if (resolved.kind === "headingChild") {
+        const range = scope === "content" ? resolved.child.range : (0, ranges_js_1.headingContentRange)(resolved.section);
+        return document2.slice(range.start, range.end);
+      }
+      return null;
+    };
+    var preexistsProbe = (content, resolved, scope) => {
+      if (resolved.kind === "headingChild") {
+        return scope === "markerAndContent" ? (0, levels_js_1.rebaseHeadings)(content, resolved.section.heading?.level ?? 0).text : content;
+      }
+      if (resolved.kind !== "heading") {
+        return content;
+      }
+      if (scope === "content") {
+        return (0, levels_js_1.rebaseHeadings)(content, resolved.section.heading?.level ?? 0).text;
+      }
+      if (scope === "markerAndContent") {
+        return (0, levels_js_1.rebaseHeadings)(content, parentLevel(resolved.section)).text;
+      }
+      return content;
+    };
+    var patchHeading = (document2, model, instruction, section) => {
+      if (instruction.operation === "delete" || instruction.scope === "parent") {
+        return (0, structural_js_1.structuralHeading)(document2, model, instruction, section);
+      }
+      const { operation, scope, content: value } = instruction;
+      if (scope === "content") {
+        const fragment2 = (0, text_js_1.sectionFragment)(value, section.heading?.level ?? 0, model.lineEnding);
+        const content = (0, ranges_js_1.headingContentRange)(section);
+        const empty = content.start === content.end;
+        const bodyStart = fragment2.text ? bodyStartPast(document2, content) : content.start;
+        switch (operation) {
+          case "replace":
+            return (0, text_js_1.splice)(document2, [{ range: { start: bodyStart, end: content.end }, text: fragment2.text }], fragment2.warnings);
+          case "prepend":
+            return (0, text_js_1.splice)(document2, [
+              blockEdit(document2, model, { start: bodyStart, end: bodyStart }, fragment2.text, {
+                padBefore: false,
+                padAfter: !empty
+              })
+            ], fragment2.warnings);
+          case "append":
+            return (0, text_js_1.splice)(document2, [
+              blockEdit(document2, model, { start: content.end, end: content.end }, fragment2.text, {
+                padBefore: !empty,
+                padAfter: false
+              })
+            ], fragment2.warnings);
+        }
+      }
+      if (scope === "marker") {
+        return (0, text_js_1.splice)(document2, [markerRenameEdit(document2, model, section, operation, value)], []);
+      }
+      const fragment = (0, text_js_1.sectionFragment)(value, parentLevel(section), model.lineEnding);
+      const padBefore = !/^#{1,6} /.test(fragment.text);
+      if (operation === "replace") {
+        return (0, text_js_1.splice)(document2, [
+          blockEdit(document2, model, (0, ranges_js_1.subtreeContentRange)(section), fragment.text, {
+            padBefore,
+            padAfter: false
+          })
+        ], fragment.warnings);
+      }
+      if (!section.heading) {
+        throw new instructions_js_1.EngineError("cannot insert a sibling of the document root");
+      }
+      const at = operation === "prepend" ? (0, ranges_js_1.subtreeContentRange)(section).start : (0, ranges_js_1.subtreeEnd)(section);
+      return (0, text_js_1.splice)(document2, [
+        blockEdit(document2, model, { start: at, end: at }, fragment.text, {
+          padBefore,
+          padAfter: false
+        })
+      ], fragment.warnings);
+    };
+    var bodyStartPast = (document2, content) => {
+      const leading = /^(?:[^\S\r\n]*(?:\r\n|\r|\n))+/.exec(document2.slice(content.start, content.end));
+      return content.start + (leading ? leading[0].length : 0);
+    };
+    var contentEdit = (content, operation, text) => {
+      switch (operation) {
+        case "replace":
+          return { range: content, text };
+        case "prepend":
+          return { range: { start: content.start, end: content.start }, text };
+        case "append":
+          return { range: { start: content.end, end: content.end }, text };
+      }
+    };
+    var blockEdit = (document2, model, range, text, pads) => {
+      if (!text) {
+        return { range, text };
+      }
+      const gaps = (0, text_js_1.ownedGaps)(document2, range, model.lineEnding);
+      const before = pads.padBefore ? gaps.before : (0, text_js_1.lineStartGap)(document2, range.start, model.lineEnding);
+      return {
+        range,
+        text: before + text + (pads.padAfter ? gaps.after : "")
       };
-      return createFn[granularity](date3);
-    }
-    exports2.DEFAULT_DAILY_NOTE_FORMAT = DEFAULT_DAILY_NOTE_FORMAT;
-    exports2.DEFAULT_MONTHLY_NOTE_FORMAT = DEFAULT_MONTHLY_NOTE_FORMAT;
-    exports2.DEFAULT_QUARTERLY_NOTE_FORMAT = DEFAULT_QUARTERLY_NOTE_FORMAT;
-    exports2.DEFAULT_WEEKLY_NOTE_FORMAT = DEFAULT_WEEKLY_NOTE_FORMAT;
-    exports2.DEFAULT_YEARLY_NOTE_FORMAT = DEFAULT_YEARLY_NOTE_FORMAT;
-    exports2.appHasDailyNotesPluginLoaded = appHasDailyNotesPluginLoaded2;
-    exports2.appHasMonthlyNotesPluginLoaded = appHasMonthlyNotesPluginLoaded2;
-    exports2.appHasQuarterlyNotesPluginLoaded = appHasQuarterlyNotesPluginLoaded2;
-    exports2.appHasWeeklyNotesPluginLoaded = appHasWeeklyNotesPluginLoaded2;
-    exports2.appHasYearlyNotesPluginLoaded = appHasYearlyNotesPluginLoaded2;
-    exports2.createDailyNote = createDailyNote2;
-    exports2.createMonthlyNote = createMonthlyNote2;
-    exports2.createPeriodicNote = createPeriodicNote;
-    exports2.createQuarterlyNote = createQuarterlyNote2;
-    exports2.createWeeklyNote = createWeeklyNote2;
-    exports2.createYearlyNote = createYearlyNote2;
-    exports2.getAllDailyNotes = getAllDailyNotes2;
-    exports2.getAllMonthlyNotes = getAllMonthlyNotes2;
-    exports2.getAllQuarterlyNotes = getAllQuarterlyNotes2;
-    exports2.getAllWeeklyNotes = getAllWeeklyNotes2;
-    exports2.getAllYearlyNotes = getAllYearlyNotes2;
-    exports2.getDailyNote = getDailyNote2;
-    exports2.getDailyNoteSettings = getDailyNoteSettings2;
-    exports2.getDateFromFile = getDateFromFile;
-    exports2.getDateFromPath = getDateFromPath;
-    exports2.getDateUID = getDateUID;
-    exports2.getMonthlyNote = getMonthlyNote2;
-    exports2.getMonthlyNoteSettings = getMonthlyNoteSettings2;
-    exports2.getPeriodicNoteSettings = getPeriodicNoteSettings;
-    exports2.getQuarterlyNote = getQuarterlyNote2;
-    exports2.getQuarterlyNoteSettings = getQuarterlyNoteSettings2;
-    exports2.getTemplateInfo = getTemplateInfo;
-    exports2.getWeeklyNote = getWeeklyNote2;
-    exports2.getWeeklyNoteSettings = getWeeklyNoteSettings2;
-    exports2.getYearlyNote = getYearlyNote2;
-    exports2.getYearlyNoteSettings = getYearlyNoteSettings2;
+    };
+    var markerRenameEdit = (document2, model, section, operation, value) => {
+      const range = (0, ranges_js_1.headingMarkerRange)(section);
+      const markerText = document2.slice(range.start, range.end);
+      const hasEol = /(?:\r\n|\r|\n)$/.test(markerText);
+      const eol = hasEol ? model.lineEnding : "";
+      const oldText = section.heading?.text ?? "";
+      const newText = operation === "replace" ? value : operation === "prepend" ? value + oldText : oldText + value;
+      const level = section.heading?.level ?? 1;
+      return { range, text: "#".repeat(level) + " " + newText + eol };
+    };
+    var patchHeadingChild = (document2, model, instruction, section, child, index) => {
+      if (instruction.scope === "markerAndContent") {
+        const fragment = (0, text_js_1.sectionFragment)(instruction.content, section.heading?.level ?? 0, model.lineEnding);
+        const siblings = section.bodyChildren;
+        const at = instruction.operation === "prepend" ? child.range.start : index + 1 < siblings.length ? siblings[index + 1].range.start : section.body.end;
+        return (0, text_js_1.splice)(document2, [
+          blockEdit(document2, model, { start: at, end: at }, fragment.text, {
+            // The heading line above the body start, and the owned trailing
+            // gap / next marker / EOF below the body end, are self-delimiting.
+            padBefore: at !== section.body.start,
+            padAfter: at !== section.body.end
+          })
+        ], fragment.warnings);
+      }
+      if (instruction.operation === "delete") {
+        const end = (0, structural_js_1.consumeTrailingBlank)(document2, child.range.end);
+        return (0, text_js_1.splice)(document2, [{ range: { start: child.range.start, end }, text: "" }], []);
+      }
+      const value = (0, text_js_1.toLineEnding)(instruction.content, model.lineEnding);
+      return (0, text_js_1.splice)(document2, [contentEdit(child.range, instruction.operation, value)], []);
+    };
+    var patchBlock = (document2, model, instruction, block) => {
+      if (instruction.operation === "delete") {
+        return (0, structural_js_1.deleteBlock)(document2, model, instruction, block);
+      }
+      if ((0, instructions_js_1.isBlockTableRowInstruction)(instruction)) {
+        return (0, table_js_1.patchTableRows)(document2, model, instruction, block);
+      }
+      const { operation, scope } = instruction;
+      const value = (0, text_js_1.toLineEnding)(instruction.content, model.lineEnding);
+      if (scope === "content") {
+        return (0, text_js_1.splice)(document2, [contentEdit(block.content, operation, value)], []);
+      }
+      if (scope === "marker") {
+        const markerText = document2.slice(block.marker.start, block.marker.end);
+        const text = markerText.replace(/\^[A-Za-z0-9_-]+/, "^" + instruction.content);
+        return (0, text_js_1.splice)(document2, [{ range: block.marker, text }], []);
+      }
+      const full = (0, ranges_js_1.blockFullRange)(block);
+      if (operation === "replace") {
+        return (0, text_js_1.splice)(document2, [{ range: full, text: value }], []);
+      }
+      const separator = model.lineEnding + model.lineEnding;
+      if (operation === "prepend") {
+        return (0, text_js_1.splice)(document2, [{ range: { start: full.start, end: full.start }, text: value + separator }], []);
+      }
+      return (0, text_js_1.splice)(document2, [{ range: { start: full.end, end: full.end }, text: separator + value }], []);
+    };
+    var patch = (document2, input) => {
+      const parsed = schema_js_1.InstructionInputSchema.safeParse(input);
+      if (!parsed.success) {
+        throw new instructions_js_1.InvalidInstructionError(parsed.error.issues.map((issue2) => issue2.path.length ? `${issue2.path.join(".")}: ${issue2.message}` : issue2.message).join("; "));
+      }
+      const instruction = (0, instructions_js_1.withDefaultScope)(input);
+      const model = (0, model_js_1.buildModel)(document2);
+      (0, instructions_js_1.assertValidCell)(cellOf(instruction));
+      if (instruction.ifMatch !== void 0 && instruction.ifMatch !== model.version) {
+        throw new instructions_js_1.PreconditionFailedError(`ifMatch precondition failed: expected version ${instruction.ifMatch}, document is at ${model.version}`);
+      }
+      const resolved = (0, resolve_js_1.resolveTarget)(model, instruction);
+      if (!resolved) {
+        if (instruction.createTargetIfMissing) {
+          switch (instruction.targetType) {
+            case "heading":
+              return (0, create_js_1.createHeading)(document2, model, instruction);
+            case "block":
+              return (0, create_js_1.createBlock)(document2, model, instruction);
+            case "frontmatter":
+              return (0, frontmatter_js_1.patchFrontmatter)(document2, model, instruction);
+          }
+        }
+        throw new instructions_js_1.TargetNotFoundError(`could not resolve ${instruction.targetType} target ${JSON.stringify(instruction.target)}`);
+      }
+      if (instruction.rejectIfContentPreexists && (instruction.operation === "prepend" || instruction.operation === "append") && "content" in instruction && typeof instruction.content === "string" && instruction.content.trim().length > 0) {
+        const span = scopeSpanText(document2, resolved, instruction.scope);
+        const probe = preexistsProbe(instruction.content, resolved, instruction.scope);
+        if (span !== null && span.includes(probe.trim())) {
+          throw new instructions_js_1.ContentPreexistsError(`the target already contains the content to ${instruction.operation}`);
+        }
+      }
+      if (instruction.targetType === "heading" && resolved.kind === "headingChild") {
+        if (!(0, instructions_js_1.isWithinInstruction)(instruction)) {
+          throw new instructions_js_1.EngineError("resolved a headingChild for an instruction without `within`");
+        }
+        return patchHeadingChild(document2, model, instruction, resolved.section, resolved.child, resolved.index);
+      }
+      if (instruction.targetType === "heading" && resolved.kind === "heading" && !(0, instructions_js_1.isWithinInstruction)(instruction)) {
+        return patchHeading(document2, model, instruction, resolved.section);
+      }
+      if (instruction.targetType === "block" && resolved.kind === "block") {
+        return patchBlock(document2, model, instruction, resolved.block);
+      }
+      if (instruction.targetType === "frontmatter" && resolved.kind === "frontmatter") {
+        return (0, frontmatter_js_1.patchFrontmatter)(document2, model, instruction);
+      }
+      throw new instructions_js_1.EngineError(`resolved ${resolved.kind} does not match ${instruction.targetType} target`);
+    };
+    exports2.patch = patch;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/read.js
+var require_read2 = __commonJS({
+  "node_modules/markdown-patch-2/dist/read.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.readTarget = void 0;
+    var model_js_1 = require_model();
+    var resolve_js_1 = require_resolve();
+    var ranges_js_1 = require_ranges();
+    var text_js_1 = require_text2();
+    var instructions_js_1 = require_instructions();
+    var READ_SCOPES = [
+      "content",
+      "marker",
+      "markerAndContent"
+    ];
+    var readTarget3 = (document2, target) => {
+      const scope = target.scope ?? "content";
+      if (!READ_SCOPES.includes(scope)) {
+        throw new instructions_js_1.InvalidInstructionError(`invalid read scope ${JSON.stringify(scope)}; expected one of ${READ_SCOPES.join(", ")}`);
+      }
+      const model = (0, model_js_1.buildModel)(document2);
+      const resolved = (0, resolve_js_1.resolveTarget)(model, target);
+      if (!resolved) {
+        throw new instructions_js_1.TargetNotFoundError(`Target not found: ${target.targetType} ${JSON.stringify(target.target)}`);
+      }
+      switch (resolved.kind) {
+        case "heading": {
+          const section = resolved.section;
+          if (scope === "marker") {
+            if (!section.heading) {
+              throw new instructions_js_1.TargetNotFoundError("the document root has no marker to read");
+            }
+            return { kind: "heading", content: section.heading.text };
+          }
+          if (scope === "markerAndContent") {
+            const range2 = (0, ranges_js_1.subtreeContentRange)(section);
+            const raw2 = document2.slice(range2.start, range2.end);
+            const baseline2 = section.parent?.heading?.level ?? 0;
+            const content2 = baseline2 === 0 ? raw2 : (0, text_js_1.relevelText)(raw2, -baseline2, model.lineEnding).text;
+            return { kind: "heading", content: content2 };
+          }
+          const range = (0, ranges_js_1.headingContentRange)(section);
+          const raw = document2.slice(range.start, range.end);
+          const baseline = section.heading?.level ?? 0;
+          const content = baseline === 0 ? raw : (0, text_js_1.relevelText)(raw, -baseline, model.lineEnding).text;
+          return { kind: "heading", content };
+        }
+        case "headingChild": {
+          if (scope !== "content") {
+            throw new instructions_js_1.InvalidInstructionError("a `within` read supports only the `content` scope: a positional body block has no marker of its own");
+          }
+          const { start, end } = resolved.child.range;
+          return { kind: "heading", content: document2.slice(start, end) };
+        }
+        case "block": {
+          const block = resolved.block;
+          if (scope === "marker") {
+            return { kind: "block", content: block.id };
+          }
+          const range = scope === "markerAndContent" ? (0, ranges_js_1.blockFullRange)(block) : (0, ranges_js_1.blockContentRange)(block);
+          return { kind: "block", content: document2.slice(range.start, range.end) };
+        }
+        case "frontmatter": {
+          const entry = resolved.entry;
+          if (scope === "marker") {
+            return { kind: "frontmatter", value: entry.key };
+          }
+          if (scope === "markerAndContent") {
+            return { kind: "frontmatter", value: { [entry.key]: entry.value } };
+          }
+          return { kind: "frontmatter", value: entry.value };
+        }
+      }
+    };
+    exports2.readTarget = readTarget3;
+  }
+});
+
+// node_modules/markdown-patch-2/dist/index.js
+var require_dist3 = __commonJS({
+  "node_modules/markdown-patch-2/dist/index.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.InvalidCellContentError = exports2.TableColumnCountError = exports2.NotATableError = exports2.InstructionInputObjectSchema = exports2.InstructionInputSchema = exports2.isWithinInstruction = exports2.isBlockTableRowInstruction = exports2.assertValidCell = exports2.isValidCell = exports2.ReservedDuplicateMarkerError = exports2.FrontmatterKeyCollisionError = exports2.FrontmatterParseError = exports2.MergeError = exports2.ContentPreexistsError = exports2.PreconditionFailedError = exports2.TargetNotFoundError = exports2.InvalidInstructionError = exports2.InvalidCellError = exports2.EngineError = exports2.readTarget = exports2.headingTreePaths = exports2.projectMap = exports2.buildModel = exports2.patch = void 0;
+    var engine_js_1 = require_engine();
+    Object.defineProperty(exports2, "patch", { enumerable: true, get: function() {
+      return engine_js_1.patch;
+    } });
+    var model_js_1 = require_model();
+    Object.defineProperty(exports2, "buildModel", { enumerable: true, get: function() {
+      return model_js_1.buildModel;
+    } });
+    var projection_js_1 = require_projection();
+    Object.defineProperty(exports2, "projectMap", { enumerable: true, get: function() {
+      return projection_js_1.projectMap;
+    } });
+    Object.defineProperty(exports2, "headingTreePaths", { enumerable: true, get: function() {
+      return projection_js_1.headingTreePaths;
+    } });
+    var read_js_1 = require_read2();
+    Object.defineProperty(exports2, "readTarget", { enumerable: true, get: function() {
+      return read_js_1.readTarget;
+    } });
+    var instructions_js_1 = require_instructions();
+    Object.defineProperty(exports2, "EngineError", { enumerable: true, get: function() {
+      return instructions_js_1.EngineError;
+    } });
+    Object.defineProperty(exports2, "InvalidCellError", { enumerable: true, get: function() {
+      return instructions_js_1.InvalidCellError;
+    } });
+    Object.defineProperty(exports2, "InvalidInstructionError", { enumerable: true, get: function() {
+      return instructions_js_1.InvalidInstructionError;
+    } });
+    Object.defineProperty(exports2, "TargetNotFoundError", { enumerable: true, get: function() {
+      return instructions_js_1.TargetNotFoundError;
+    } });
+    Object.defineProperty(exports2, "PreconditionFailedError", { enumerable: true, get: function() {
+      return instructions_js_1.PreconditionFailedError;
+    } });
+    Object.defineProperty(exports2, "ContentPreexistsError", { enumerable: true, get: function() {
+      return instructions_js_1.ContentPreexistsError;
+    } });
+    Object.defineProperty(exports2, "MergeError", { enumerable: true, get: function() {
+      return instructions_js_1.MergeError;
+    } });
+    Object.defineProperty(exports2, "FrontmatterParseError", { enumerable: true, get: function() {
+      return instructions_js_1.FrontmatterParseError;
+    } });
+    Object.defineProperty(exports2, "FrontmatterKeyCollisionError", { enumerable: true, get: function() {
+      return instructions_js_1.FrontmatterKeyCollisionError;
+    } });
+    Object.defineProperty(exports2, "ReservedDuplicateMarkerError", { enumerable: true, get: function() {
+      return instructions_js_1.ReservedDuplicateMarkerError;
+    } });
+    Object.defineProperty(exports2, "isValidCell", { enumerable: true, get: function() {
+      return instructions_js_1.isValidCell;
+    } });
+    Object.defineProperty(exports2, "assertValidCell", { enumerable: true, get: function() {
+      return instructions_js_1.assertValidCell;
+    } });
+    Object.defineProperty(exports2, "isBlockTableRowInstruction", { enumerable: true, get: function() {
+      return instructions_js_1.isBlockTableRowInstruction;
+    } });
+    Object.defineProperty(exports2, "isWithinInstruction", { enumerable: true, get: function() {
+      return instructions_js_1.isWithinInstruction;
+    } });
+    var schema_js_1 = require_schema4();
+    Object.defineProperty(exports2, "InstructionInputSchema", { enumerable: true, get: function() {
+      return schema_js_1.InstructionInputSchema;
+    } });
+    Object.defineProperty(exports2, "InstructionInputObjectSchema", { enumerable: true, get: function() {
+      return schema_js_1.InstructionInputObjectSchema;
+    } });
+    var table_js_1 = require_table();
+    Object.defineProperty(exports2, "NotATableError", { enumerable: true, get: function() {
+      return table_js_1.NotATableError;
+    } });
+    Object.defineProperty(exports2, "TableColumnCountError", { enumerable: true, get: function() {
+      return table_js_1.TableColumnCountError;
+    } });
+    Object.defineProperty(exports2, "InvalidCellContentError", { enumerable: true, get: function() {
+      return table_js_1.InvalidCellContentError;
+    } });
   }
 });
 
@@ -53695,7 +59160,7 @@ var require_codegen = __commonJS({
 });
 
 // node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/compile/util.js
-var require_util2 = __commonJS({
+var require_util3 = __commonJS({
   "node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/compile/util.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -53901,13 +59366,13 @@ var require_names = __commonJS({
 });
 
 // node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/compile/errors.js
-var require_errors2 = __commonJS({
+var require_errors3 = __commonJS({
   "node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/compile/errors.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.extendErrors = exports2.resetErrorsCount = exports2.reportExtraError = exports2.reportError = exports2.keyword$DataError = exports2.keywordError = void 0;
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var names_1 = require_names();
     exports2.keywordError = {
       message: ({ keyword }) => (0, codegen_1.str)`must pass "${keyword}" keyword validation`
@@ -54028,7 +59493,7 @@ var require_boolSchema = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.boolOrEmptySchema = exports2.topBoolOrEmptySchema = void 0;
-    var errors_1 = require_errors2();
+    var errors_1 = require_errors3();
     var codegen_1 = require_codegen();
     var names_1 = require_names();
     var boolError = {
@@ -54135,9 +59600,9 @@ var require_dataType = __commonJS({
     exports2.reportTypeError = exports2.checkDataTypes = exports2.checkDataType = exports2.coerceAndCheckDataType = exports2.getJSONTypes = exports2.getSchemaTypes = exports2.DataType = void 0;
     var rules_1 = require_rules();
     var applicability_1 = require_applicability();
-    var errors_1 = require_errors2();
+    var errors_1 = require_errors3();
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var DataType;
     (function(DataType2) {
       DataType2[DataType2["Correct"] = 0] = "Correct";
@@ -54318,7 +59783,7 @@ var require_defaults = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.assignDefaults = void 0;
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     function assignDefaults(it2, ty) {
       const { properties, items } = it2.schema;
       if (ty === "object" && properties) {
@@ -54355,9 +59820,9 @@ var require_code2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.validateUnion = exports2.validateArray = exports2.usePattern = exports2.callValidateCode = exports2.schemaProperties = exports2.allSchemaProperties = exports2.noPropertyInData = exports2.propertyInData = exports2.isOwnProperty = exports2.hasPropFunc = exports2.reportMissingProp = exports2.checkMissingProp = exports2.checkReportMissingProp = void 0;
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var names_1 = require_names();
-    var util_2 = require_util2();
+    var util_2 = require_util3();
     function checkReportMissingProp(cxt, prop) {
       const { gen, data, it: it2 } = cxt;
       gen.if(noPropertyInData(gen, data, prop, it2.opts.ownProperties), () => {
@@ -54490,7 +59955,7 @@ var require_keyword = __commonJS({
     var codegen_1 = require_codegen();
     var names_1 = require_names();
     var code_1 = require_code2();
-    var errors_1 = require_errors2();
+    var errors_1 = require_errors3();
     function macroKeywordCode(cxt, def) {
       const { gen, keyword, schema, parentSchema, it: it2 } = cxt;
       const macroSchema = def.macro.call(it2.self, schema, parentSchema, it2);
@@ -54606,7 +60071,7 @@ var require_subschema = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.extendSubschemaMode = exports2.extendSubschemaData = exports2.getSubschema = void 0;
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     function getSubschema(it2, { keyword, schemaProp, schema, schemaPath, errSchemaPath, topSchemaRef }) {
       if (keyword !== void 0 && schema !== void 0) {
         throw new Error('both "keyword" and "schema" passed, only one allowed');
@@ -54806,12 +60271,12 @@ var require_json_schema_traverse = __commonJS({
 });
 
 // node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/compile/resolve.js
-var require_resolve = __commonJS({
+var require_resolve2 = __commonJS({
   "node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/compile/resolve.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.getSchemaRefs = exports2.resolveUrl = exports2.normalizeId = exports2._getFullPath = exports2.getFullPath = exports2.inlineRef = void 0;
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var equal = require_fast_deep_equal();
     var traverse = require_json_schema_traverse();
     var SIMPLE_INLINED = /* @__PURE__ */ new Set([
@@ -54976,9 +60441,9 @@ var require_validate = __commonJS({
     var subschema_1 = require_subschema();
     var codegen_1 = require_codegen();
     var names_1 = require_names();
-    var resolve_1 = require_resolve();
-    var util_1 = require_util2();
-    var errors_1 = require_errors2();
+    var resolve_1 = require_resolve2();
+    var util_1 = require_util3();
+    var errors_1 = require_errors3();
     function validateFunctionCode(it2) {
       if (isSchemaObj(it2)) {
         checkKeywords(it2);
@@ -55490,7 +60955,7 @@ var require_ref_error = __commonJS({
   "node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/compile/ref_error.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var resolve_1 = require_resolve();
+    var resolve_1 = require_resolve2();
     var MissingRefError = class extends Error {
       constructor(resolver, baseId, ref, msg) {
         super(msg || `can't resolve reference ${ref} from id ${baseId}`);
@@ -55511,8 +60976,8 @@ var require_compile = __commonJS({
     var codegen_1 = require_codegen();
     var validation_error_1 = require_validation_error();
     var names_1 = require_names();
-    var resolve_1 = require_resolve();
-    var util_1 = require_util2();
+    var resolve_1 = require_resolve2();
+    var util_1 = require_util3();
     var validate_1 = require_validate();
     var SchemaEnv = class {
       constructor(env) {
@@ -56599,9 +62064,9 @@ var require_core = __commonJS({
     var rules_1 = require_rules();
     var compile_1 = require_compile();
     var codegen_2 = require_codegen();
-    var resolve_1 = require_resolve();
+    var resolve_1 = require_resolve2();
     var dataType_1 = require_dataType();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var $dataRefSchema = require_data();
     var uri_1 = require_uri2();
     var defaultRegExp = (str, flags) => new RegExp(str, flags);
@@ -57202,7 +62667,7 @@ var require_ref2 = __commonJS({
     var codegen_1 = require_codegen();
     var names_1 = require_names();
     var compile_1 = require_compile();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var def = {
       keyword: "$ref",
       schemaType: "string",
@@ -57426,7 +62891,7 @@ var require_limitLength = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var ucs2length_1 = require_ucs2length();
     var error2 = {
       message({ keyword, schemaCode }) {
@@ -57458,7 +62923,7 @@ var require_pattern = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var code_1 = require_code2();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var codegen_1 = require_codegen();
     var error2 = {
       message: ({ schemaCode }) => (0, codegen_1.str)`must match pattern "${schemaCode}"`,
@@ -57525,7 +62990,7 @@ var require_required = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var code_1 = require_code2();
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var error2 = {
       message: ({ params: { missingProperty } }) => (0, codegen_1.str)`must have required property '${missingProperty}'`,
       params: ({ params: { missingProperty } }) => (0, codegen_1._)`{missingProperty: ${missingProperty}}`
@@ -57647,7 +63112,7 @@ var require_uniqueItems = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var dataType_1 = require_dataType();
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var equal_1 = require_equal();
     var error2 = {
       message: ({ params: { i, j: j2 } }) => (0, codegen_1.str)`must NOT have duplicate items (items ## ${j2} and ${i} are identical)`,
@@ -57713,7 +63178,7 @@ var require_const = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var equal_1 = require_equal();
     var error2 = {
       message: "must be equal to constant",
@@ -57742,7 +63207,7 @@ var require_enum = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var equal_1 = require_equal();
     var error2 = {
       message: "must be equal to one of the allowed values",
@@ -57830,7 +63295,7 @@ var require_additionalItems = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.validateAdditionalItems = void 0;
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var error2 = {
       message: ({ params: { len } }) => (0, codegen_1.str)`must NOT have more than ${len} items`,
       params: ({ params: { len } }) => (0, codegen_1._)`{limit: ${len}}`
@@ -57883,7 +63348,7 @@ var require_items = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.validateTuple = void 0;
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var code_1 = require_code2();
     var def = {
       keyword: "items",
@@ -57956,7 +63421,7 @@ var require_items2020 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var code_1 = require_code2();
     var additionalItems_1 = require_additionalItems();
     var error2 = {
@@ -57991,7 +63456,7 @@ var require_contains = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var error2 = {
       message: ({ params: { min, max } }) => max === void 0 ? (0, codegen_1.str)`must contain at least ${min} valid item(s)` : (0, codegen_1.str)`must contain at least ${min} and no more than ${max} valid item(s)`,
       params: ({ params: { min, max } }) => max === void 0 ? (0, codegen_1._)`{minContains: ${min}}` : (0, codegen_1._)`{minContains: ${min}, maxContains: ${max}}`
@@ -58086,7 +63551,7 @@ var require_dependencies = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.validateSchemaDeps = exports2.validatePropertyDeps = exports2.error = void 0;
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var code_1 = require_code2();
     exports2.error = {
       message: ({ params: { property, depsCount, deps } }) => {
@@ -58179,7 +63644,7 @@ var require_propertyNames = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var error2 = {
       message: "property name must be valid",
       params: ({ params }) => (0, codegen_1._)`{propertyName: ${params.propertyName}}`
@@ -58224,7 +63689,7 @@ var require_additionalProperties = __commonJS({
     var code_1 = require_code2();
     var codegen_1 = require_codegen();
     var names_1 = require_names();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var error2 = {
       message: "must NOT have additional properties",
       params: ({ params }) => (0, codegen_1._)`{additionalProperty: ${params.additionalProperty}}`
@@ -58329,7 +63794,7 @@ var require_properties = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var validate_1 = require_validate();
     var code_1 = require_code2();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var additionalProperties_1 = require_additionalProperties();
     var def = {
       keyword: "properties",
@@ -58387,8 +63852,8 @@ var require_patternProperties = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var code_1 = require_code2();
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
-    var util_2 = require_util2();
+    var util_1 = require_util3();
+    var util_2 = require_util3();
     var def = {
       keyword: "patternProperties",
       type: "object",
@@ -58459,7 +63924,7 @@ var require_not = __commonJS({
   "node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/vocabularies/applicator/not.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var def = {
       keyword: "not",
       schemaType: ["object", "boolean"],
@@ -58508,7 +63973,7 @@ var require_oneOf = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var error2 = {
       message: "must match exactly one schema in oneOf",
       params: ({ params }) => (0, codegen_1._)`{passingSchemas: ${params.passing}}`
@@ -58565,7 +64030,7 @@ var require_allOf = __commonJS({
   "node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/vocabularies/applicator/allOf.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var def = {
       keyword: "allOf",
       schemaType: "array",
@@ -58593,7 +64058,7 @@ var require_if = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var error2 = {
       message: ({ params }) => (0, codegen_1.str)`must match "${params.ifClause}" schema`,
       params: ({ params }) => (0, codegen_1._)`{failingKeyword: ${params.ifClause}}`
@@ -58661,7 +64126,7 @@ var require_thenElse = __commonJS({
   "node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/vocabularies/applicator/thenElse.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var def = {
       keyword: ["then", "else"],
       schemaType: ["object", "boolean"],
@@ -58869,7 +64334,7 @@ var require_draft7 = __commonJS({
 });
 
 // node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/vocabularies/discriminator/types.js
-var require_types3 = __commonJS({
+var require_types4 = __commonJS({
   "node_modules/@modelcontextprotocol/sdk/node_modules/ajv/dist/vocabularies/discriminator/types.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -58888,10 +64353,10 @@ var require_discriminator = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen();
-    var types_1 = require_types3();
+    var types_1 = require_types4();
     var compile_1 = require_compile();
     var ref_error_1 = require_ref_error();
-    var util_1 = require_util2();
+    var util_1 = require_util3();
     var error2 = {
       message: ({ params: { discrError, tagName } }) => discrError === types_1.DiscrError.Tag ? `tag "${tagName}" must be string` : `value of tag "${tagName}" must be in oneOf`,
       params: ({ params: { discrError, tag, tagName } }) => (0, codegen_1._)`{error: ${discrError}, tag: ${tagName}, tagValue: ${tag}}`
@@ -60437,7 +65902,7 @@ var require_codegen2 = __commonJS({
 });
 
 // node_modules/ajv-formats/node_modules/ajv/dist/compile/util.js
-var require_util3 = __commonJS({
+var require_util4 = __commonJS({
   "node_modules/ajv-formats/node_modules/ajv/dist/compile/util.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -60643,13 +66108,13 @@ var require_names2 = __commonJS({
 });
 
 // node_modules/ajv-formats/node_modules/ajv/dist/compile/errors.js
-var require_errors3 = __commonJS({
+var require_errors4 = __commonJS({
   "node_modules/ajv-formats/node_modules/ajv/dist/compile/errors.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.extendErrors = exports2.resetErrorsCount = exports2.reportExtraError = exports2.reportError = exports2.keyword$DataError = exports2.keywordError = void 0;
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var names_1 = require_names2();
     exports2.keywordError = {
       message: ({ keyword }) => (0, codegen_1.str)`must pass "${keyword}" keyword validation`
@@ -60770,7 +66235,7 @@ var require_boolSchema2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.boolOrEmptySchema = exports2.topBoolOrEmptySchema = void 0;
-    var errors_1 = require_errors3();
+    var errors_1 = require_errors4();
     var codegen_1 = require_codegen2();
     var names_1 = require_names2();
     var boolError = {
@@ -60877,9 +66342,9 @@ var require_dataType2 = __commonJS({
     exports2.reportTypeError = exports2.checkDataTypes = exports2.checkDataType = exports2.coerceAndCheckDataType = exports2.getJSONTypes = exports2.getSchemaTypes = exports2.DataType = void 0;
     var rules_1 = require_rules2();
     var applicability_1 = require_applicability2();
-    var errors_1 = require_errors3();
+    var errors_1 = require_errors4();
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var DataType;
     (function(DataType2) {
       DataType2[DataType2["Correct"] = 0] = "Correct";
@@ -61060,7 +66525,7 @@ var require_defaults2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.assignDefaults = void 0;
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     function assignDefaults(it2, ty) {
       const { properties, items } = it2.schema;
       if (ty === "object" && properties) {
@@ -61097,9 +66562,9 @@ var require_code4 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.validateUnion = exports2.validateArray = exports2.usePattern = exports2.callValidateCode = exports2.schemaProperties = exports2.allSchemaProperties = exports2.noPropertyInData = exports2.propertyInData = exports2.isOwnProperty = exports2.hasPropFunc = exports2.reportMissingProp = exports2.checkMissingProp = exports2.checkReportMissingProp = void 0;
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var names_1 = require_names2();
-    var util_2 = require_util3();
+    var util_2 = require_util4();
     function checkReportMissingProp(cxt, prop) {
       const { gen, data, it: it2 } = cxt;
       gen.if(noPropertyInData(gen, data, prop, it2.opts.ownProperties), () => {
@@ -61232,7 +66697,7 @@ var require_keyword2 = __commonJS({
     var codegen_1 = require_codegen2();
     var names_1 = require_names2();
     var code_1 = require_code4();
-    var errors_1 = require_errors3();
+    var errors_1 = require_errors4();
     function macroKeywordCode(cxt, def) {
       const { gen, keyword, schema, parentSchema, it: it2 } = cxt;
       const macroSchema = def.macro.call(it2.self, schema, parentSchema, it2);
@@ -61348,7 +66813,7 @@ var require_subschema2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.extendSubschemaMode = exports2.extendSubschemaData = exports2.getSubschema = void 0;
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     function getSubschema(it2, { keyword, schemaProp, schema, schemaPath, errSchemaPath, topSchemaRef }) {
       if (keyword !== void 0 && schema !== void 0) {
         throw new Error('both "keyword" and "schema" passed, only one allowed');
@@ -61513,12 +66978,12 @@ var require_json_schema_traverse2 = __commonJS({
 });
 
 // node_modules/ajv-formats/node_modules/ajv/dist/compile/resolve.js
-var require_resolve2 = __commonJS({
+var require_resolve3 = __commonJS({
   "node_modules/ajv-formats/node_modules/ajv/dist/compile/resolve.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.getSchemaRefs = exports2.resolveUrl = exports2.normalizeId = exports2._getFullPath = exports2.getFullPath = exports2.inlineRef = void 0;
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var equal = require_fast_deep_equal();
     var traverse = require_json_schema_traverse2();
     var SIMPLE_INLINED = /* @__PURE__ */ new Set([
@@ -61683,9 +67148,9 @@ var require_validate2 = __commonJS({
     var subschema_1 = require_subschema2();
     var codegen_1 = require_codegen2();
     var names_1 = require_names2();
-    var resolve_1 = require_resolve2();
-    var util_1 = require_util3();
-    var errors_1 = require_errors3();
+    var resolve_1 = require_resolve3();
+    var util_1 = require_util4();
+    var errors_1 = require_errors4();
     function validateFunctionCode(it2) {
       if (isSchemaObj(it2)) {
         checkKeywords(it2);
@@ -62197,7 +67662,7 @@ var require_ref_error2 = __commonJS({
   "node_modules/ajv-formats/node_modules/ajv/dist/compile/ref_error.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var resolve_1 = require_resolve2();
+    var resolve_1 = require_resolve3();
     var MissingRefError = class extends Error {
       constructor(resolver, baseId, ref, msg) {
         super(msg || `can't resolve reference ${ref} from id ${baseId}`);
@@ -62218,8 +67683,8 @@ var require_compile2 = __commonJS({
     var codegen_1 = require_codegen2();
     var validation_error_1 = require_validation_error2();
     var names_1 = require_names2();
-    var resolve_1 = require_resolve2();
-    var util_1 = require_util3();
+    var resolve_1 = require_resolve3();
+    var util_1 = require_util4();
     var validate_1 = require_validate2();
     var SchemaEnv = class {
       constructor(env) {
@@ -62497,9 +67962,9 @@ var require_core3 = __commonJS({
     var rules_1 = require_rules2();
     var compile_1 = require_compile2();
     var codegen_2 = require_codegen2();
-    var resolve_1 = require_resolve2();
+    var resolve_1 = require_resolve3();
     var dataType_1 = require_dataType2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var $dataRefSchema = require_data2();
     var uri_1 = require_uri3();
     var defaultRegExp = (str, flags) => new RegExp(str, flags);
@@ -63100,7 +68565,7 @@ var require_ref3 = __commonJS({
     var codegen_1 = require_codegen2();
     var names_1 = require_names2();
     var compile_1 = require_compile2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var def = {
       keyword: "$ref",
       schemaType: "string",
@@ -63324,7 +68789,7 @@ var require_limitLength2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var ucs2length_1 = require_ucs2length2();
     var error2 = {
       message({ keyword, schemaCode }) {
@@ -63356,7 +68821,7 @@ var require_pattern2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var code_1 = require_code4();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var codegen_1 = require_codegen2();
     var error2 = {
       message: ({ schemaCode }) => (0, codegen_1.str)`must match pattern "${schemaCode}"`,
@@ -63423,7 +68888,7 @@ var require_required2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var code_1 = require_code4();
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var error2 = {
       message: ({ params: { missingProperty } }) => (0, codegen_1.str)`must have required property '${missingProperty}'`,
       params: ({ params: { missingProperty } }) => (0, codegen_1._)`{missingProperty: ${missingProperty}}`
@@ -63545,7 +69010,7 @@ var require_uniqueItems2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var dataType_1 = require_dataType2();
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var equal_1 = require_equal2();
     var error2 = {
       message: ({ params: { i, j: j2 } }) => (0, codegen_1.str)`must NOT have duplicate items (items ## ${j2} and ${i} are identical)`,
@@ -63611,7 +69076,7 @@ var require_const2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var equal_1 = require_equal2();
     var error2 = {
       message: "must be equal to constant",
@@ -63640,7 +69105,7 @@ var require_enum2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var equal_1 = require_equal2();
     var error2 = {
       message: "must be equal to one of the allowed values",
@@ -63728,7 +69193,7 @@ var require_additionalItems2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.validateAdditionalItems = void 0;
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var error2 = {
       message: ({ params: { len } }) => (0, codegen_1.str)`must NOT have more than ${len} items`,
       params: ({ params: { len } }) => (0, codegen_1._)`{limit: ${len}}`
@@ -63781,7 +69246,7 @@ var require_items2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.validateTuple = void 0;
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var code_1 = require_code4();
     var def = {
       keyword: "items",
@@ -63854,7 +69319,7 @@ var require_items20202 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var code_1 = require_code4();
     var additionalItems_1 = require_additionalItems2();
     var error2 = {
@@ -63889,7 +69354,7 @@ var require_contains2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var error2 = {
       message: ({ params: { min, max } }) => max === void 0 ? (0, codegen_1.str)`must contain at least ${min} valid item(s)` : (0, codegen_1.str)`must contain at least ${min} and no more than ${max} valid item(s)`,
       params: ({ params: { min, max } }) => max === void 0 ? (0, codegen_1._)`{minContains: ${min}}` : (0, codegen_1._)`{minContains: ${min}, maxContains: ${max}}`
@@ -63984,7 +69449,7 @@ var require_dependencies2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.validateSchemaDeps = exports2.validatePropertyDeps = exports2.error = void 0;
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var code_1 = require_code4();
     exports2.error = {
       message: ({ params: { property, depsCount, deps } }) => {
@@ -64077,7 +69542,7 @@ var require_propertyNames2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var error2 = {
       message: "property name must be valid",
       params: ({ params }) => (0, codegen_1._)`{propertyName: ${params.propertyName}}`
@@ -64122,7 +69587,7 @@ var require_additionalProperties2 = __commonJS({
     var code_1 = require_code4();
     var codegen_1 = require_codegen2();
     var names_1 = require_names2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var error2 = {
       message: "must NOT have additional properties",
       params: ({ params }) => (0, codegen_1._)`{additionalProperty: ${params.additionalProperty}}`
@@ -64227,7 +69692,7 @@ var require_properties2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var validate_1 = require_validate2();
     var code_1 = require_code4();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var additionalProperties_1 = require_additionalProperties2();
     var def = {
       keyword: "properties",
@@ -64285,8 +69750,8 @@ var require_patternProperties2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var code_1 = require_code4();
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
-    var util_2 = require_util3();
+    var util_1 = require_util4();
+    var util_2 = require_util4();
     var def = {
       keyword: "patternProperties",
       type: "object",
@@ -64357,7 +69822,7 @@ var require_not2 = __commonJS({
   "node_modules/ajv-formats/node_modules/ajv/dist/vocabularies/applicator/not.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var def = {
       keyword: "not",
       schemaType: ["object", "boolean"],
@@ -64406,7 +69871,7 @@ var require_oneOf2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var error2 = {
       message: "must match exactly one schema in oneOf",
       params: ({ params }) => (0, codegen_1._)`{passingSchemas: ${params.passing}}`
@@ -64463,7 +69928,7 @@ var require_allOf2 = __commonJS({
   "node_modules/ajv-formats/node_modules/ajv/dist/vocabularies/applicator/allOf.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var def = {
       keyword: "allOf",
       schemaType: "array",
@@ -64491,7 +69956,7 @@ var require_if2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var error2 = {
       message: ({ params }) => (0, codegen_1.str)`must match "${params.ifClause}" schema`,
       params: ({ params }) => (0, codegen_1._)`{failingKeyword: ${params.ifClause}}`
@@ -64559,7 +70024,7 @@ var require_thenElse2 = __commonJS({
   "node_modules/ajv-formats/node_modules/ajv/dist/vocabularies/applicator/thenElse.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var def = {
       keyword: ["then", "else"],
       schemaType: ["object", "boolean"],
@@ -64767,7 +70232,7 @@ var require_draft72 = __commonJS({
 });
 
 // node_modules/ajv-formats/node_modules/ajv/dist/vocabularies/discriminator/types.js
-var require_types4 = __commonJS({
+var require_types5 = __commonJS({
   "node_modules/ajv-formats/node_modules/ajv/dist/vocabularies/discriminator/types.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -64786,10 +70251,10 @@ var require_discriminator2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     var codegen_1 = require_codegen2();
-    var types_1 = require_types4();
+    var types_1 = require_types5();
     var compile_1 = require_compile2();
     var ref_error_1 = require_ref_error2();
-    var util_1 = require_util3();
+    var util_1 = require_util4();
     var error2 = {
       message: ({ params: { discrError, tagName } }) => discrError === types_1.DiscrError.Tag ? `tag "${tagName}" must be string` : `value of tag "${tagName}" must be in oneOf`,
       params: ({ params: { discrError, tag, tagName } }) => (0, codegen_1._)`{error: ${discrError}, tag: ${tagName}, tagValue: ${tag}}`
@@ -65185,7 +70650,7 @@ var require_limit = __commonJS({
 });
 
 // node_modules/ajv-formats/dist/index.js
-var require_dist3 = __commonJS({
+var require_dist4 = __commonJS({
   "node_modules/ajv-formats/dist/index.js"(exports2, module2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -69458,7 +74923,8 @@ var import_cors = __toESM(require_lib4());
 var import_mime_types = __toESM(require_mime_types());
 var import_response_time = __toESM(require_response_time());
 var import_query_string = __toESM(require_query_string());
-var import_markdown_patch4 = __toESM(require_dist2());
+var import_markdown_patch3 = __toESM(require_dist2());
+var import_markdown_patch_23 = __toESM(require_dist3());
 
 // node_modules/zod/v4/core/core.js
 var NEVER = Object.freeze({
@@ -75470,29 +80936,37 @@ var DEFAULT_SETTINGS = {
   enableInsecureServer: false
 };
 var ERROR_CODE_MESSAGES = {
+  [40005 /* InvalidFrontmatter */]: "Document frontmatter could not be parsed.",
   [40101 /* ApiKeyAuthorizationRequired */]: "Authorization required.  Find your API Key in the 'Local REST API with MCP' section of your Obsidian settings.",
   [40011 /* ContentTypeSpecificationRequired */]: "Content-Type header required; this API accepts data in multiple content-types and you must indicate the content-type of your request body via the Content-Type header.",
   [40012 /* InvalidContentType */]: "Unknown or invalid Content-Type specified in Content-Type header.",
   [40015 /* InvalidContentForContentType */]: "Your request body could not be processed as the content-type specified in your Content-Type header.",
-  [40460 /* PeriodDoesNotExist */]: "Specified period does not exist.",
-  [40060 /* PeriodIsNotEnabled */]: "Specified period is not enabled.",
-  [40461 /* PeriodicNoteDoesNotExist */]: "Periodic note does not exist for the specified period.",
   [40510 /* RequestMethodValidOnlyForFiles */]: "Request method is valid only for file paths, not directories.",
   [40010 /* TextContentEncodingRequired */]: "Incoming content must be text data and have an appropriate text/* Content-type header set (e.g. text/markdown).",
   [40070 /* InvalidFilterQuery */]: "The query you provided could not be processed.",
   [40053 /* MissingTargetTypeHeader */]: "No 'Target-Type' header was provided.",
-  [40054 /* InvalidTargetTypeHeader */]: "The 'Target-Type' header you provided was invalid.",
+  // A target type or scope can arrive by header *or* by URL path element, so
+  // these read neutrally; the call site appends where the bad value came from
+  // and which values are valid there (the two patch formats accept different
+  // scopes). getResponseMessage prepends this text to any custom message, so a
+  // call site that restates what is already here produces a doubled response.
+  [40054 /* InvalidTargetTypeHeader */]: "The target type you specified was invalid. Valid target types are 'heading', 'block', and 'frontmatter'.",
   [40055 /* MissingTargetHeader */]: "No 'Target' header was provided.",
-  [40059 /* InvalidTargetScopeHeader */]: "The 'Target-Scope' header you provided was invalid. Valid values are 'content', 'marker', and 'markerAndContent'.",
+  [40059 /* InvalidTargetScopeHeader */]: "The target scope you specified was invalid.",
   [40056 /* MissingOperation */]: "No 'Operation' header was provided.",
   [40057 /* InvalidOperation */]: "The 'Operation' header you provided was invalid.",
   [40058 /* InvalidTargetHeader */]: "The 'Target' header you provided was invalid.",
+  [40082 /* InvalidPatchVersionHeader */]: "The 'Markdown-Patch-Version' header you provided was invalid. Valid values are '1' (the deprecated header-driven format) and '2' (the default JSON-instruction format).",
+  [40083 /* HeaderTargetingRequiresVersion1 */]: "Header-based targeting (Target-Type/Target and the related Target-Scope/Target-Delimiter/Trim-Target-Whitespace headers) is deprecated and only processed when you also send 'Markdown-Patch-Version: 1'. Without it, reach a sub-part of a document with path-element targeting instead (e.g. /vault/note.md/heading/My%20Heading).",
+  [40084 /* PatchHeaderTargetingRequiresExplicitVersion */]: "Header-based PATCH targeting is ambiguous between the two patch formats, so it requires an explicit 'Markdown-Patch-Version' header: send '1' for the deprecated 1.x header-driven format, or '2' for raw-content mode (instruction fields in headers \u2014 heading Targets as percent-encoded JSON arrays \u2014 with the raw payload as the request body). The 1.x-only Target-Delimiter and Trim-Target-Whitespace headers are never processed under version 2.",
   [40080 /* PatchFailed */]: "The patch you provided could not be applied to the target content.",
+  [40081 /* InvalidPatchInstruction */]: "The patch instruction you provided was malformed or outside the supported algebra.",
   [40090 /* InvalidSearch */]: "The search query you provided is not valid.",
-  [42200 /* ConflictingTargetSpecification */]: "Target type/target specified in both URL path and request headers. Use one or the other.",
+  [42200 /* ConflictingTargetSpecification */]: "Conflicting target specifications: supply the target via URL path elements, via Target-Type/Target headers, or (for PATCH) as an 'application/vnd.olrapi.patch-instruction+json' instruction body \u2014 never more than one of these.",
   [50010 /* ErrorPreparingSimpleSearch */]: "Error encountered while calling Obsidian `prepareSimpleSearch` API.",
-  [40020 /* MissingDestinationHeader */]: "Destination header is required for MOVE operations.",
+  [40020 /* MissingDestinationHeader */]: "Destination header is required for MOVE and COPY operations.",
   [40022 /* InvalidDestinationHeader */]: "The 'Destination' header you provided could not be parsed.",
+  [40023 /* InvalidWithinHeader */]: "The 'Within' header must be a single integer, e.g. 0 or -1.",
   [40021 /* PathTraversalNotAllowed */]: "Path traversal is not allowed. Paths must be relative and within the vault.",
   [40920 /* DestinationAlreadyExists */]: "Destination file already exists.",
   [50020 /* FileOperationFailed */]: "File operation failed. Check the error message for details."
@@ -75514,6 +80988,18 @@ function isContentType(value) {
   return Object.values(import_markdown_patch.ContentType).includes(value);
 }
 function isPatchTargetScope(value) {
+  return value === "content" || value === "marker" || value === "markerAndContent";
+}
+function isV2Operation(value) {
+  return value === "replace" || value === "prepend" || value === "append" || value === "delete";
+}
+function isV2TargetType(value) {
+  return value === "heading" || value === "block" || value === "frontmatter";
+}
+function isV2Scope(value) {
+  return value === "content" || value === "marker" || value === "markerAndContent" || value === "parent";
+}
+function isV2ReadScope(value) {
   return value === "content" || value === "marker" || value === "markerAndContent";
 }
 
@@ -75569,9 +81055,9 @@ var LocalRestApiPublicApi = class {
     return this.publicRouter.route(path2);
   }
   /** Registers an MCP tool that will be available to MCP clients. */
-  addMcpTool(name, description, schema, callback) {
+  addMcpTool(name, description, schema, callback, annotations) {
     this.assertRegistered();
-    const cleanup = this.mcpHandler.registerTool(name, description, schema, callback);
+    const cleanup = this.mcpHandler.registerTool(name, description, schema, callback, annotations);
     this.mcpToolCleanups.push(cleanup);
     this.registeredMcpTools.push(name);
   }
@@ -75589,11 +81075,11 @@ var LocalRestApiPublicApi = class {
 
 // src/vaultOperations.ts
 var import_obsidian = require("obsidian");
-var periodicNotes = __toESM(require_main());
 var import_path = __toESM(require("path"));
 var import_markdown_patch2 = __toESM(require_dist2());
-var jsonLogic = require_logic();
-var WildcardRegexp = require_glob_to_regexp();
+var import_markdown_patch_2 = __toESM(require_dist3());
+var import_json_logic_js = __toESM(require_logic());
+var import_glob_to_regexp = __toESM(require_glob_to_regexp());
 var FileNotFoundError = class extends Error {
 };
 var CommandNotFoundError = class extends Error {
@@ -75601,18 +81087,19 @@ var CommandNotFoundError = class extends Error {
 var DestinationAlreadyExistsError = class extends Error {
 };
 var VaultOperations = class {
-  constructor(app) {
+  constructor(app, settings) {
     this.app = app;
-    jsonLogic.add_operation(
+    this.settings = settings;
+    import_json_logic_js.default.add_operation(
       "glob",
       (pattern, field) => {
         if (typeof field === "string" && typeof pattern === "string") {
-          return WildcardRegexp(pattern).test(field);
+          return (0, import_glob_to_regexp.default)(pattern).test(field);
         }
         return false;
       }
     );
-    jsonLogic.add_operation(
+    import_json_logic_js.default.add_operation(
       "regexp",
       (pattern, field) => {
         if (typeof field === "string" && typeof pattern === "string") {
@@ -75668,6 +81155,28 @@ var VaultOperations = class {
       frontmatterFields: Object.keys(documentMap.frontmatter)
     };
   }
+  /**
+   * The markdown-patch 2.0 document map: headings nested by containment (each
+   * heading text maps to its child headings; every occurrence of a repeated
+   * sibling gets its own key, later ones carrying a reserved marker suffix),
+   * block ids disambiguated the same way, frontmatter field names, and the
+   * content-hash `version` token clients pass back as a patch `ifMatch`
+   * precondition.
+   */
+  async getDocumentMapV2Object(file) {
+    const content = await this.app.vault.adapter.read(file.path);
+    return (0, import_markdown_patch_2.projectMap)((0, import_markdown_patch_2.buildModel)(content));
+  }
+  /**
+   * The markdown-patch 2.0 targeted read: resolve a `(targetType, target)`
+   * address — a heading path array, a bare block id, or a frontmatter key — and
+   * return the section body (headings/blocks) or parsed value (frontmatter).
+   * Throws {@link TargetNotFoundError} when the address does not resolve.
+   */
+  async readFileSectionMdp2(file, target) {
+    const content = await this.app.vault.adapter.read(file.path);
+    return (0, import_markdown_patch_2.readTarget)(content, target);
+  }
   async readFileSection(file, targetType, target, targetDelimiter = "::") {
     const content = await this.app.vault.adapter.read(file.path);
     const documentMap = (0, import_markdown_patch2.getDocumentMap)(content);
@@ -75703,6 +81212,9 @@ var VaultOperations = class {
     const links = Object.keys(
       this.app.metadataCache.resolvedLinks[file.path] ?? {}
     );
+    const unresolvedLinks = Object.keys(
+      this.app.metadataCache.unresolvedLinks[file.path] ?? {}
+    );
     const index = backlinksIndex ?? this.buildBacklinksIndex();
     const backlinks = index[file.path] ?? [];
     return {
@@ -75712,23 +81224,40 @@ var VaultOperations = class {
       path: file.path,
       content: includeContent ? await this.app.vault.cachedRead(file) : "",
       links,
-      backlinks
+      backlinks,
+      unresolvedLinks
     };
   }
-  async resolvePathAndTarget(rawPath) {
-    const normalizedPath = rawPath.endsWith("/") ? rawPath.slice(0, -1) : rawPath;
-    if (!normalizedPath) return null;
-    let exactStat = null;
+  async renderFileToHtml(file, content) {
+    const markdown = content ?? await this.app.vault.cachedRead(file);
+    const el = activeDocument.createElement("div");
+    const component = new import_obsidian.Component();
+    component.load();
     try {
-      exactStat = await this.app.vault.adapter.stat(normalizedPath);
-    } catch {
+      await import_obsidian.MarkdownRenderer.render(this.app, markdown, el, file.path, component);
+      return el.innerHTML;
+    } finally {
+      component.unload();
     }
-    if (exactStat?.type === "file") {
-      return { filePath: normalizedPath };
+  }
+  async resolvePathAndTarget(rawSegments) {
+    const segments = rawSegments.length > 0 && rawSegments[rawSegments.length - 1] === "" ? rawSegments.slice(0, -1) : rawSegments;
+    if (segments.length === 0) return null;
+    const isFilePath = (parts) => parts.every((part) => !part.includes("/"));
+    if (isFilePath(segments)) {
+      let exactStat = null;
+      try {
+        exactStat = await this.app.vault.adapter.stat(segments.join("/"));
+      } catch {
+      }
+      if (exactStat?.type === "file") {
+        return { filePath: segments.join("/") };
+      }
     }
-    const segments = normalizedPath.split("/");
     for (let i = segments.length - 1; i >= 1; i--) {
-      const candidate = segments.slice(0, i).join("/");
+      const prefix = segments.slice(0, i);
+      if (!isFilePath(prefix)) continue;
+      const candidate = prefix.join("/");
       let s = null;
       try {
         s = await this.app.vault.adapter.stat(candidate);
@@ -75738,8 +81267,9 @@ var VaultOperations = class {
       if (s?.type === "file") {
         const remainder = segments.slice(i);
         const targetType = remainder[0];
+        const targetSegments = targetType === "heading" ? remainder.slice(1) : void 0;
         const target = targetType === "heading" ? remainder.slice(1).join("::") : remainder[1];
-        return { filePath: candidate, targetType, target };
+        return { filePath: candidate, targetType, target, targetSegments };
       }
     }
     return null;
@@ -75798,12 +81328,20 @@ var VaultOperations = class {
     fileContents += content;
     await this.app.vault.adapter.write(filePath, fileContents);
   }
-  async deleteVaultFile(filePath) {
-    const pathExists = await this.app.vault.adapter.exists(filePath);
-    if (!pathExists) {
+  async deleteVaultFile(filePath, permanent = false) {
+    if (permanent) {
+      const pathExists = await this.app.vault.adapter.exists(filePath);
+      if (!pathExists) {
+        throw new FileNotFoundError(`File not found: ${filePath}`);
+      }
+      await this.app.vault.adapter.remove(filePath);
+      return;
+    }
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!file) {
       throw new FileNotFoundError(`File not found: ${filePath}`);
     }
-    await this.app.vault.adapter.remove(filePath);
+    await this.app.fileManager.trashFile(file);
   }
   async moveVaultFile(sourcePath, destinationPath, allowOverwrite = false) {
     if (!destinationPath) {
@@ -75835,6 +81373,38 @@ var VaultOperations = class {
     await this.app.fileManager.renameFile(sourceFile, destinationPath);
     return sourceFile.path;
   }
+  async copyVaultFile(sourcePath, destinationPath, allowOverwrite = false) {
+    if (!destinationPath) {
+      throw new Error("Destination path must not be empty.");
+    }
+    const sourceFile = this.app.vault.getAbstractFileByPath(sourcePath);
+    if (!(sourceFile instanceof import_obsidian.TFile)) {
+      throw new FileNotFoundError(`File not found: ${sourcePath}`);
+    }
+    if (sourcePath === destinationPath) {
+      throw new DestinationAlreadyExistsError(
+        `Destination already exists: ${destinationPath}`
+      );
+    }
+    const destExists = await this.app.vault.adapter.exists(destinationPath);
+    if (destExists) {
+      if (!allowOverwrite) {
+        throw new DestinationAlreadyExistsError(
+          `Destination already exists: ${destinationPath}`
+        );
+      }
+      await this.app.vault.adapter.remove(destinationPath);
+    }
+    const parentDir = destinationPath.substring(
+      0,
+      destinationPath.lastIndexOf("/")
+    );
+    if (parentDir && !await this.app.vault.adapter.exists(parentDir)) {
+      await this.app.vault.createFolder(parentDir);
+    }
+    const copiedFile = await this.app.vault.copy(sourceFile, destinationPath);
+    return copiedFile.path;
+  }
   // Throws PatchFailed on patch error; caller is responsible for mapping to
   // the appropriate HTTP error code or MCP error.
   async patchFileSection(filePath, targetType, target, operation, content, contentType2, options) {
@@ -75860,83 +81430,21 @@ var VaultOperations = class {
     await this.app.vault.adapter.write(filePath, patched);
     return patched;
   }
-  getPeriodicNoteInterface() {
-    return {
-      daily: {
-        settings: periodicNotes.getDailyNoteSettings(),
-        loaded: periodicNotes.appHasDailyNotesPluginLoaded(),
-        create: periodicNotes.createDailyNote,
-        get: periodicNotes.getDailyNote,
-        getAll: periodicNotes.getAllDailyNotes
-      },
-      weekly: {
-        settings: periodicNotes.getWeeklyNoteSettings(),
-        loaded: periodicNotes.appHasWeeklyNotesPluginLoaded(),
-        create: periodicNotes.createWeeklyNote,
-        get: periodicNotes.getWeeklyNote,
-        getAll: periodicNotes.getAllWeeklyNotes
-      },
-      monthly: {
-        settings: periodicNotes.getMonthlyNoteSettings(),
-        loaded: periodicNotes.appHasMonthlyNotesPluginLoaded(),
-        create: periodicNotes.createMonthlyNote,
-        get: periodicNotes.getMonthlyNote,
-        getAll: periodicNotes.getAllMonthlyNotes
-      },
-      quarterly: {
-        settings: periodicNotes.getQuarterlyNoteSettings(),
-        loaded: periodicNotes.appHasQuarterlyNotesPluginLoaded(),
-        create: periodicNotes.createQuarterlyNote,
-        get: periodicNotes.getQuarterlyNote,
-        getAll: periodicNotes.getAllQuarterlyNotes
-      },
-      yearly: {
-        settings: periodicNotes.getYearlyNoteSettings(),
-        loaded: periodicNotes.appHasYearlyNotesPluginLoaded(),
-        create: periodicNotes.createYearlyNote,
-        get: periodicNotes.getYearlyNote,
-        getAll: periodicNotes.getAllYearlyNotes
-      }
-    };
-  }
-  periodicGetInterface(period) {
-    const periodic = this.getPeriodicNoteInterface();
-    if (!periodic[period]) {
-      return [null, 40460 /* PeriodDoesNotExist */];
+  // Applies a single markdown-patch 2.0 instruction and writes the result.
+  // ("Mdp2" = markdown-patch 2.0, not the removed API version 2.0 PATCH.)
+  // Throws FileNotFoundError when the file is missing; lets the 2.0 engine's
+  // typed errors (TargetNotFoundError, PreconditionFailedError, …) propagate for
+  // the caller to map to HTTP responses. Returns the patched document alongside
+  // any advisory warnings the engine surfaced (e.g. heading-depth overflow).
+  async patchFileSectionMdp2(filePath, instruction) {
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof import_obsidian.TFile)) {
+      throw new FileNotFoundError(`File not found: ${filePath}`);
     }
-    if (!periodic[period].loaded) {
-      return [null, 40060 /* PeriodIsNotEnabled */];
-    }
-    return [periodic[period], null];
-  }
-  periodicGetNote(periodName, timestamp) {
-    const [period, err] = this.periodicGetInterface(periodName);
-    if (err || !period) {
-      return [null, err ?? 40460 /* PeriodDoesNotExist */];
-    }
-    const now = window.moment(timestamp);
-    const all = period.getAll();
-    const file = period.get(now, all);
-    if (!file) {
-      return [null, 40461 /* PeriodicNoteDoesNotExist */];
-    }
-    return [file, null];
-  }
-  async periodicGetOrCreateNote(periodName, timestamp) {
-    const [gottenFile, err] = this.periodicGetNote(periodName, timestamp);
-    let file = gottenFile;
-    if (err === 40461 /* PeriodicNoteDoesNotExist */) {
-      const [period] = this.periodicGetInterface(periodName);
-      if (!period) {
-        return [null, 40460 /* PeriodDoesNotExist */];
-      }
-      const now = window.moment(Date.now());
-      file = await period.create(now);
-      await this.waitForFileCache(file);
-    } else if (err) {
-      return [null, err];
-    }
-    return [file, null];
+    const fileContents = await this.app.vault.read(file);
+    const result = (0, import_markdown_patch_2.patch)(fileContents, instruction);
+    await this.app.vault.adapter.write(filePath, result.document);
+    return result;
   }
   async simpleSearch(query, contextLength = 100) {
     const results = [];
@@ -75989,7 +81497,7 @@ var VaultOperations = class {
     for (const file of this.app.vault.getMarkdownFiles()) {
       const fileContext = await this.getFileMetadataObject(file, backlinksIndex, includeContent);
       try {
-        const fileResult = jsonLogic.apply(query, fileContext);
+        const fileResult = import_json_logic_js.default.apply(query, fileContext);
         if (this.isTruthy(fileResult)) {
           results.push({ filename: file.path, result: fileResult });
         }
@@ -80298,7 +85806,7 @@ function isTerminal(status) {
   return status === "completed" || status === "failed" || status === "cancelled";
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/Options.js
+// node_modules/zod-to-json-schema/dist/esm/Options.js
 var ignoreOverride = /* @__PURE__ */ Symbol("Let zodToJsonSchema decide on which parser to use");
 var defaultOptions = {
   name: void 0,
@@ -80332,7 +85840,7 @@ var getDefaultOptions = (options) => typeof options === "string" ? {
   ...options
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/Refs.js
+// node_modules/zod-to-json-schema/dist/esm/Refs.js
 var getRefs = (options) => {
   const _options = getDefaultOptions(options);
   const currentPath = _options.name !== void 0 ? [..._options.basePath, _options.definitionPath, _options.name] : _options.basePath;
@@ -80353,7 +85861,7 @@ var getRefs = (options) => {
   };
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/errorMessages.js
+// node_modules/zod-to-json-schema/dist/esm/errorMessages.js
 function addErrorMessage(res, key, errorMessage, refs) {
   if (!refs?.errorMessages)
     return;
@@ -80369,7 +85877,7 @@ function setResponseValueAndErrors(res, key, value, errorMessage, refs) {
   addErrorMessage(res, key, errorMessage, refs);
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/getRelativePath.js
+// node_modules/zod-to-json-schema/dist/esm/getRelativePath.js
 var getRelativePath = (pathA, pathB) => {
   let i = 0;
   for (; i < pathA.length && i < pathB.length; i++) {
@@ -80379,7 +85887,7 @@ var getRelativePath = (pathA, pathB) => {
   return [(pathA.length - i).toString(), ...pathB.slice(i)].join("/");
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/any.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/any.js
 function parseAnyDef(refs) {
   if (refs.target !== "openAi") {
     return {};
@@ -80395,7 +85903,7 @@ function parseAnyDef(refs) {
   };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/array.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/array.js
 function parseArrayDef(def, refs) {
   const res = {
     type: "array"
@@ -80419,7 +85927,7 @@ function parseArrayDef(def, refs) {
   return res;
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/bigint.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/bigint.js
 function parseBigintDef(def, refs) {
   const res = {
     type: "integer",
@@ -80465,24 +85973,24 @@ function parseBigintDef(def, refs) {
   return res;
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/boolean.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/boolean.js
 function parseBooleanDef() {
   return {
     type: "boolean"
   };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/branded.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/branded.js
 function parseBrandedDef(_def, refs) {
   return parseDef(_def.type._def, refs);
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/catch.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/catch.js
 var parseCatchDef = (def, refs) => {
   return parseDef(def.innerType._def, refs);
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/date.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/date.js
 function parseDateDef(def, refs, overrideDateStrategy) {
   const strategy = overrideDateStrategy ?? refs.dateStrategy;
   if (Array.isArray(strategy)) {
@@ -80541,7 +86049,7 @@ var integerDateParser = (def, refs) => {
   return res;
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/default.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/default.js
 function parseDefaultDef(_def, refs) {
   return {
     ...parseDef(_def.innerType._def, refs),
@@ -80549,12 +86057,12 @@ function parseDefaultDef(_def, refs) {
   };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/effects.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/effects.js
 function parseEffectsDef(_def, refs) {
   return refs.effectStrategy === "input" ? parseDef(_def.schema._def, refs) : parseAnyDef(refs);
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/enum.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/enum.js
 function parseEnumDef(def) {
   return {
     type: "string",
@@ -80562,7 +86070,7 @@ function parseEnumDef(def) {
   };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/intersection.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/intersection.js
 var isJsonSchema7AllOfType = (type) => {
   if ("type" in type && type.type === "string")
     return false;
@@ -80604,7 +86112,7 @@ function parseIntersectionDef(def, refs) {
   } : void 0;
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/literal.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/literal.js
 function parseLiteralDef(def, refs) {
   const parsedType2 = typeof def.value;
   if (parsedType2 !== "bigint" && parsedType2 !== "number" && parsedType2 !== "boolean" && parsedType2 !== "string") {
@@ -80624,7 +86132,7 @@ function parseLiteralDef(def, refs) {
   };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/string.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/string.js
 var emojiRegex2 = void 0;
 var zodPatterns = {
   /**
@@ -80949,7 +86457,7 @@ function stringifyRegExpWithFlags(regex, refs) {
   return pattern;
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/record.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/record.js
 function parseRecordDef(def, refs) {
   if (refs.target === "openAi") {
     console.warn("Warning: OpenAI may not support records in schemas! Try an array of key-value pairs instead.");
@@ -81001,7 +86509,7 @@ function parseRecordDef(def, refs) {
   return schema;
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/map.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/map.js
 function parseMapDef(def, refs) {
   if (refs.mapStrategy === "record") {
     return parseRecordDef(def, refs);
@@ -81026,7 +86534,7 @@ function parseMapDef(def, refs) {
   };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/nativeEnum.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/nativeEnum.js
 function parseNativeEnumDef(def) {
   const object3 = def.values;
   const actualKeys = Object.keys(def.values).filter((key) => {
@@ -81040,7 +86548,7 @@ function parseNativeEnumDef(def) {
   };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/never.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/never.js
 function parseNeverDef(refs) {
   return refs.target === "openAi" ? void 0 : {
     not: parseAnyDef({
@@ -81050,7 +86558,7 @@ function parseNeverDef(refs) {
   };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/null.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/null.js
 function parseNullDef(refs) {
   return refs.target === "openApi3" ? {
     enum: ["null"],
@@ -81060,7 +86568,7 @@ function parseNullDef(refs) {
   };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/union.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/union.js
 var primitiveMappings = {
   ZodString: "string",
   ZodNumber: "number",
@@ -81128,7 +86636,7 @@ var asAnyOf = (def, refs) => {
   return anyOf.length ? { anyOf } : void 0;
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/nullable.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/nullable.js
 function parseNullableDef(def, refs) {
   if (["ZodString", "ZodNumber", "ZodBigInt", "ZodBoolean", "ZodNull"].includes(def.innerType._def.typeName) && (!def.innerType._def.checks || !def.innerType._def.checks.length)) {
     if (refs.target === "openApi3") {
@@ -81160,7 +86668,7 @@ function parseNullableDef(def, refs) {
   return base && { anyOf: [base, { type: "null" }] };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/number.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/number.js
 function parseNumberDef(def, refs) {
   const res = {
     type: "number"
@@ -81209,7 +86717,7 @@ function parseNumberDef(def, refs) {
   return res;
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/object.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/object.js
 function parseObjectDef(def, refs) {
   const forceOptionalIntoNullable = refs.target === "openAi";
   const result = {
@@ -81279,7 +86787,7 @@ function safeIsOptional(schema) {
   }
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/optional.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/optional.js
 var parseOptionalDef = (def, refs) => {
   if (refs.currentPath.toString() === refs.propertyPath?.toString()) {
     return parseDef(def.innerType._def, refs);
@@ -81298,7 +86806,7 @@ var parseOptionalDef = (def, refs) => {
   } : parseAnyDef(refs);
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/pipeline.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/pipeline.js
 var parsePipelineDef = (def, refs) => {
   if (refs.pipeStrategy === "input") {
     return parseDef(def.in._def, refs);
@@ -81318,12 +86826,12 @@ var parsePipelineDef = (def, refs) => {
   };
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/promise.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/promise.js
 function parsePromiseDef(def, refs) {
   return parseDef(def.type._def, refs);
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/set.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/set.js
 function parseSetDef(def, refs) {
   const items = parseDef(def.valueType._def, {
     ...refs,
@@ -81343,7 +86851,7 @@ function parseSetDef(def, refs) {
   return schema;
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/tuple.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/tuple.js
 function parseTupleDef(def, refs) {
   if (def.rest) {
     return {
@@ -81371,24 +86879,24 @@ function parseTupleDef(def, refs) {
   }
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/undefined.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/undefined.js
 function parseUndefinedDef(refs) {
   return {
     not: parseAnyDef(refs)
   };
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/unknown.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/unknown.js
 function parseUnknownDef(refs) {
   return parseAnyDef(refs);
 }
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parsers/readonly.js
+// node_modules/zod-to-json-schema/dist/esm/parsers/readonly.js
 var parseReadonlyDef = (def, refs) => {
   return parseDef(def.innerType._def, refs);
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/selectParser.js
+// node_modules/zod-to-json-schema/dist/esm/selectParser.js
 var selectParser = (def, typeName, refs) => {
   switch (typeName) {
     case ZodFirstPartyTypeKind.ZodString:
@@ -81464,7 +86972,7 @@ var selectParser = (def, typeName, refs) => {
   }
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/parseDef.js
+// node_modules/zod-to-json-schema/dist/esm/parseDef.js
 function parseDef(def, refs, forceResolution = false) {
   const seenItem = refs.seen.get(def);
   if (refs.override) {
@@ -81520,7 +87028,7 @@ var addMeta = (def, refs, jsonSchema) => {
   return jsonSchema;
 };
 
-// node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema/dist/esm/zodToJsonSchema.js
+// node_modules/zod-to-json-schema/dist/esm/zodToJsonSchema.js
 var zodToJsonSchema = (schema, options) => {
   const refs = getRefs(options);
   let definitions = typeof options === "object" && options.definitions ? Object.entries(options.definitions).reduce((acc, [name2, schema2]) => ({
@@ -82579,7 +88087,7 @@ function mergeCapabilities(base, additional) {
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/validation/ajv-provider.js
 var import_ajv = __toESM(require_ajv(), 1);
-var import_ajv_formats = __toESM(require_dist3(), 1);
+var import_ajv_formats = __toESM(require_dist4(), 1);
 function createDefaultAjvInstance() {
   const ajv = new import_ajv.Ajv({
     strict: false,
@@ -84617,13 +90125,60 @@ data:
 var import_path2 = require("path");
 var import_crypto = require("crypto");
 var import_obsidian2 = require("obsidian");
-var import_markdown_patch3 = __toESM(require_dist2());
 
-// docs/openapi.yaml
-var openapi_default = 'components:\n  schemas:\n    Error:\n      properties:\n        errorCode:\n          description: |\n            A 5-digit error code uniquely identifying this particular type of error.\n          example: 40149\n          type: "number"\n        message:\n          description: "Message describing the error."\n          example: "A brief description of the error."\n          type: "string"\n      type: "object"\n    NoteJson:\n      properties:\n        backlinks:\n          description: "Vault-relative paths of files that link to this file."\n          items:\n            type: "string"\n          type: "array"\n        content:\n          type: "string"\n        frontmatter:\n          type: "object"\n        links:\n          description: "Vault-relative paths of files this file links to."\n          items:\n            type: "string"\n          type: "array"\n        path:\n          type: "string"\n        stat:\n          properties:\n            ctime:\n              type: "number"\n            mtime:\n              type: "number"\n            size:\n              type: "number"\n          required:\n            - "ctime"\n            - "mtime"\n            - "size"\n          type: "object"\n        tags:\n          items:\n            type: "string"\n          type: "array"\n      required:\n        - "tags"\n        - "frontmatter"\n        - "stat"\n        - "path"\n        - "content"\n        - "links"\n        - "backlinks"\n      type: "object"\n  securitySchemes:\n    apiKeyAuth:\n      description: |\n        Find your API Key in your Obsidian settings\n        in the "Local REST API" section under "Plugins".\n      scheme: "bearer"\n      type: "http"\ninfo:\n  description: |\n    The Obsidian Local REST API with MCP plugin gives you two ways to interact with your Obsidian vault programmatically:\n    \n    - **REST API** \u2014 standard HTTP endpoints for reading and writing notes, searching vault contents, managing periodic notes, and more. Useful from scripts, applications, or any HTTP client.\n    - **MCP server** \u2014 exposes the same capabilities as structured tools for AI assistants (Claude, Cursor, and other MCP-compatible clients). See the `POST /mcp/` endpoint for connection details.\n    \n    ## Testing with this interface\n    \n    Select any operation in the sidebar, then open the **Try It** tab to send a live request to your running Obsidian instance.\n    \n    **Authentication** \u2014 all requests require a Bearer token. In the **Try It** panel, expand the **Security** section and paste the API key shown in Obsidian under **Settings \u2192 Local REST API with MCP**.\n    \n    **Certificate warning** \u2014 the plugin generates a self-signed TLS certificate on first run. Most browsers will block requests to an untrusted certificate, so you may need to add it as a trusted certificate in your OS or browser settings before requests will go through. The steps vary by environment \u2014 search for "trust self-signed certificate" plus your OS or browser name if you\'re unsure. If that proves too cumbersome, you can enable the insecure HTTP server in your plugin settings instead and select "HTTP (insecure mode)" from the **Try It** section.\n  title: "Local REST API for Obsidian"\n  version: "1.0"\nopenapi: "3.2.0"\npaths:\n  /:\n    get:\n      description: |\n        Returns basic details about the server as well as your authentication status.\n        \n        This is the only API request that does *not* require authentication.\n      responses:\n        "200":\n          content:\n            application/json:\n              schema:\n                properties:\n                  authenticated:\n                    description: "Is your current request authenticated?"\n                    type: "boolean"\n                  ok:\n                    description: "\'OK\'"\n                    type: "string"\n                  service:\n                    description: "\'Obsidian Local REST API\'"\n                    type: "string"\n                  versions:\n                    properties:\n                      obsidian:\n                        description: "Obsidian plugin API version"\n                        type: "string"\n                      self:\n                        description: "Plugin version."\n                        type: "string"\n                    type: "object"\n                type: "object"\n          description: "Success"\n      summary: |\n        Returns basic details about the server.\n      tags:\n        - "System"\n  /active/:\n    delete:\n      parameters: []\n      responses:\n        "204":\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "File does not exist."\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Deletes the currently-active file in Obsidian.\n      tags:\n        - "Active File"\n    get:\n      description: |\n        Returns the content of the currently active file in Obsidian.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        # Retrieving Document Metadata\n        \n        ## Metadata\n        \n        If you specify the header `Accept: application/vnd.olrapi.note+json`, will return a JSON representation of your note including parsed tag and frontmatter data as well as filesystem metadata.\n        \n        ## Document Map\n        \n        If you specify the header `Accept: application/vnd.olrapi.document-map+json`, will return a JSON object outlining what PATCH targets exist. See "responses" below for details.\n      parameters:\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      responses:\n        "200":\n          content:\n            application/json:\n              description: "Returned when `Target-Type` is `frontmatter`; the JSON value of the specified frontmatter field."\n              schema: {}\n            "application/vnd.olrapi.document-map+json":\n              schema:\n                properties:\n                  blocks:\n                    example:\n                      - "^blockref1"\n                      - "^anotherBlockRef"\n                    items:\n                      type: "string"\n                    type: "array"\n                  frontmatterFields:\n                    example:\n                      - "title"\n                      - "tags"\n                      - "dateCreated"\n                    items:\n                      type: "string"\n                    type: "array"\n                  headings:\n                    example:\n                      - "Heading 1"\n                      - "Heading 1::Subhead of Heading 1"\n                      - "Heading 2"\n                    items:\n                      type: "string"\n                    type: "array"\n                type: "object"\n            "application/vnd.olrapi.note+json":\n              schema:\n                "$ref": "#/components/schemas/NoteJson"\n            text/markdown:\n              schema:\n                example: |\n                  # This is my document\n                  \n                  something else here\n                type: "string"\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "404":\n          description: "File or target section does not exist"\n      summary: |\n        Return the content of the active file open in Obsidian.\n      tags:\n        - "Active File"\n    patch:\n      description: |\n        Inserts content into the currently-open note relative to a heading, block reference, or frontmatter field within that document.\n        \n        Allows you to modify the content relative to a heading, block reference, or frontmatter field in your document.\n        \n        # How to Use & Examples\n        \n        All of the below examples assume you have a document that looks like\n        this:\n        \n        ```markdown\n        ---\n        alpha: 1\n        beta: test\n        delta:\n        zeta: 1\n        yotta: 1\n        gamma:\n        - one\n        - two\n        ---\n        \n        # Heading 1\n        \n        This is the content for heading one\n        \n        Also references some [[#^484ef2]]\n        \n        ## Subheading 1:1\n        Content for Subheading 1:1\n        \n        ### Subsubheading 1:1:1\n        \n        ### Subsubheading 1:1:2\n        \n        Testing how block references work for a table.[[#^2c7cfa]]\n        Some content for Subsubheading 1:1:2\n        \n        More random text.\n        \n        ^2d9b4a\n        \n        ## Subheading 1:2\n        \n        Content for Subheading 1:2.\n        \n        some content with a block reference ^484ef2\n        \n        ## Subheading 1:3\n        | City         | Population |\n        | ------------ | ---------- |\n        | Seattle, WA  | 8          |\n        | Portland, OR | 4          |\n        \n        ^2c7cfa\n        ```\n        \n        ## Append, Prepend, or Replace Content Below a Heading\n        \n        If you wanted to append the content "Hello" below "Subheading 1:1:1" under "Heading 1",\n        you could send a request with the following headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `heading`\n        - `Target`: `Heading 1::Subheading 1:1:1` (percent-encode any non-ASCII characters, e.g. `H%C3%A9llo` for `H\xE9llo`)\n        - with the request body: `Hello`\n        \n        The above would work just fine for `prepend` or `replace`, too, of course,\n        but with different results.\n        \n        > **Note:** The heading line itself (`### Subsubheading 1:1:1`) is not part of the section content. When using `replace`, supply only the body text that should appear beneath the heading \u2014 do not include the heading line in the request body, or it will be duplicated.\n        \n        ## Append, Prepend, or Replace Content to a Block Reference\n        \n        If you wanted to append the content "Hello" below the block referenced by\n        "2d9b4a" above ("More random text."), you could send the following headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `block`\n        - `Target`: `2d9b4a`\n        - with the request body: `Hello`\n        \n        The above would work just fine for `prepend` or `replace`, too, of course,\n        but with different results.\n        \n        ## Append, Prepend, or Replace a Row or Rows to/in a Table Referenced by a Block Reference\n        \n        If you wanted to add a new city ("Chicago, IL") and population ("16") pair to the table above\n        referenced by the block reference `2c7cfa`, you could send the following\n        headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `block`\n        - `Target`: `2c7cfa`\n        - `Content-Type`: `application/json`\n        - with the request body: `[["Chicago, IL", "16"]]`\n        \n        The use of a `Content-Type` of `application/json` allows the API\n        to infer that member of your array represents rows and columns of your\n        to append to the referenced table.  You can of course just use a\n        `Content-Type` of `text/markdown`, but in such a case you\'ll have to\n        format your table row manually instead of letting the library figure\n        it out for you.\n        \n        You also have the option of using `prepend` (in which case, your new\n        row would be the first -- right below the table heading) or `replace` (in which\n        case all rows except the table heading would be replaced by the new row(s)\n        you supplied).\n        \n        ## Setting a Frontmatter Field\n        \n        If you wanted to set the frontmatter field `alpha` to `2`, you could\n        send the following headers:\n        \n        - `Operation`: `replace`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `beep`\n        - with the request body `2`\n        \n        If you\'re setting a frontmatter field that might not already exist\n        you may want to use the `Create-Target-If-Missing` header so the\n        new frontmatter field is created and set to your specified value\n        if it doesn\'t already exist.\n        \n        You may find using a `Content-Type` of `application/json` to be\n        particularly useful in the case of frontmatter since frontmatter\n        fields\' values are JSON data, and the API can be smarter about\n        interpreting your `prepend` or `append` requests if you specify\n        your data as JSON (particularly when appending, for example,\n        list items).\n        \n        ## Adding and Removing Tags\n        \n        Obsidian stores tags in two places: the `tags` frontmatter field and as\n        inline `#tag` syntax in the document body. You can manage frontmatter tags\n        with the PATCH API.\n        \n        ### Adding a tag\n        \n        To add the tag `project/active` to a document\'s frontmatter `tags` list:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `tags`\n        - `Content-Type`: `application/json`\n        - `Create-Target-If-Missing`: `true`\n        - with the request body: `["project/active"]`\n        \n        Passing an array as `application/json` tells the API to merge individual\n        items into the existing list rather than replace the whole field.\n        `Create-Target-If-Missing` ensures the `tags` key is created when the\n        document has no frontmatter tags yet.\n        \n        ### Removing a tag\n        \n        There is no direct "remove item from list" operation. To remove a tag,\n        first read the current tags via GET (or `vault_read` in the MCP API),\n        filter out the unwanted tag client-side, then replace the entire field:\n        \n        - `Operation`: `replace`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `tags`\n        - `Content-Type`: `application/json`\n        - with the request body: `["remaining-tag-1", "remaining-tag-2"]`\n        \n        ## Identifying Patch Targets in a File\n        \n        You can issue a GET request to `/vault/files/{path}` with an `Accept` header\n        of `application/vnd.olrapi.document-map+json` to get a JSON object\n        outlining what headings, block references, and frontmatter fields exist.\n      parameters:\n        - description: "Patch operation to perform"\n          in: "header"\n          name: "Operation"\n          required: true\n          schema:\n            enum:\n              - "append"\n              - "prepend"\n              - "replace"\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Controls which part of the target the operation acts on. Only applicable to\n            `heading` and `block` targets; ignored for `frontmatter`.\n            \n            - `content` (default): the operation applies to the content region only \u2014 the area\n              below the heading line or at the block, leaving the heading/block-ID token unchanged.\n            - `marker`: the operation applies only to the heading line or block-ID token itself,\n              leaving the content unchanged.\n            - `markerAndContent`: the operation applies to the full range covering both the\n              heading/block-ID token and its content, allowing them to be replaced or repositioned\n              together.\n          in: "header"\n          name: "Target-Scope"\n          required: false\n          schema:\n            default: "content"\n            enum:\n              - "content"\n              - "marker"\n              - "markerAndContent"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: true\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: true\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          application/json:\n            schema:\n              example: "[\'one\', \'two\']"\n              type: "string"\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content you would like to insert."\n        required: true\n      responses:\n        "200":\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request; see response message for details."\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Does not exist"\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Partially update content in the currently open note.\n      tags:\n        - "Active File"\n    post:\n      description: |\n        Appends content to the end of the currently-open note.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        When a target is specified the content is appended within that section and the full updated file content is returned with a `200` status. Without a target, the content is appended to the end of the file and a `204` status is returned.\n        \n        If you need `prepend` or `replace` operations, use `PATCH` instead.\n      parameters:\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content you would like to append."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; targeted section updated. The full updated file content is returned."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "204":\n          description: "Success; content appended to end of file."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request"\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Append content to the active file open in Obsidian.\n      tags:\n        - "Active File"\n    put:\n      description: |\n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        When a target is specified the target section is replaced with the request body and the full updated file content is returned with a `200` status. If the target does not exist it will be created. Without a target, the entire file is replaced and a `204` status is returned.\n      parameters:\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          "*/*":\n            schema:\n              type: "string"\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content of the file you would like to upload."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; targeted section replaced. The full updated file content is returned."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "204":\n          description: "Success; entire file replaced."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Incoming file could not be processed.  Make sure you have specified a reasonable file name, and make sure you have set a reasonable \'Content-Type\' header; if you are uploading a note, \'text/markdown\' is likely the right choice.\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Update the content of the active file open in Obsidian.\n      tags:\n        - "Active File"\n  /commands/:\n    get:\n      responses:\n        "200":\n          content:\n            application/json:\n              example:\n                commands:\n                  - id: "global-search:open"\n                    name: "Search: Search in all files"\n                  - id: "graph:open"\n                    name: "Graph view: Open graph view"\n              schema:\n                properties:\n                  commands:\n                    items:\n                      properties:\n                        id:\n                          type: "string"\n                        name:\n                          type: "string"\n                      type: "object"\n                    type: "array"\n                type: "object"\n          description: "A list of available commands."\n      summary: |\n        Get a list of available commands.\n      tags:\n        - "Commands"\n  "/commands/{commandId}/":\n    post:\n      parameters:\n        - description: "The id of the command to execute"\n          in: "path"\n          name: "commandId"\n          required: true\n          schema:\n            type: "string"\n      responses:\n        "204":\n          description: "Success"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "The command you specified does not exist."\n      summary: |\n        Execute a command.\n      tags:\n        - "Commands"\n  /mcp/:\n    get:\n      description: |\n        Opens a long-lived SSE stream so the server can push messages to the client for an existing session. Requires the session ID returned by the `initialize` response.\n      parameters:\n        - description: "Session ID returned by the server on initialization."\n          in: "header"\n          name: "Mcp-Session-Id"\n          required: true\n          schema:\n            type: "string"\n        - description: "MCP protocol version negotiated during initialization (e.g. `2025-06-18`). Required on all requests after initialization. Unrecognised values are rejected with 400."\n          in: "header"\n          name: "MCP-Protocol-Version"\n          required: false\n          schema:\n            type: "string"\n      responses:\n        "200":\n          content:\n            text/event-stream:\n              schema:\n                type: "string"\n          description: "SSE stream opened. The server pushes JSON-RPC messages as server-sent events."\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Unsupported MCP-Protocol-Version."\n        "401":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "API key required."\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Session not found."\n      summary: |\n        Open a server-sent events stream for an existing MCP session.\n      tags:\n        - "MCP"\n    post:\n      description: |\n        Interact with this plugin\'s MCP server using the [Streamable HTTP transport](https://modelcontextprotocol.io/docs/concepts/transports#streamable-http).\n        \n        Point any MCP-compatible client (Claude Code, Cursor, or any MCP SDK client that supports the Streamable HTTP transport) at this endpoint and pass your API key as a bearer token. Send an `initialize` request via `POST /mcp/` to start a session; the server returns a session ID in the `Mcp-Session-Id` response header. Include that header on all subsequent requests.\n        \n        Include the `MCP-Protocol-Version` header on all requests after initialization, set to the protocol version negotiated during the `initialize` exchange (e.g. `2025-06-18`). Requests with an unrecognized version value are rejected with `400 Bad Request`.\n        \n        ## Available tools\n        \n        | Tool | Description |\n        |---|---|\n        | `vault_list` | List files and subdirectories inside a vault directory |\n        | `vault_read` | Read a file\'s full content, frontmatter, tags, and stat |\n        | `vault_write` | Create or overwrite a vault file |\n        | `vault_append` | Append content to the end of a vault file |\n        | `vault_patch` | Patch a specific heading, block reference, or frontmatter field |\n        | `vault_delete` | Delete a vault file |\n        | `vault_move` | Move (rename) a vault file to a new path |\n        | `vault_get_document_map` | List the headings, block references, and frontmatter fields in a file |\n        | `active_file_get_path` | Return the vault path of the file currently open in Obsidian |\n        | `periodic_note_get_path` | Return the vault path of the current periodic note (daily, weekly, monthly, quarterly, yearly) |\n        | `search_query` | Search using a JsonLogic query evaluated against each note\'s metadata |\n        | `search_simple` | Full-text search using Obsidian\'s built-in search |\n        | `tag_list` | List all tags across the vault with usage counts |\n        | `command_list` | List all registered Obsidian commands |\n        | `command_execute` | Execute an Obsidian command by ID |\n        | `open_file` | Open a file in the Obsidian UI |\n        \n        ## Available resources\n        \n        | URI | Description |\n        |---|---|\n        | `obsidian://local-rest-api/openapi.yaml` | Full OpenAPI specification for this REST API |\n      parameters:\n        - description: "Session ID returned by the server on initialization. Omit for the initial `initialize` request; required for all subsequent requests."\n          in: "header"\n          name: "Mcp-Session-Id"\n          required: false\n          schema:\n            type: "string"\n        - description: "MCP protocol version negotiated during initialization (e.g. `2025-06-18`). Required on all requests after initialization. Unrecognised values are rejected with 400."\n          in: "header"\n          name: "MCP-Protocol-Version"\n          required: false\n          schema:\n            type: "string"\n      requestBody:\n        content:\n          application/json:\n            examples:\n              call_vault_patch:\n                summary: "Patch a heading in a vault file (tools/call)"\n                value:\n                  id: 3\n                  jsonrpc: "2.0"\n                  method: "tools/call"\n                  params:\n                    arguments:\n                      content: |\n                        New line of content\n                      operation: "append"\n                      path: "path/to/note.md"\n                      target: "My Section"\n                      targetType: "heading"\n                    name: "vault_patch"\n              call_vault_read:\n                summary: "Read a vault file (tools/call)"\n                value:\n                  id: 2\n                  jsonrpc: "2.0"\n                  method: "tools/call"\n                  params:\n                    arguments:\n                      path: "path/to/note.md"\n                    name: "vault_read"\n              list_tools:\n                summary: "List all available MCP tools"\n                value:\n                  id: 1\n                  jsonrpc: "2.0"\n                  method: "tools/list"\n                  params: {}\n              read_openapi_resource:\n                summary: "Read the OpenAPI spec resource (resources/read)"\n                value:\n                  id: 4\n                  jsonrpc: "2.0"\n                  method: "resources/read"\n                  params:\n                    uri: "obsidian://local-rest-api/openapi.yaml"\n            schema:\n              description: "A JSON-RPC 2.0 request message."\n              properties:\n                id:\n                  description: "Request identifier. Include for calls that expect a response; omit for notifications."\n                  oneOf:\n                    - type: "string"\n                    - type: "number"\n                jsonrpc:\n                  description: "JSON-RPC version. Must be \\"2.0\\"."\n                  enum:\n                    - "2.0"\n                  type: "string"\n                method:\n                  description: "MCP method to invoke."\n                  enum:\n                    - "initialize"\n                    - "tools/list"\n                    - "tools/call"\n                    - "resources/list"\n                    - "resources/read"\n                    - "prompts/list"\n                    - "prompts/get"\n                    - "ping"\n                  type: "string"\n                params:\n                  description: "Method-specific parameters."\n                  type: "object"\n              required:\n                - "jsonrpc"\n                - "method"\n              type: "object"\n        required: true\n      responses:\n        "200":\n          description: "Message handled. Response body contains the JSON-RPC result, or may be empty for notifications. On session initialization the `Mcp-Session-Id` response header contains the new session ID."\n          headers:\n            Mcp-Session-Id:\n              description: "Session ID assigned by the server. Present only on the `initialize` response."\n              schema:\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Unsupported MCP-Protocol-Version."\n        "401":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "API key required."\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Session not found."\n      summary: |\n        Send a JSON-RPC 2.0 message to the MCP server.\n      tags:\n        - "MCP"\n  /obsidian-local-rest-api.crt:\n    get:\n      responses:\n        "200":\n          description: "Success"\n      summary: |\n        Returns the certificate in use by this API.\n      tags:\n        - "System"\n  "/open/{filename}":\n    post:\n      description: |\n        Note: Obsidian will create a new document at the path you have\n        specified if such a document did not already exist.\n      parameters:\n        - description: |\n            Path to the file to return (relative to your vault root).\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n        - description: "Open this as a new leaf?"\n          in: "query"\n          name: "newLeaf"\n          required: false\n          schema:\n            type: "boolean"\n      responses:\n        "200":\n          description: "Success"\n      summary: |\n        Open the specified document in the Obsidian user interface.\n      tags:\n        - "Open"\n  /openapi.yaml:\n    get:\n      responses:\n        "200":\n          description: "Success"\n      summary: |\n        Returns OpenAPI YAML document describing the capabilities of this API.\n      tags:\n        - "System"\n  "/periodic/{period}/":\n    delete:\n      parameters:\n        - description: "The name of the period for which you would like to grab a periodic note."\n          in: "path"\n          name: "period"\n          required: true\n          schema:\n            default: "daily"\n            enum:\n              - "daily"\n              - "weekly"\n              - "monthly"\n              - "quarterly"\n              - "yearly"\n            type: "string"\n      responses:\n        "204":\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "File does not exist."\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Delete the current periodic note for the specified period.\n      tags:\n        - "Periodic Notes"\n    get:\n      description: |\n        Returns the content of the current periodic note for the specified period.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        # Retrieving Document Metadata\n        \n        ## Metadata\n        \n        If you specify the header `Accept: application/vnd.olrapi.note+json`, will return a JSON representation of your note including parsed tag and frontmatter data as well as filesystem metadata.\n        \n        ## Document Map\n        \n        If you specify the header `Accept: application/vnd.olrapi.document-map+json`, will return a JSON object outlining what PATCH targets exist. See "responses" below for details.\n      parameters:\n        - description: "The name of the period for which you would like to grab a periodic note."\n          in: "path"\n          name: "period"\n          required: true\n          schema:\n            default: "daily"\n            enum:\n              - "daily"\n              - "weekly"\n              - "monthly"\n              - "quarterly"\n              - "yearly"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      responses:\n        "200":\n          content:\n            application/json:\n              description: "Returned when `Target-Type` is `frontmatter`; the JSON value of the specified frontmatter field."\n              schema: {}\n            "application/vnd.olrapi.document-map+json":\n              schema:\n                properties:\n                  blocks:\n                    example:\n                      - "^blockref1"\n                      - "^anotherBlockRef"\n                    items:\n                      type: "string"\n                    type: "array"\n                  frontmatterFields:\n                    example:\n                      - "title"\n                      - "tags"\n                      - "dateCreated"\n                    items:\n                      type: "string"\n                    type: "array"\n                  headings:\n                    example:\n                      - "Heading 1"\n                      - "Heading 1::Subhead of Heading 1"\n                      - "Heading 2"\n                    items:\n                      type: "string"\n                    type: "array"\n                type: "object"\n            "application/vnd.olrapi.note+json":\n              schema:\n                "$ref": "#/components/schemas/NoteJson"\n            text/markdown:\n              schema:\n                example: |\n                  # This is my document\n                  \n                  something else here\n                type: "string"\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "404":\n          description: "File or target section does not exist"\n      summary: |\n        Get current periodic note for the specified period.\n      tags:\n        - "Periodic Notes"\n    patch:\n      description: |\n        Inserts content into the current periodic note for the specified period relative to a heading, block reference, or frontmatter field within that document.\n        \n        Allows you to modify the content relative to a heading, block reference, or frontmatter field in your document.\n        \n        # How to Use & Examples\n        \n        All of the below examples assume you have a document that looks like\n        this:\n        \n        ```markdown\n        ---\n        alpha: 1\n        beta: test\n        delta:\n        zeta: 1\n        yotta: 1\n        gamma:\n        - one\n        - two\n        ---\n        \n        # Heading 1\n        \n        This is the content for heading one\n        \n        Also references some [[#^484ef2]]\n        \n        ## Subheading 1:1\n        Content for Subheading 1:1\n        \n        ### Subsubheading 1:1:1\n        \n        ### Subsubheading 1:1:2\n        \n        Testing how block references work for a table.[[#^2c7cfa]]\n        Some content for Subsubheading 1:1:2\n        \n        More random text.\n        \n        ^2d9b4a\n        \n        ## Subheading 1:2\n        \n        Content for Subheading 1:2.\n        \n        some content with a block reference ^484ef2\n        \n        ## Subheading 1:3\n        | City         | Population |\n        | ------------ | ---------- |\n        | Seattle, WA  | 8          |\n        | Portland, OR | 4          |\n        \n        ^2c7cfa\n        ```\n        \n        ## Append, Prepend, or Replace Content Below a Heading\n        \n        If you wanted to append the content "Hello" below "Subheading 1:1:1" under "Heading 1",\n        you could send a request with the following headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `heading`\n        - `Target`: `Heading 1::Subheading 1:1:1` (percent-encode any non-ASCII characters, e.g. `H%C3%A9llo` for `H\xE9llo`)\n        - with the request body: `Hello`\n        \n        The above would work just fine for `prepend` or `replace`, too, of course,\n        but with different results.\n        \n        > **Note:** The heading line itself (`### Subsubheading 1:1:1`) is not part of the section content. When using `replace`, supply only the body text that should appear beneath the heading \u2014 do not include the heading line in the request body, or it will be duplicated.\n        \n        ## Append, Prepend, or Replace Content to a Block Reference\n        \n        If you wanted to append the content "Hello" below the block referenced by\n        "2d9b4a" above ("More random text."), you could send the following headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `block`\n        - `Target`: `2d9b4a`\n        - with the request body: `Hello`\n        \n        The above would work just fine for `prepend` or `replace`, too, of course,\n        but with different results.\n        \n        ## Append, Prepend, or Replace a Row or Rows to/in a Table Referenced by a Block Reference\n        \n        If you wanted to add a new city ("Chicago, IL") and population ("16") pair to the table above\n        referenced by the block reference `2c7cfa`, you could send the following\n        headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `block`\n        - `Target`: `2c7cfa`\n        - `Content-Type`: `application/json`\n        - with the request body: `[["Chicago, IL", "16"]]`\n        \n        The use of a `Content-Type` of `application/json` allows the API\n        to infer that member of your array represents rows and columns of your\n        to append to the referenced table.  You can of course just use a\n        `Content-Type` of `text/markdown`, but in such a case you\'ll have to\n        format your table row manually instead of letting the library figure\n        it out for you.\n        \n        You also have the option of using `prepend` (in which case, your new\n        row would be the first -- right below the table heading) or `replace` (in which\n        case all rows except the table heading would be replaced by the new row(s)\n        you supplied).\n        \n        ## Setting a Frontmatter Field\n        \n        If you wanted to set the frontmatter field `alpha` to `2`, you could\n        send the following headers:\n        \n        - `Operation`: `replace`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `beep`\n        - with the request body `2`\n        \n        If you\'re setting a frontmatter field that might not already exist\n        you may want to use the `Create-Target-If-Missing` header so the\n        new frontmatter field is created and set to your specified value\n        if it doesn\'t already exist.\n        \n        You may find using a `Content-Type` of `application/json` to be\n        particularly useful in the case of frontmatter since frontmatter\n        fields\' values are JSON data, and the API can be smarter about\n        interpreting your `prepend` or `append` requests if you specify\n        your data as JSON (particularly when appending, for example,\n        list items).\n        \n        ## Adding and Removing Tags\n        \n        Obsidian stores tags in two places: the `tags` frontmatter field and as\n        inline `#tag` syntax in the document body. You can manage frontmatter tags\n        with the PATCH API.\n        \n        ### Adding a tag\n        \n        To add the tag `project/active` to a document\'s frontmatter `tags` list:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `tags`\n        - `Content-Type`: `application/json`\n        - `Create-Target-If-Missing`: `true`\n        - with the request body: `["project/active"]`\n        \n        Passing an array as `application/json` tells the API to merge individual\n        items into the existing list rather than replace the whole field.\n        `Create-Target-If-Missing` ensures the `tags` key is created when the\n        document has no frontmatter tags yet.\n        \n        ### Removing a tag\n        \n        There is no direct "remove item from list" operation. To remove a tag,\n        first read the current tags via GET (or `vault_read` in the MCP API),\n        filter out the unwanted tag client-side, then replace the entire field:\n        \n        - `Operation`: `replace`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `tags`\n        - `Content-Type`: `application/json`\n        - with the request body: `["remaining-tag-1", "remaining-tag-2"]`\n        \n        ## Identifying Patch Targets in a File\n        \n        You can issue a GET request to `/vault/files/{path}` with an `Accept` header\n        of `application/vnd.olrapi.document-map+json` to get a JSON object\n        outlining what headings, block references, and frontmatter fields exist.\n      parameters:\n        - description: "The name of the period for which you would like to grab a periodic note."\n          in: "path"\n          name: "period"\n          required: true\n          schema:\n            default: "daily"\n            enum:\n              - "daily"\n              - "weekly"\n              - "monthly"\n              - "quarterly"\n              - "yearly"\n            type: "string"\n        - description: "Patch operation to perform"\n          in: "header"\n          name: "Operation"\n          required: true\n          schema:\n            enum:\n              - "append"\n              - "prepend"\n              - "replace"\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Controls which part of the target the operation acts on. Only applicable to\n            `heading` and `block` targets; ignored for `frontmatter`.\n            \n            - `content` (default): the operation applies to the content region only \u2014 the area\n              below the heading line or at the block, leaving the heading/block-ID token unchanged.\n            - `marker`: the operation applies only to the heading line or block-ID token itself,\n              leaving the content unchanged.\n            - `markerAndContent`: the operation applies to the full range covering both the\n              heading/block-ID token and its content, allowing them to be replaced or repositioned\n              together.\n          in: "header"\n          name: "Target-Scope"\n          required: false\n          schema:\n            default: "content"\n            enum:\n              - "content"\n              - "marker"\n              - "markerAndContent"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: true\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: true\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          application/json:\n            schema:\n              example: "[\'one\', \'two\']"\n              type: "string"\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content you would like to insert."\n        required: true\n      responses:\n        "200":\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request; see response message for details."\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Does not exist"\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Partially update content in the current periodic note for the specified period.\n      tags:\n        - "Periodic Notes"\n    post:\n      description: |\n        Appends content to the current periodic note for the specified period. Note that this will create the relevant periodic note if necessary.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        When a target is specified the content is appended within that section and the full updated file content is returned with a `200` status. Without a target, the content is appended to the end of the file and a `204` status is returned.\n        \n        If you need `prepend` or `replace` operations, use `PATCH` instead.\n      parameters:\n        - description: "The name of the period for which you would like to grab a periodic note."\n          in: "path"\n          name: "period"\n          required: true\n          schema:\n            default: "daily"\n            enum:\n              - "daily"\n              - "weekly"\n              - "monthly"\n              - "quarterly"\n              - "yearly"\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content you would like to append."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; targeted section updated. The full updated file content is returned."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "204":\n          description: "Success; content appended to end of file."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request"\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Append content to the current periodic note for the specified period.\n      tags:\n        - "Periodic Notes"\n    put:\n      description: |\n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        When a target is specified the target section is replaced with the request body and the full updated file content is returned with a `200` status. If the target does not exist it will be created. Without a target, the entire file is replaced and a `204` status is returned.\n      parameters:\n        - description: "The name of the period for which you would like to grab a periodic note."\n          in: "path"\n          name: "period"\n          required: true\n          schema:\n            default: "daily"\n            enum:\n              - "daily"\n              - "weekly"\n              - "monthly"\n              - "quarterly"\n              - "yearly"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          "*/*":\n            schema:\n              type: "string"\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content of the file you would like to upload."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; targeted section replaced. The full updated file content is returned."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "204":\n          description: "Success; entire file replaced."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Incoming file could not be processed.  Make sure you have specified a reasonable file name, and make sure you have set a reasonable \'Content-Type\' header; if you are uploading a note, \'text/markdown\' is likely the right choice.\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Update the content of the current periodic note for the specified period.\n      tags:\n        - "Periodic Notes"\n  "/periodic/{period}/{year}/{month}/{day}/":\n    delete:\n      description: |\n        Deletes the periodic note for the specified period.\n      parameters:\n        - description: "The year of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "year"\n          required: true\n          schema:\n            type: "number"\n        - description: "The month (1-12) of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "month"\n          required: true\n          schema:\n            type: "number"\n        - description: "The day (1-31) of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "day"\n          required: true\n          schema:\n            type: "number"\n        - description: "The name of the period for which you would like to grab a periodic note."\n          in: "path"\n          name: "period"\n          required: true\n          schema:\n            default: "daily"\n            enum:\n              - "daily"\n              - "weekly"\n              - "monthly"\n              - "quarterly"\n              - "yearly"\n            type: "string"\n      responses:\n        "204":\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "File does not exist."\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Delete the periodic note for the specified period and date.\n      tags:\n        - "Periodic Notes"\n    get:\n      description: |\n        Returns the content of the periodic note for the specified period and date.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        # Retrieving Document Metadata\n        \n        ## Metadata\n        \n        If you specify the header `Accept: application/vnd.olrapi.note+json`, will return a JSON representation of your note including parsed tag and frontmatter data as well as filesystem metadata.\n        \n        ## Document Map\n        \n        If you specify the header `Accept: application/vnd.olrapi.document-map+json`, will return a JSON object outlining what PATCH targets exist. See "responses" below for details.\n      parameters:\n        - description: "The year of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "year"\n          required: true\n          schema:\n            type: "number"\n        - description: "The month (1-12) of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "month"\n          required: true\n          schema:\n            type: "number"\n        - description: "The day (1-31) of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "day"\n          required: true\n          schema:\n            type: "number"\n        - description: "The name of the period for which you would like to grab a periodic note."\n          in: "path"\n          name: "period"\n          required: true\n          schema:\n            default: "daily"\n            enum:\n              - "daily"\n              - "weekly"\n              - "monthly"\n              - "quarterly"\n              - "yearly"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      responses:\n        "200":\n          content:\n            application/json:\n              description: "Returned when `Target-Type` is `frontmatter`; the JSON value of the specified frontmatter field."\n              schema: {}\n            "application/vnd.olrapi.document-map+json":\n              schema:\n                properties:\n                  blocks:\n                    example:\n                      - "^blockref1"\n                      - "^anotherBlockRef"\n                    items:\n                      type: "string"\n                    type: "array"\n                  frontmatterFields:\n                    example:\n                      - "title"\n                      - "tags"\n                      - "dateCreated"\n                    items:\n                      type: "string"\n                    type: "array"\n                  headings:\n                    example:\n                      - "Heading 1"\n                      - "Heading 1::Subhead of Heading 1"\n                      - "Heading 2"\n                    items:\n                      type: "string"\n                    type: "array"\n                type: "object"\n            "application/vnd.olrapi.note+json":\n              schema:\n                "$ref": "#/components/schemas/NoteJson"\n            text/markdown:\n              schema:\n                example: |\n                  # This is my document\n                  \n                  something else here\n                type: "string"\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "404":\n          description: "File or target section does not exist"\n      summary: |\n        Get the periodic note for the specified period and date.\n      tags:\n        - "Periodic Notes"\n    patch:\n      description: |\n        Inserts content into a periodic note for the specified period and date relative to a heading, block reference, or frontmatter field within that document.\n        \n        Allows you to modify the content relative to a heading, block reference, or frontmatter field in your document.\n        \n        # How to Use & Examples\n        \n        All of the below examples assume you have a document that looks like\n        this:\n        \n        ```markdown\n        ---\n        alpha: 1\n        beta: test\n        delta:\n        zeta: 1\n        yotta: 1\n        gamma:\n        - one\n        - two\n        ---\n        \n        # Heading 1\n        \n        This is the content for heading one\n        \n        Also references some [[#^484ef2]]\n        \n        ## Subheading 1:1\n        Content for Subheading 1:1\n        \n        ### Subsubheading 1:1:1\n        \n        ### Subsubheading 1:1:2\n        \n        Testing how block references work for a table.[[#^2c7cfa]]\n        Some content for Subsubheading 1:1:2\n        \n        More random text.\n        \n        ^2d9b4a\n        \n        ## Subheading 1:2\n        \n        Content for Subheading 1:2.\n        \n        some content with a block reference ^484ef2\n        \n        ## Subheading 1:3\n        | City         | Population |\n        | ------------ | ---------- |\n        | Seattle, WA  | 8          |\n        | Portland, OR | 4          |\n        \n        ^2c7cfa\n        ```\n        \n        ## Append, Prepend, or Replace Content Below a Heading\n        \n        If you wanted to append the content "Hello" below "Subheading 1:1:1" under "Heading 1",\n        you could send a request with the following headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `heading`\n        - `Target`: `Heading 1::Subheading 1:1:1` (percent-encode any non-ASCII characters, e.g. `H%C3%A9llo` for `H\xE9llo`)\n        - with the request body: `Hello`\n        \n        The above would work just fine for `prepend` or `replace`, too, of course,\n        but with different results.\n        \n        > **Note:** The heading line itself (`### Subsubheading 1:1:1`) is not part of the section content. When using `replace`, supply only the body text that should appear beneath the heading \u2014 do not include the heading line in the request body, or it will be duplicated.\n        \n        ## Append, Prepend, or Replace Content to a Block Reference\n        \n        If you wanted to append the content "Hello" below the block referenced by\n        "2d9b4a" above ("More random text."), you could send the following headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `block`\n        - `Target`: `2d9b4a`\n        - with the request body: `Hello`\n        \n        The above would work just fine for `prepend` or `replace`, too, of course,\n        but with different results.\n        \n        ## Append, Prepend, or Replace a Row or Rows to/in a Table Referenced by a Block Reference\n        \n        If you wanted to add a new city ("Chicago, IL") and population ("16") pair to the table above\n        referenced by the block reference `2c7cfa`, you could send the following\n        headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `block`\n        - `Target`: `2c7cfa`\n        - `Content-Type`: `application/json`\n        - with the request body: `[["Chicago, IL", "16"]]`\n        \n        The use of a `Content-Type` of `application/json` allows the API\n        to infer that member of your array represents rows and columns of your\n        to append to the referenced table.  You can of course just use a\n        `Content-Type` of `text/markdown`, but in such a case you\'ll have to\n        format your table row manually instead of letting the library figure\n        it out for you.\n        \n        You also have the option of using `prepend` (in which case, your new\n        row would be the first -- right below the table heading) or `replace` (in which\n        case all rows except the table heading would be replaced by the new row(s)\n        you supplied).\n        \n        ## Setting a Frontmatter Field\n        \n        If you wanted to set the frontmatter field `alpha` to `2`, you could\n        send the following headers:\n        \n        - `Operation`: `replace`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `beep`\n        - with the request body `2`\n        \n        If you\'re setting a frontmatter field that might not already exist\n        you may want to use the `Create-Target-If-Missing` header so the\n        new frontmatter field is created and set to your specified value\n        if it doesn\'t already exist.\n        \n        You may find using a `Content-Type` of `application/json` to be\n        particularly useful in the case of frontmatter since frontmatter\n        fields\' values are JSON data, and the API can be smarter about\n        interpreting your `prepend` or `append` requests if you specify\n        your data as JSON (particularly when appending, for example,\n        list items).\n        \n        ## Adding and Removing Tags\n        \n        Obsidian stores tags in two places: the `tags` frontmatter field and as\n        inline `#tag` syntax in the document body. You can manage frontmatter tags\n        with the PATCH API.\n        \n        ### Adding a tag\n        \n        To add the tag `project/active` to a document\'s frontmatter `tags` list:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `tags`\n        - `Content-Type`: `application/json`\n        - `Create-Target-If-Missing`: `true`\n        - with the request body: `["project/active"]`\n        \n        Passing an array as `application/json` tells the API to merge individual\n        items into the existing list rather than replace the whole field.\n        `Create-Target-If-Missing` ensures the `tags` key is created when the\n        document has no frontmatter tags yet.\n        \n        ### Removing a tag\n        \n        There is no direct "remove item from list" operation. To remove a tag,\n        first read the current tags via GET (or `vault_read` in the MCP API),\n        filter out the unwanted tag client-side, then replace the entire field:\n        \n        - `Operation`: `replace`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `tags`\n        - `Content-Type`: `application/json`\n        - with the request body: `["remaining-tag-1", "remaining-tag-2"]`\n        \n        ## Identifying Patch Targets in a File\n        \n        You can issue a GET request to `/vault/files/{path}` with an `Accept` header\n        of `application/vnd.olrapi.document-map+json` to get a JSON object\n        outlining what headings, block references, and frontmatter fields exist.\n      parameters:\n        - description: "The year of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "year"\n          required: true\n          schema:\n            type: "number"\n        - description: "The month (1-12) of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "month"\n          required: true\n          schema:\n            type: "number"\n        - description: "The day (1-31) of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "day"\n          required: true\n          schema:\n            type: "number"\n        - description: "The name of the period for which you would like to grab a periodic note."\n          in: "path"\n          name: "period"\n          required: true\n          schema:\n            default: "daily"\n            enum:\n              - "daily"\n              - "weekly"\n              - "monthly"\n              - "quarterly"\n              - "yearly"\n            type: "string"\n        - description: "Patch operation to perform"\n          in: "header"\n          name: "Operation"\n          required: true\n          schema:\n            enum:\n              - "append"\n              - "prepend"\n              - "replace"\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Controls which part of the target the operation acts on. Only applicable to\n            `heading` and `block` targets; ignored for `frontmatter`.\n            \n            - `content` (default): the operation applies to the content region only \u2014 the area\n              below the heading line or at the block, leaving the heading/block-ID token unchanged.\n            - `marker`: the operation applies only to the heading line or block-ID token itself,\n              leaving the content unchanged.\n            - `markerAndContent`: the operation applies to the full range covering both the\n              heading/block-ID token and its content, allowing them to be replaced or repositioned\n              together.\n          in: "header"\n          name: "Target-Scope"\n          required: false\n          schema:\n            default: "content"\n            enum:\n              - "content"\n              - "marker"\n              - "markerAndContent"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: true\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: true\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          application/json:\n            schema:\n              example: "[\'one\', \'two\']"\n              type: "string"\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content you would like to insert."\n        required: true\n      responses:\n        "200":\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request; see response message for details."\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Does not exist"\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Partially update content in the periodic note for the specified period and date.\n      tags:\n        - "Periodic Notes"\n    post:\n      description: |\n        Appends content to the periodic note for the specified period and date. Note that this will create the relevant periodic note if necessary.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        When a target is specified the content is appended within that section and the full updated file content is returned with a `200` status. Without a target, the content is appended to the end of the file and a `204` status is returned.\n        \n        If you need `prepend` or `replace` operations, use `PATCH` instead.\n      parameters:\n        - description: "The year of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "year"\n          required: true\n          schema:\n            type: "number"\n        - description: "The month (1-12) of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "month"\n          required: true\n          schema:\n            type: "number"\n        - description: "The day (1-31) of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "day"\n          required: true\n          schema:\n            type: "number"\n        - description: "The name of the period for which you would like to grab a periodic note."\n          in: "path"\n          name: "period"\n          required: true\n          schema:\n            default: "daily"\n            enum:\n              - "daily"\n              - "weekly"\n              - "monthly"\n              - "quarterly"\n              - "yearly"\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content you would like to append."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; targeted section updated. The full updated file content is returned."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "204":\n          description: "Success; content appended to end of file."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request"\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Append content to the periodic note for the specified period and date.\n      tags:\n        - "Periodic Notes"\n    put:\n      description: |\n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        When a target is specified the target section is replaced with the request body and the full updated file content is returned with a `200` status. If the target does not exist it will be created. Without a target, the entire file is replaced and a `204` status is returned.\n      parameters:\n        - description: "The year of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "year"\n          required: true\n          schema:\n            type: "number"\n        - description: "The month (1-12) of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "month"\n          required: true\n          schema:\n            type: "number"\n        - description: "The day (1-31) of the date for which you would like to grab a periodic note."\n          in: "path"\n          name: "day"\n          required: true\n          schema:\n            type: "number"\n        - description: "The name of the period for which you would like to grab a periodic note."\n          in: "path"\n          name: "period"\n          required: true\n          schema:\n            default: "daily"\n            enum:\n              - "daily"\n              - "weekly"\n              - "monthly"\n              - "quarterly"\n              - "yearly"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          "*/*":\n            schema:\n              type: "string"\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content of the file you would like to upload."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; targeted section replaced. The full updated file content is returned."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "204":\n          description: "Success; entire file replaced."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Incoming file could not be processed.  Make sure you have specified a reasonable file name, and make sure you have set a reasonable \'Content-Type\' header; if you are uploading a note, \'text/markdown\' is likely the right choice.\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Update the content of the periodic note for the specified period and date.\n      tags:\n        - "Periodic Notes"\n  /search/:\n    post:\n      description: |\n        Evaluates a provided query against each file in your vault.\n        \n        This endpoint supports multiple query formats.  Your query should be specified in your request\'s body, and will be interpreted according to the `Content-type` header you specify from the below options. Additional query formats may be added in the future.\n        \n        # JsonLogic (`application/vnd.olrapi.jsonlogic+json`)\n        \n        Accepts a JsonLogic query specified as JSON.  See [JsonLogic](https://jsonlogic.com/operations.html)\'s documentation for information about the base set of operators available, but in addition to those operators the following operators are available:\n        \n        - `glob: [PATTERN, VALUE]`: Returns `true` if a string matches a glob pattern.  E.g.: `{"glob": ["*.foo", "bar.foo"]}` is `true` and `{"glob": ["*.bar", "bar.foo"]}` is `false`.\n        - `regexp: [PATTERN, VALUE]`: Returns `true` if a string matches a regular expression.  E.g.: `{"regexp": [".*\\.foo", "bar.foo"]` is `true` and `{"regexp": [".*\\.bar", "bar.foo"]}` is `false`.\n        \n        Returns only non-falsy results.  "Non-falsy" here treats the following values as "falsy":\n        \n        - `false`\n        - `null` or `undefined`\n        - `0`\n        - `[]`\n        - `{}`\n        \n        Files are represented as an object having the schema described\n        in the Schema named \'NoteJson\' at the bottom of this page.\n        Understanding the shape of a JSON object from a schema can be\n        tricky; so you may find it helpful to examine the generated metadata\n        for individual files in your vault to understand exactly what values\n        are returned.  To see that, access the `GET` `/vault/{filePath}`\n        route setting the header:\n        `Accept: application/vnd.olrapi.note+json`.  See examples below\n        for working examples of queries performing common search operations.\n      requestBody:\n        content:\n          "application/vnd.olrapi.jsonlogic+json":\n            examples:\n              find_by_frontmatter_url_glob:\n                summary: "Find notes having URL or a matching URL glob frontmatter field."\n                value: |\n                  {\n                    "or": [\n                      {"===": [{"var": "frontmatter.url"}, "https://myurl.com/some/path/"]},\n                      {"glob": [{"var": "frontmatter.url-glob"}, "https://myurl.com/some/path/"]}\n                    ]\n                  }\n              find_by_frontmatter_value:\n                summary: "Find notes having a certain frontmatter field value."\n                value: |\n                  {\n                    "==": [\n                      {"var": "frontmatter.myField"},\n                      "myValue"\n                    ]\n                  }\n              find_by_tag:\n                summary: "Find notes having a certain tag"\n                value: |\n                  {\n                    "in": [\n                      "myTag",\n                      {"var": "tags"}\n                    ]\n                  }\n            schema:\n              externalDocs:\n                url: "https://jsonlogic.com/operations.html"\n              type: "object"\n        required: true\n      responses:\n        "200":\n          content:\n            application/json:\n              schema:\n                items:\n                  properties:\n                    filename:\n                      description: "Path to the matching file"\n                      type: "string"\n                    result:\n                      oneOf:\n                        - type: "string"\n                        - type: "number"\n                        - items: {}\n                          type: "array"\n                        - type: "object"\n                        - type: "boolean"\n                  required:\n                    - "filename"\n                    - "result"\n                  type: "object"\n                type: "array"\n          description: "Success"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Bad request.  Make sure you have specified an acceptable\n            Content-Type for your search query.\n      summary: |\n        Search for documents matching a specified search query\n      tags:\n        - "Search"\n  /search/simple/:\n    post:\n      parameters:\n        - description: "Your search query"\n          in: "query"\n          name: "query"\n          required: true\n          schema:\n            type: "string"\n        - description: "How much context to return around the matching string"\n          in: "query"\n          name: "contextLength"\n          required: false\n          schema:\n            default: 100\n            type: "number"\n      responses:\n        "200":\n          content:\n            application/json:\n              schema:\n                items:\n                  properties:\n                    filename:\n                      description: "Path to the matching file"\n                      type: "string"\n                    matches:\n                      items:\n                        properties:\n                          context:\n                            type: "string"\n                          match:\n                            properties:\n                              end:\n                                type: "number"\n                              start:\n                                type: "number"\n                            required:\n                              - "start"\n                              - "end"\n                            type: "object"\n                        required:\n                          - "match"\n                          - "context"\n                        type: "object"\n                      type: "array"\n                    score:\n                      type: "number"\n                  type: "object"\n                type: "array"\n          description: "Success"\n      summary: |\n        Search for documents matching a specified text query\n      tags:\n        - "Search"\n  /tags/:\n    get:\n      description: |\n        Returns all tags found across all files in the vault, drawn from both inline (`#tag`) and frontmatter tag syntax. Each tag is returned without the `#` prefix. Hierarchical tags (e.g. `work/tasks`) also contribute a count to every parent prefix (e.g. `work`), mirroring how Obsidian displays tag counts in its sidebar.\n      responses:\n        "200":\n          content:\n            application/json:\n              example:\n                tags:\n                  - count: 3\n                    name: "project"\n                  - count: 1\n                    name: "important"\n                  - count: 2\n                    name: "work"\n                  - count: 2\n                    name: "work/tasks"\n              schema:\n                properties:\n                  tags:\n                    items:\n                      properties:\n                        count:\n                          description: "Number of times this tag is used across the vault."\n                          type: "number"\n                        name:\n                          description: "Tag name without the leading `#`."\n                          type: "string"\n                      type: "object"\n                    type: "array"\n                type: "object"\n          description: "A list of tags with their usage counts."\n      summary: |\n        Get a list of all tags with metadata.\n      tags:\n        - "Tags"\n  /vault/:\n    get:\n      description: |\n        Lists files in the root directory of your vault.\n        \n        Note: that this is exactly the same API endpoint as the below "List files that exist in the specified directory." and exists here only due to a quirk of this particular interactive tool.\n      responses:\n        "200":\n          content:\n            application/json:\n              example:\n                files:\n                  - "mydocument.md"\n                  - "somedirectory/"\n              schema:\n                properties:\n                  files:\n                    items:\n                      type: "string"\n                    type: "array"\n                type: "object"\n          description: "Success"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Directory does not exist"\n      summary: |\n        List files that exist in the root of your vault.\n      tags:\n        - "Vault Directories"\n  "/vault/{filename}":\n    additionalOperations:\n      move:\n        description: |\n          Moves a file from its current location to a new location specified in the Destination header. This operation preserves file history and updates internal links.\n        parameters:\n          - description: |\n              The new path for the file, relative to your vault root. The path must not escape the vault root (relative segments like `..` are permitted as long as the resolved path remains inside the vault). Absolute paths (starting with `/`) are rejected. If the path ends with a trailing slash, the source filename is preserved and the file is placed in that directory (e.g. "archive/" moves "notes/todo.md" to "archive/todo.md"). If the path contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `r%C3%A9sum%C3%A9.md` for `r\xE9sum\xE9.md`).\n            in: "header"\n            name: "Destination"\n            required: true\n            schema:\n              format: "path"\n              type: "string"\n          - description: |\n              If "true", the move proceeds even when a file already exists at the destination. Defaults to "false", which returns a 409 if the destination exists.\n            in: "header"\n            name: "Allow-Overwrite"\n            required: false\n            schema:\n              default: "false"\n              enum:\n                - "true"\n                - "false"\n              type: "string"\n          - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n            in: "path"\n            name: "filename"\n            required: true\n            schema:\n              format: "path"\n              type: "string"\n        responses:\n          "204":\n            description: "File successfully moved."\n            headers:\n              Content-Location:\n                description: "The vault-relative path of the file at its new location (e.g. `archive/file.md`). Non-ASCII characters are percent-encoded."\n                schema:\n                  type: "string"\n          "400":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: |\n              Bad request - Missing Destination header, malformed percent-encoding, or path escapes the vault root (e.g. starts with "/").\n          "404":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: "Source file does not exist."\n          "405":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: |\n              Your path references a directory instead of a file; this request method is valid only for files.\n          "409":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: "Destination file already exists."\n        summary: |\n          Move a file to a new location in your vault.\n        tags:\n          - "Vault Files"\n    delete:\n      parameters:\n        - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n      responses:\n        "204":\n          description: "Success"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "File does not exist."\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Delete a particular file in your vault.\n      tags:\n        - "Vault Files"\n    get:\n      description: |\n        Returns the content of the file at the specified path in your vault should the file exist.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        # Retrieving Document Metadata\n        \n        ## Metadata\n        \n        If you specify the header `Accept: application/vnd.olrapi.note+json`, will return a JSON representation of your note including parsed tag and frontmatter data as well as filesystem metadata.\n        \n        ## Document Map\n        \n        If you specify the header `Accept: application/vnd.olrapi.document-map+json`, will return a JSON object outlining what PATCH targets exist. See "responses" below for details.\n      parameters:\n        - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      responses:\n        "200":\n          content:\n            application/json:\n              description: "Returned when `Target-Type` is `frontmatter`; the JSON value of the specified frontmatter field."\n              schema: {}\n            "application/vnd.olrapi.document-map+json":\n              schema:\n                properties:\n                  blocks:\n                    example:\n                      - "^blockref1"\n                      - "^anotherBlockRef"\n                    items:\n                      type: "string"\n                    type: "array"\n                  frontmatterFields:\n                    example:\n                      - "title"\n                      - "tags"\n                      - "dateCreated"\n                    items:\n                      type: "string"\n                    type: "array"\n                  headings:\n                    example:\n                      - "Heading 1"\n                      - "Heading 1::Subhead of Heading 1"\n                      - "Heading 2"\n                    items:\n                      type: "string"\n                    type: "array"\n                type: "object"\n            "application/vnd.olrapi.note+json":\n              schema:\n                "$ref": "#/components/schemas/NoteJson"\n            text/markdown:\n              schema:\n                example: |\n                  # This is my document\n                  \n                  something else here\n                type: "string"\n          description: "Success"\n        "404":\n          description: "File or target section does not exist"\n      summary: |\n        Return the content of a single file in your vault.\n      tags:\n        - "Vault Files"\n    patch:\n      description: |\n        Inserts content into an existing note relative to a heading, block reference, or frontmatter field within that document.\n        \n        Allows you to modify the content relative to a heading, block reference, or frontmatter field in your document.\n        \n        # How to Use & Examples\n        \n        All of the below examples assume you have a document that looks like\n        this:\n        \n        ```markdown\n        ---\n        alpha: 1\n        beta: test\n        delta:\n        zeta: 1\n        yotta: 1\n        gamma:\n        - one\n        - two\n        ---\n        \n        # Heading 1\n        \n        This is the content for heading one\n        \n        Also references some [[#^484ef2]]\n        \n        ## Subheading 1:1\n        Content for Subheading 1:1\n        \n        ### Subsubheading 1:1:1\n        \n        ### Subsubheading 1:1:2\n        \n        Testing how block references work for a table.[[#^2c7cfa]]\n        Some content for Subsubheading 1:1:2\n        \n        More random text.\n        \n        ^2d9b4a\n        \n        ## Subheading 1:2\n        \n        Content for Subheading 1:2.\n        \n        some content with a block reference ^484ef2\n        \n        ## Subheading 1:3\n        | City         | Population |\n        | ------------ | ---------- |\n        | Seattle, WA  | 8          |\n        | Portland, OR | 4          |\n        \n        ^2c7cfa\n        ```\n        \n        ## Append, Prepend, or Replace Content Below a Heading\n        \n        If you wanted to append the content "Hello" below "Subheading 1:1:1" under "Heading 1",\n        you could send a request with the following headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `heading`\n        - `Target`: `Heading 1::Subheading 1:1:1` (percent-encode any non-ASCII characters, e.g. `H%C3%A9llo` for `H\xE9llo`)\n        - with the request body: `Hello`\n        \n        The above would work just fine for `prepend` or `replace`, too, of course,\n        but with different results.\n        \n        > **Note:** The heading line itself (`### Subsubheading 1:1:1`) is not part of the section content. When using `replace`, supply only the body text that should appear beneath the heading \u2014 do not include the heading line in the request body, or it will be duplicated.\n        \n        ## Append, Prepend, or Replace Content to a Block Reference\n        \n        If you wanted to append the content "Hello" below the block referenced by\n        "2d9b4a" above ("More random text."), you could send the following headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `block`\n        - `Target`: `2d9b4a`\n        - with the request body: `Hello`\n        \n        The above would work just fine for `prepend` or `replace`, too, of course,\n        but with different results.\n        \n        ## Append, Prepend, or Replace a Row or Rows to/in a Table Referenced by a Block Reference\n        \n        If you wanted to add a new city ("Chicago, IL") and population ("16") pair to the table above\n        referenced by the block reference `2c7cfa`, you could send the following\n        headers:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `block`\n        - `Target`: `2c7cfa`\n        - `Content-Type`: `application/json`\n        - with the request body: `[["Chicago, IL", "16"]]`\n        \n        The use of a `Content-Type` of `application/json` allows the API\n        to infer that member of your array represents rows and columns of your\n        to append to the referenced table.  You can of course just use a\n        `Content-Type` of `text/markdown`, but in such a case you\'ll have to\n        format your table row manually instead of letting the library figure\n        it out for you.\n        \n        You also have the option of using `prepend` (in which case, your new\n        row would be the first -- right below the table heading) or `replace` (in which\n        case all rows except the table heading would be replaced by the new row(s)\n        you supplied).\n        \n        ## Setting a Frontmatter Field\n        \n        If you wanted to set the frontmatter field `alpha` to `2`, you could\n        send the following headers:\n        \n        - `Operation`: `replace`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `beep`\n        - with the request body `2`\n        \n        If you\'re setting a frontmatter field that might not already exist\n        you may want to use the `Create-Target-If-Missing` header so the\n        new frontmatter field is created and set to your specified value\n        if it doesn\'t already exist.\n        \n        You may find using a `Content-Type` of `application/json` to be\n        particularly useful in the case of frontmatter since frontmatter\n        fields\' values are JSON data, and the API can be smarter about\n        interpreting your `prepend` or `append` requests if you specify\n        your data as JSON (particularly when appending, for example,\n        list items).\n        \n        ## Adding and Removing Tags\n        \n        Obsidian stores tags in two places: the `tags` frontmatter field and as\n        inline `#tag` syntax in the document body. You can manage frontmatter tags\n        with the PATCH API.\n        \n        ### Adding a tag\n        \n        To add the tag `project/active` to a document\'s frontmatter `tags` list:\n        \n        - `Operation`: `append`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `tags`\n        - `Content-Type`: `application/json`\n        - `Create-Target-If-Missing`: `true`\n        - with the request body: `["project/active"]`\n        \n        Passing an array as `application/json` tells the API to merge individual\n        items into the existing list rather than replace the whole field.\n        `Create-Target-If-Missing` ensures the `tags` key is created when the\n        document has no frontmatter tags yet.\n        \n        ### Removing a tag\n        \n        There is no direct "remove item from list" operation. To remove a tag,\n        first read the current tags via GET (or `vault_read` in the MCP API),\n        filter out the unwanted tag client-side, then replace the entire field:\n        \n        - `Operation`: `replace`\n        - `Target-Type`: `frontmatter`\n        - `Target`: `tags`\n        - `Content-Type`: `application/json`\n        - with the request body: `["remaining-tag-1", "remaining-tag-2"]`\n        \n        ## Identifying Patch Targets in a File\n        \n        You can issue a GET request to `/vault/files/{path}` with an `Accept` header\n        of `application/vnd.olrapi.document-map+json` to get a JSON object\n        outlining what headings, block references, and frontmatter fields exist.\n      parameters:\n        - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n        - description: "Patch operation to perform"\n          in: "header"\n          name: "Operation"\n          required: true\n          schema:\n            enum:\n              - "append"\n              - "prepend"\n              - "replace"\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Controls which part of the target the operation acts on. Only applicable to\n            `heading` and `block` targets; ignored for `frontmatter`.\n            \n            - `content` (default): the operation applies to the content region only \u2014 the area\n              below the heading line or at the block, leaving the heading/block-ID token unchanged.\n            - `marker`: the operation applies only to the heading line or block-ID token itself,\n              leaving the content unchanged.\n            - `markerAndContent`: the operation applies to the full range covering both the\n              heading/block-ID token and its content, allowing them to be replaced or repositioned\n              together.\n          in: "header"\n          name: "Target-Scope"\n          required: false\n          schema:\n            default: "content"\n            enum:\n              - "content"\n              - "marker"\n              - "markerAndContent"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: true\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: true\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          application/json:\n            schema:\n              example: "[\'one\', \'two\']"\n              type: "string"\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content you would like to insert."\n        required: true\n      responses:\n        "200":\n          description: "Success"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request; see response message for details."\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Does not exist"\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Partially update content in an existing note.\n      tags:\n        - "Vault Files"\n    post:\n      description: |\n        Appends content to the end of an existing note. If the specified file does not yet exist, it will be created as an empty file.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        When a target is specified the content is appended within that section and the full updated file content is returned with a `200` status. Without a target, the content is appended to the end of the file and a `204` status is returned.\n        \n        If you need `prepend` or `replace` operations, use `PATCH` instead.\n      parameters:\n        - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content you would like to append."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; targeted section updated. The full updated file content is returned."\n        "204":\n          description: "Success; content appended to end of file."\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request"\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Append content to a new or existing file.\n      tags:\n        - "Vault Files"\n    put:\n      description: |\n        Creates a new file in your vault or updates the content of an existing one if the specified file already exists.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by providing `Target-Type` and `Target` headers:\n        \n        - Set `Target-Type` to `heading`, `block`, or `frontmatter`. When `Target-Type` is `heading`, the operation applies to the body content *beneath* that heading line \u2014 the heading line itself (`## My Section`) is not part of the section and should not appear in the patched content.\n        - Set `Target` to the name of the heading, block reference, or frontmatter field. If the target contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `H%C3%A9llo` for `H\xE9llo`).\n        - For nested headings, use the `Target-Delimiter` header (default `::`) to separate levels.\n        \n        You can also embed the target type and target directly in the URL path after the note identifier instead of using headers. The segment immediately following the note identifier is the target type, and the remaining segments form the target:\n        \n        - `.../heading/My%20Section` is equivalent to supplying `Target-Type: heading` and `Target: My%20Section`.\n        - For nested headings, add additional path segments: `.../heading/My%20Section/Subsection` is equivalent to `Target: My%20Section::Subsection`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        \n        Do not combine URL-embedded targeting with `Target-Type`, `Target`, or `Target-Delimiter` headers in the same request. If both are provided, the request fails with `422 ConflictingTargetSpecification`.\n        \n        ## Target-Scope\n        \n        For `heading` and `block` targets, the optional `Target-Scope` header controls which portion of the target the operation acts on:\n        \n        - `content` (default): the operation applies to the content region \u2014 the area beneath the heading line or at the block, leaving the heading/block-ID token unchanged.\n        - `marker`: the operation applies only to the heading line or block-ID token itself, leaving the content unchanged. Useful for renaming a heading in-place with a `replace` operation without touching the section content.\n        - `markerAndContent`: the operation applies to the full range covering both the heading/block-ID token and its content, allowing them to be replaced or repositioned together.\n        \n        When a target is specified the target section is replaced with the request body and the full updated file content is returned with a `200` status. If the target does not exist it will be created. Without a target, the entire file is replaced and a `204` status is returned.\n      parameters:\n        - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Trim whitespace from Target content before applying the operation?"\n          in: "header"\n          name: "Trim-Target-Whitespace"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: |\n            Type of sub-document section to target. When specified, the operation\n            applies only to the matching section rather than the whole file. Must\n            be used together with the `Target` header.\n            \n            - `heading`: a markdown heading section.\n            - `block`: a block reference.\n            - `frontmatter`: a frontmatter field.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            The section to target; required when `Target-Type` is specified.\n            This value can be URL-Encoded and *must* be URL-Encoded if it\n            includes non-ASCII characters.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: "Delimiter used when specifying nested heading targets (e.g. \\"Heading 1::Subheading\\"). Defaults to \\"::\\"."\n          in: "header"\n          name: "Target-Delimiter"\n          required: false\n          schema:\n            default: "::"\n            type: "string"\n      requestBody:\n        content:\n          "*/*":\n            schema:\n              type: "string"\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content of the file you would like to upload."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; targeted section replaced. The full updated file content is returned."\n        "204":\n          description: "Success; entire file replaced."\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Incoming file could not be processed.  Make sure you have specified a reasonable file name, and make sure you have set a reasonable \'Content-Type\' header; if you are uploading a note, \'text/markdown\' is likely the right choice.\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Create a new file in your vault or update the content of an existing one.\n      tags:\n        - "Vault Files"\n  "/vault/{pathToDirectory}/":\n    get:\n      parameters:\n        - description: |\n            Path to list files from (relative to your vault root).  Note that empty directories will not be returned.\n            \n            Note: this particular interactive tool requires that you provide an argument for this field, but the API itself will allow you to list the root folder of your vault. If you would like to try listing content in the root of your vault using this interactive tool, use the above "List files that exist in the root of your vault" form above.\n          in: "path"\n          name: "pathToDirectory"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n      responses:\n        "200":\n          content:\n            application/json:\n              example:\n                files:\n                  - "mydocument.md"\n                  - "somedirectory/"\n              schema:\n                properties:\n                  files:\n                    items:\n                      type: "string"\n                    type: "array"\n                type: "object"\n          description: "Success"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Directory does not exist"\n      summary: |\n        List files that exist in the specified directory.\n      tags:\n        - "Vault Directories"\nsecurity:\n  - apiKeyAuth: []\nservers:\n  - description: "HTTPS (Secure Mode)"\n    url: "https://{host}:{port}"\n    variables:\n      host:\n        default: "127.0.0.1"\n        description: "Binding host"\n      port:\n        default: "27124"\n        description: "HTTPS port"\n  - description: "HTTP (Insecure Mode)"\n    url: "http://{host}:{port}"\n    variables:\n      host:\n        default: "127.0.0.1"\n        description: "Binding host"\n      port:\n        default: "27123"\n        description: "HTTP port"\ntags:\n  - name: "Vault Files"\n  - name: "Active File"\n  - name: "Periodic Notes"\n  - name: "Vault Directories"\n  - name: "Search"\n  - name: "Commands"\n  - name: "Open"\n  - name: "System"\n  - name: "MCP"\n';
+// node_modules/ts-dedent/esm/index.js
+function dedent(templ) {
+  var values = [];
+  for (var _i = 1; _i < arguments.length; _i++) {
+    values[_i - 1] = arguments[_i];
+  }
+  var strings = Array.from(typeof templ === "string" ? [templ] : templ);
+  strings[strings.length - 1] = strings[strings.length - 1].replace(/\r?\n([\t ]*)$/, "");
+  var indentLengths = strings.reduce(function(arr, str) {
+    var matches = str.match(/\n([\t ]+|(?!\s).)/g);
+    if (matches) {
+      return arr.concat(matches.map(function(match) {
+        var _a2, _b;
+        return (_b = (_a2 = match.match(/[\t ]/g)) === null || _a2 === void 0 ? void 0 : _a2.length) !== null && _b !== void 0 ? _b : 0;
+      }));
+    }
+    return arr;
+  }, []);
+  if (indentLengths.length) {
+    var pattern_1 = new RegExp("\n[	 ]{".concat(Math.min.apply(Math, indentLengths), "}"), "g");
+    strings = strings.map(function(str) {
+      return str.replace(pattern_1, "\n");
+    });
+  }
+  strings[0] = strings[0].replace(/^\r?\n/, "");
+  var string3 = strings[0];
+  values.forEach(function(value, i) {
+    var endentations = string3.match(/(?:^|\n)( *)$/);
+    var endentation = endentations ? endentations[1] : "";
+    var indentedValue = value;
+    if (typeof value === "string" && value.includes("\n")) {
+      indentedValue = String(value).split("\n").map(function(str, i2) {
+        return i2 === 0 ? str : "".concat(endentation).concat(str);
+      }).join("\n");
+    }
+    string3 += indentedValue + strings[i + 1];
+  });
+  return string3;
+}
 
 // src/mcpHandler.ts
-var PERIODS = ["daily", "weekly", "monthly", "quarterly", "yearly"];
+var import_markdown_patch_22 = __toESM(require_dist3());
+
+// docs/openapi.yaml
+var openapi_default = 'components:\n  schemas:\n    Error:\n      properties:\n        errorCode:\n          description: |\n            A 5-digit error code uniquely identifying this particular type of error.\n          example: 40149\n          type: "number"\n        message:\n          description: "Message describing the error."\n          example: "A brief description of the error."\n          type: "string"\n      type: "object"\n    HeadingAddress:\n      description: |\n        A heading address: the path of heading texts from the top level down\n        to the target. Use `null` or `[]` for the document root.\n      oneOf:\n        - items:\n            type: "string"\n          type: "array"\n        - type: "null"\n    HeadingTree:\n      additionalProperties:\n        "$ref": "#/components/schemas/HeadingTree"\n      description: |\n        The document\'s headings nested by containment: each heading\'s text\n        maps to a HeadingTree of its child headings, and a leaf heading maps\n        to `{}`. Nesting carries no heading level \u2014 a level skipped in the\n        source leaves no hole. To target a heading, use the path of keys from\n        the top level down to it as a HeadingAddress.\n        \n        A repeated sibling heading appears once, but its children are not\n        lost: they merge into that one key, because a heading is addressed by\n        its whole path rather than its name. Given `## Log / ### Monday`\n        followed by `## Log / ### Tuesday`, the tree is\n        `{"Log": {"Monday": {}, "Tuesday": {}}}` and both are separately\n        addressable. Only sections that share an entire path are one address,\n        and that address resolves to the first in document order. The tree\n        therefore lists exactly the headings you can target.\n      example:\n        Appendix: {}\n        Overview:\n          Details: {}\n      type: "object"\n    NoteJson:\n      properties:\n        backlinks:\n          description: "Vault-relative paths of files that link to this file."\n          items:\n            type: "string"\n          type: "array"\n        content:\n          type: "string"\n        frontmatter:\n          type: "object"\n        links:\n          description: "Vault-relative paths of files this file links to."\n          items:\n            type: "string"\n          type: "array"\n        path:\n          type: "string"\n        stat:\n          properties:\n            ctime:\n              type: "number"\n            mtime:\n              type: "number"\n            size:\n              type: "number"\n          required:\n            - "ctime"\n            - "mtime"\n            - "size"\n          type: "object"\n        tags:\n          items:\n            type: "string"\n          type: "array"\n        unresolvedLinks:\n          description: "Link text found in this file that does not resolve to an existing vault file."\n          items:\n            type: "string"\n          type: "array"\n      required:\n        - "tags"\n        - "frontmatter"\n        - "stat"\n        - "path"\n        - "content"\n        - "links"\n        - "backlinks"\n        - "unresolvedLinks"\n      type: "object"\n    PatchInstruction:\n      additionalProperties: false\n      description: "A single edit expressed as one operation applied to a scope of a target node. The payload rides in exactly one of `content`, `value`, or `destination`, chosen by what it is. Not every operation\xD7scope\xD7targetType combination is valid; invalid ones are rejected."\n      properties:\n        content:\n          description: "String payload: a heading/block body or label, a new block id for a block `marker` rename (letters, numbers, hyphens, and underscores only), or a new frontmatter key name for a frontmatter `marker` rename. Heading levels are relative to the edited span (a leading `#` becomes a direct child). For heading writes, whitespace is library-owned: leading/trailing blank lines here are ignored, and the engine supplies the blank line that keeps inserted content a separate block \u2014 never add newlines to control spacing. (Block-target `content` is the exception: it is spliced literally for inline edits.) A heading `marker` rename may not contain a line break. Provide exactly one of `content`, `value`, or `destination`."\n          type: "string"\n        createTargetIfMissing:\n          default: false\n          description: "Create the target (heading path, block id, or frontmatter key) if it does not already exist."\n          type: "boolean"\n        destination:\n          additionalProperties: false\n          description: "For a heading move (operation `replace`, scope `parent`): where the section is re-parented. Provide exactly one of `content`, `value`, or `destination`."\n          properties:\n            parent:\n              anyOf:\n                - items:\n                    type: "string"\n                  type: "array"\n              description: "The section\'s new parent heading address, or null/[] for the document root."\n              nullable: true\n            place:\n              anyOf:\n                - enum:\n                    - "first"\n                    - "last"\n                  type: "string"\n                - additionalProperties: false\n                  properties:\n                    before:\n                      anyOf:\n                        - items:\n                            type: "string"\n                          type: "array"\n                      description: "A heading\'s containment path: the ancestor heading texts from the top level down (e.g. [\\"Overview\\",\\"Details\\"]), or null/[] for the document root."\n                      nullable: true\n                  required:\n                    - "before"\n                  type: "object"\n                - additionalProperties: false\n                  properties:\n                    after:\n                      anyOf:\n                        - items:\n                            type: "string"\n                          type: "array"\n                      description: "A heading\'s containment path: the ancestor heading texts from the top level down (e.g. [\\"Overview\\",\\"Details\\"]), or null/[] for the document root."\n                      nullable: true\n                  required:\n                    - "after"\n                  type: "object"\n              description: "Position among the new parent\'s children: \\"first\\", \\"last\\", or { before } / { after } a sibling heading address."\n          required:\n            - "parent"\n            - "place"\n          type: "object"\n        ifMatch:\n          description: "Optimistic-concurrency token (the `version` from a prior document map). If set and the document has changed since, the patch fails with a precondition error without modifying the file."\n          type: "string"\n        operation:\n          description: "What happens to the scoped span: replace it, insert before (`prepend`) or after (`append`), or `delete` it."\n          enum:\n            - "replace"\n            - "prepend"\n            - "append"\n            - "delete"\n          type: "string"\n        rejectIfContentPreexists:\n          default: false\n          description: "Fail a `prepend`/`append` when the string content already appears in the target span (makes those operations idempotent on retry)."\n          type: "boolean"\n        scope:\n          default: "content"\n          description: "Which part of the target the operation acts on (default `content`). `content`: the node body \u2014 for a heading, its whole subtree below the heading line. `marker`: the label only \u2014 a heading line, a block `^id`, or a frontmatter key (`replace` renames it). `markerAndContent`: the whole node/subtree (`prepend`/`append` insert a sibling). `parent`: a heading\'s place in the tree \u2014 only with operation `replace`, carrying a `destination` (a move)."\n          enum:\n            - "content"\n            - "marker"\n            - "markerAndContent"\n            - "parent"\n          type: "string"\n        target:\n          anyOf:\n            - items:\n                type: "string"\n              type: "array"\n            - type: "string"\n          description: "The node to edit. For a heading: an array of heading texts from the top level down to the target (e.g. [\\"Overview\\",\\"Details\\"]), or null/[] for the document root. If a heading is a duplicate of an earlier sibling under the same parent, its address carries an extra non-printable marker suffix appended by the server \u2014 copy that address verbatim from wherever the document\'s heading structure was discovered, never retype or reconstruct it. For a block: the bare block id, without the leading `^` (letters, numbers, hyphens, and underscores only) \u2014 a duplicate block id\'s later occurrence carries the same kind of marker suffix, copied verbatim the same way. For a frontmatter field: the key."\n          nullable: true\n        targetType:\n          description: "The kind of node to edit."\n          enum:\n            - "heading"\n            - "block"\n            - "frontmatter"\n          type: "string"\n        value:\n          description: "Structured JSON payload: a frontmatter value (any JSON \u2014 string, number, boolean, array, object, null; for `prepend`/`append` this merges: list concat, dict merge, string concat), or table rows on a `block` target\'s `content` cell (a 2-D array of strings, one row per entry \u2014 `replace` swaps the body rows, `prepend`/`append` insert before/after the existing ones; each row\'s length must match the table\'s column count). Table cells are content, not table source: a `|` is escaped for you, and a cell containing a line break is rejected, since a row is a single line. Provide exactly one of `content`, `value`, or `destination`."\n        within:\n          description: "Refines a heading target to one of the section\'s direct-body top-level blocks (a paragraph, list, table, code fence, blockquote, \u2026): 0 is the first block in document order, and a negative index counts from the end (-1 = last). Isolated `^id` lines are not counted, so indices match the rendered blocks. With scope `content`, the edit is a literal splice into that block \u2014 you own the joint, so `append` *continues* the block (e.g. content `\\\\n- item` extends a list) \u2014 and `delete` removes the block. With scope `markerAndContent`, `prepend`/`append` insert a new block immediately before/after it, with library-owned blank-line separators. Heading targets only; cannot be combined with `createTargetIfMissing`."\n          type: "integer"\n      required:\n        - "targetType"\n        - "target"\n        - "operation"\n      type: "object"\n  securitySchemes:\n    apiKeyAuth:\n      description: |\n        Find your API Key in your Obsidian settings\n        in the "Local REST API" section under "Plugins".\n      scheme: "bearer"\n      type: "http"\ninfo:\n  description: |\n    The Obsidian Local REST API with MCP plugin gives you two ways to interact with your Obsidian vault programmatically:\n    \n    - **REST API** \u2014 standard HTTP endpoints for reading and writing notes, searching vault contents, and more. Useful from scripts, applications, or any HTTP client.\n    - **MCP server** \u2014 exposes the same capabilities as structured tools for AI assistants (Claude, Cursor, and other MCP-compatible clients). See the `POST /mcp/` endpoint for connection details.\n    \n    ## Testing with this interface\n    \n    Select any operation in the sidebar, then open the **Try It** tab to send a live request to your running Obsidian instance.\n    \n    **Authentication** \u2014 all requests require a Bearer token. In the **Try It** panel, expand the **Security** section and paste the API key shown in Obsidian under **Settings \u2192 Local REST API with MCP**.\n    \n    **Certificate warning** \u2014 the plugin generates a self-signed TLS certificate on first run. Most browsers will block requests to an untrusted certificate, so you may need to add it as a trusted certificate in your OS or browser settings before requests will go through. The steps vary by environment \u2014 search for "trust self-signed certificate" plus your OS or browser name if you\'re unsure. If that proves too cumbersome, you can enable the insecure HTTP server in your plugin settings instead and select "HTTP (insecure mode)" from the **Try It** section.\n  title: "Local REST API for Obsidian"\n  version: "1.0"\nopenapi: "3.2.0"\npaths:\n  /:\n    get:\n      description: |\n        Returns basic details about the server as well as your authentication status.\n        \n        This is the only API request that does *not* require authentication.\n      responses:\n        "200":\n          content:\n            application/json:\n              schema:\n                properties:\n                  authenticated:\n                    description: "Is your current request authenticated?"\n                    type: "boolean"\n                  ok:\n                    description: "\'OK\'"\n                    type: "string"\n                  service:\n                    description: "\'Obsidian Local REST API\'"\n                    type: "string"\n                  versions:\n                    properties:\n                      obsidian:\n                        description: "Obsidian plugin API version"\n                        type: "string"\n                      self:\n                        description: "Plugin version."\n                        type: "string"\n                    type: "object"\n                type: "object"\n          description: "Success"\n      summary: |\n        Returns basic details about the server.\n      tags:\n        - "System"\n  /active/:\n    delete:\n      parameters:\n        - description: |\n            If "true", the file is permanently deleted instead of being moved to trash. Defaults to "false", which moves the file to trash following the user\'s Obsidian "Deleted files" preference (either the ".trash" folder or the system trash).\n          in: "query"\n          name: "permanent"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n      responses:\n        "204":\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "File does not exist."\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Deletes the currently-active file in Obsidian.\n      tags:\n        - "Active File"\n    get:\n      description: |\n        Returns the content of the currently active file in Obsidian.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by embedding a target in the URL path, immediately after the note identifier. The first segment after the note is the target type, and the remaining segments address the target:\n        \n        - `.../heading/My%20Section` targets the section beneath the `My Section` heading \u2014 the body content below the heading line.\n        - For a nested heading, add one path segment per level: `.../heading/My%20Section/Subsection` targets `Subsection` under `My Section`. Because each level is its own segment, a heading whose text contains `::` (or any other delimiter) needs no escaping.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        \n        Percent-encode any segment that contains non-ASCII characters or a literal `/` (e.g. `H%C3%A9llo` for `H\xE9llo`, or `TODO%2FDONE` for a heading named `TODO/DONE`). Each URL path segment is decoded on its own, so an encoded `%2F` stays a literal slash *inside* that one segment rather than acting as a separator \u2014 that is what lets a heading name contain a slash. The same rule applies to the note path itself: because a file or folder name can never contain a slash, the note must be addressed with real `/` separators between its path components (`/vault/folder/note.md`), not with the separators encoded (`/vault/folder%2Fnote.md`), which no longer resolves.\n        \n        If a document has a duplicate sibling heading (the same text repeated under the same parent) or a duplicate block reference ID, only the first occurrence is addressable by its plain text/id. Each later occurrence gets its own address with a non-printable marker suffix appended by the server \u2014 fetch the document map (`Accept: application/vnd.olrapi.document-map+json`) and copy that occurrence\'s key verbatim; don\'t try to type or reconstruct the marker yourself.\n        \n        `GET` returns just the addressed section. By default that is the target\'s `content` scope; add a `Target-Scope` header to read the `marker` (the label \u2014 a heading\'s raw text, a block\'s bare id, a frontmatter key) or `markerAndContent` (the whole node, in exactly the shape a PATCH `replace` at that scope consumes \u2014 a heading subtree comes back with its own line as `# Title`, levels relative to its parent, so a read-modify-write never counts `#`s). `PUT` replaces the section and `POST` appends to it, with heading levels normalized and separator whitespace managed for you. `PATCH` also accepts a URL target \u2014 its raw-content mode \u2014 with the operation and other instruction fields in headers (`Operation`, `Target-Scope`, \u2026) and the raw payload as the body. For the full instruction algebra (renames, moves, deletes, typed frontmatter values), see the PATCH documentation.\n        \n        On `PUT` and `POST`, the `Content-Type` of your request body selects how the payload is interpreted, and not every target accepts both:\n        \n        - A `text/markdown` body is literal markdown. Valid for `heading` and `block` targets. On a `frontmatter` target it is stored as the field\'s plain string value.\n        - An `application/json` body is structured data. On a `block` target that addresses a table, it is a 2-D array of row cells (`[["Chicago", "16"]]`). On a `frontmatter` target it is the field\'s typed value (a list, dictionary, number, or string). A `heading` target has no structured form \u2014 its body is markdown text \u2014 so a JSON body there is rejected with `400 InvalidPatchInstruction` rather than being stringified into your note.\n        \n        ## Deprecated: header-based targeting\n        \n        Earlier releases addressed a sub-part with `Target-Type`, `Target`, and `Target-Delimiter` request headers (plus `Target-Scope` and `Trim-Target-Whitespace`) rather than URL path segments. **That form is deprecated and will be removed in 6.0.** It is only processed when you also send `Markdown-Patch-Version: 1`, and responses served that way carry a `Deprecation: true; sunset-version="6.0"` header. On GET/PUT/POST, supplying those targeting headers without that version is rejected with `400 HeaderTargetingRequiresVersion1` \u2014 reach the sub-part with URL path segments instead. (On PATCH, `Target-Type`/`Target` headers also have a *non-deprecated* meaning under an explicit `Markdown-Patch-Version: 2` \u2014 raw-content mode, with a different `Target` encoding; see the PATCH documentation.) Supplying both URL-path targeting and the header form in one request fails with `422 ConflictingTargetSpecification`.\n        \n        # Retrieving Document Metadata\n        \n        ## Metadata\n        \n        If you specify the header `Accept: application/vnd.olrapi.note+json`, will return a JSON representation of your note including parsed tag and frontmatter data as well as filesystem metadata.\n        \n        ## Document Map\n        \n        If you specify the header `Accept: application/vnd.olrapi.document-map+json`, will return a JSON object outlining what PATCH targets exist. See "responses" below for details.\n        \n        ## Rendered HTML\n        \n        If you specify the header `Accept: text/html`, will return the note rendered to HTML using Obsidian\'s own Markdown renderer \u2014 the same rendering used in Obsidian\'s preview mode, including embeds, callouts, and other Obsidian-flavored Markdown extensions. If `Target-Type`/`Target` are specified with `heading` or `block`, only that section is rendered. `Target-Type: frontmatter` is not supported for this Accept type and returns a 400 error, since frontmatter has no HTML rendering.\n      parameters:\n        - description: |\n            Selects which markdown-patch format governs this request. You do not normally\n            need to send this header. By default (2.0), a PATCH carries its whole instruction\n            in the JSON request body, the document map returns a nested heading tree plus a\n            `version` token, and a sub-part of a document is targeted with URL path elements\n            (e.g. `.../heading/My%20Section`). Set it to `1` to opt into the deprecated 1.x\n            behavior: the header-driven PATCH format, header-based targeting\n            (`Target-Type`/`Target`/`Target-Delimiter`/`Target-Scope`) on GET/PUT/POST, and\n            the `::`-joined document map. Responses served by 1.x carry a\n            `Deprecation: true; sunset-version="6.0"` header. Any value other than `1` or `2`\n            returns `400 InvalidPatchVersionHeader`.\n            \n            One place an *explicit* `2` matters: PATCH\'s raw-content mode with header-based\n            targeting. Because `Target-Type`/`Target` headers on a PATCH are ambiguous between\n            the 1.x format and raw-content mode, a PATCH carrying them without this header is\n            rejected with `400 PatchHeaderTargetingRequiresExplicitVersion` \u2014 send `1` for the\n            deprecated engine or `2` for raw-content mode. On GET/PUT/POST, supplying those\n            targeting headers without `1` is rejected with `400 HeaderTargetingRequiresVersion1`\n            (use URL path elements instead), and PATCH URL-element targeting likewise needs no\n            version header.\n          in: "header"\n          name: "Markdown-Patch-Version"\n          required: false\n          schema:\n            default: "2"\n            enum:\n              - "1"\n              - "2"\n            type: "string"\n        - description: |\n            For a URL-path-targeted read: which part of the target to return\n            (default `content`), mirroring PATCH\'s scopes with a round-trip\n            guarantee \u2014 what a scope returns is exactly what a `replace` at that\n            scope consumes.\n            \n            - `content` (default): the node\'s body \u2014 a heading\'s body with its\n              levels made relative to the target, a block\'s text, a frontmatter\n              value.\n            - `marker`: the label \u2014 a heading\'s raw text (no `#`s, and without the\n              duplicate-marker suffix its map key may carry), a block\'s bare id, a\n              frontmatter key.\n            - `markerAndContent`: the whole node \u2014 a heading\'s subtree with its own\n              line as `# Title` (levels relative to its parent), a block\'s full\n              span including its `^id`, or a frontmatter entry as a `{key: value}`\n              JSON object.\n            \n            `parent` places a section but carries no readable value, and returns\n            `400 InvalidTargetScopeHeader`. Only meaningful when the URL path\n            addresses a sub-part of the note.\n          in: "header"\n          name: "Target-Scope"\n          required: false\n          schema:\n            default: "content"\n            enum:\n              - "content"\n              - "marker"\n              - "markerAndContent"\n            type: "string"\n      responses:\n        "200":\n          content:\n            application/json:\n              description: "Returned when the URL path targets a frontmatter field (`.../frontmatter/fieldName`); the JSON value of that field."\n              schema: {}\n            "application/vnd.olrapi.document-map+json":\n              schema:\n                description: |\n                  The document map. To receive the deprecated 1.x shape \u2014 heading paths as\n                  `::`-joined strings, block ids prefixed with `^`, and no `version` \u2014\n                  send `Markdown-Patch-Version: 1`.\n                properties:\n                  blocks:\n                    description: "Block reference ids, bare (no leading `^`), in document order."\n                    example:\n                      - "blockref1"\n                      - "anotherBlockRef"\n                    items:\n                      type: "string"\n                    type: "array"\n                  frontmatterFields:\n                    example:\n                      - "title"\n                      - "tags"\n                      - "dateCreated"\n                    items:\n                      type: "string"\n                    type: "array"\n                  headings:\n                    "$ref": "#/components/schemas/HeadingTree"\n                  version:\n                    description: "Content-hash token for the file; pass it back as a PATCH `ifMatch` to make an edit conditional on the file being unchanged."\n                    example: "a1b2c3"\n                    type: "string"\n                type: "object"\n            "application/vnd.olrapi.note+json":\n              schema:\n                "$ref": "#/components/schemas/NoteJson"\n            text/html:\n              description: |\n                Returned when `Accept: text/html` is specified. The note (or, if `Target-Type`/`Target` are specified with `heading` or `block`, just that section) rendered to HTML via Obsidian\'s Markdown renderer (embeds, callouts, etc. included). `Target-Type: frontmatter` is not supported for this Accept type and returns a 400 error.\n              schema:\n                example: |\n                  <h1>This is my document</h1>\n                  <p>something else here</p>\n                type: "string"\n            text/markdown:\n              schema:\n                example: |\n                  # This is my document\n                  \n                  something else here\n                type: "string"\n          description: "Success"\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            The `Markdown-Patch-Version` header was invalid (not `1` or `2`), the deprecated `Target-Type`/`Target` headers were invalid, the `Target-Scope` header was not a readable scope (`content`, `marker`, `markerAndContent`), or a frontmatter target was combined with `Accept: text/html` (frontmatter has no HTML rendering).\n        "404":\n          description: "File or target section does not exist"\n      summary: |\n        Return the content of the active file open in Obsidian.\n      tags:\n        - "Active File"\n    patch:\n      description: |\n        Modifies the currently-open note with a single structured instruction: an operation applied to a scope of a target \u2014 a heading, block reference, or frontmatter field within that document.\n        \n        Edit a document with a single structured instruction \u2014 an **operation** applied to a **scope** of a **target** node (a heading, block reference, or frontmatter field). By default the whole instruction travels as a JSON request body; [raw-content mode](#raw-content-mode-templating-friendly) instead carries the instruction\'s fields in URL path elements/headers with the raw payload as the body.\n        \n        > **Migrating from the header-driven format?** See [Deprecated: the 1.x header-driven format](#deprecated-the-1x-header-driven-format) at the end.\n        \n        # The algebra\n        \n        - **operation** \u2014 `replace`, `prepend`, `append`, or `delete`.\n        - **scope** (optional, default `content`):\n          - `content` \u2014 the node\'s body. For a heading, that\'s its whole subtree *below* the heading line.\n          - `marker` \u2014 the label only: a heading line, a block `^id`, or a frontmatter key. `replace` renames it.\n          - `markerAndContent` \u2014 the marker *and* the body together: for a heading, its heading line plus everything beneath it. Unlike `content`, the heading line is inside the edited span, so a `replace` here rewrites the heading itself. `prepend`/`append` insert a *sibling* before/after it.\n          - `parent` \u2014 a heading\'s place in the tree. Valid only with `replace`, and carries a `destination` (a **move**).\n        - **target** \u2014 for a heading, an array of heading texts from the top level down (`["Overview","Details"]`), or `null`/`[]` for the document root; for a block, the bare id without `^`; for a frontmatter field, the key.\n        - **within** (optional, heading targets only) \u2014 a positional refinement: an index picking one of the section\'s direct-body top-level blocks (a paragraph, list, table, code fence, \u2026), 0-based in document order, negative counting from the end (`-1` = last; isolated `^id` lines are not counted). The instruction then edits *that block*: with `content` scope, `replace`/`prepend`/`append` splice literally into it \u2014 you own the joint, so `append` with `\\n- item` *continues* a list \u2014 and `delete` removes it; with `markerAndContent` scope, `prepend`/`append` insert a new block immediately before/after it. Not combinable with `createTargetIfMissing`.\n        - **payload** \u2014 carried in exactly one field, chosen by what it is:\n          - `content` \u2014 a markdown/text string (heading & block bodies/labels, or a frontmatter key rename).\n          - `value` \u2014 arbitrary JSON (frontmatter values).\n          - `destination` \u2014 where a moved heading lands.\n        \n        Not every combination is meaningful; invalid ones are rejected with a `400`.\n        \n        **Relative heading levels.** Heading `#`-counts inside a `content` string are *relative* to the edited span, so you never count `#`s: under `content` scope a leading `#` becomes a direct child of the target; under `markerAndContent` (or a sibling insert) it lands at the target\'s own level. Nesting inside your content is preserved as you wrote it \u2014 replacing a `##` section with `# New\\n\\n## Child` yields `## New` and `### Child`. A level rebased past `######` (h6) is still written, but the response carries a `heading-depth-overflow` entry in the `Markdown-Patch-Warnings` header \u2014 percent-encoded JSON, since a warning message embeds document text verbatim and header values must be ASCII; run it through `decodeURIComponent` before parsing.\n        \n        > **Note:** because the heading line is part of the `markerAndContent` span, a `replace` whose content has *no* heading removes it \u2014 the section is dissolved into a plain paragraph. Include a leading `#` (at any depth; it is rebased for you) to keep it a heading.\n        \n        # How to Use & Examples\n        \n        All of the below examples assume you have a document that looks like this:\n        \n        ```markdown\n        ---\n        alpha: 1\n        beta: test\n        delta:\n        zeta: 1\n        yotta: 1\n        gamma:\n        - one\n        - two\n        ---\n        \n        # Heading 1\n        \n        This is the content for heading one\n        \n        Also references some [[#^484ef2]]\n        \n        ## Subheading 1:1\n        Content for Subheading 1:1\n        \n        ### Subsubheading 1:1:1\n        \n        ### Subsubheading 1:1:2\n        \n        Testing how block references work for a table.[[#^2c7cfa]]\n        Some content for Subsubheading 1:1:2\n        \n        More random text.\n        \n        ^2d9b4a\n        \n        ## Subheading 1:2\n        \n        Content for Subheading 1:2.\n        \n        some content with a block reference ^484ef2\n        \n        ## Subheading 1:3\n        | City         | Population |\n        | ------------ | ---------- |\n        | Seattle, WA  | 8          |\n        | Portland, OR | 4          |\n        \n        ^2c7cfa\n        ```\n        \n        ## Append, prepend, or replace content below a heading\n        \n        To append the content "Hello" below "Subsubheading 1:1:1" under "Heading 1":\n        \n        ```json\n        {\n          "targetType": "heading",\n          "target": ["Heading 1", "Subheading 1:1", "Subsubheading 1:1:1"],\n          "operation": "append",\n          "content": "Hello"\n        }\n        ```\n        \n        `prepend` and `replace` work the same way, with different results. Because `target` is an array, a heading whose text contains `::` needs no escaping.\n        \n        > **Note:** the heading line itself is not part of the `content` scope. When you `replace` a heading\'s content, supply only the body \u2014 do not include the heading line, or it will be duplicated. To rename the heading, see below.\n        \n        ## Renaming a heading\n        \n        Give the new text. That\'s all \u2014 no `#` characters, and nothing to look up:\n        \n        ```json\n        {\n          "targetType": "heading",\n          "target": ["Heading 1", "Subheading 1:1"],\n          "operation": "replace",\n          "scope": "marker",\n          "content": "New Name"\n        }\n        ```\n        \n        `marker` scope addresses the label rather than the line, so the heading keeps whatever level it had and the body underneath is untouched. You never need to know the heading\'s depth to rename it.\n        \n        > **Do not include `#` characters here.** They are not stripped \u2014 they become part of the heading text, so `"## New Name"` renames the heading to `## New Name` and renders as `## ## New Name`. (This is the reverse of the deprecated 1.x format, where the `#`s were required. If you are migrating, drop them.)\n        \n        The same instruction shape renames a block id (`targetType: "block"`, new id without `^`) or a frontmatter key (`targetType: "frontmatter"`, new key name in `content`).\n        \n        ## Whitespace is library-owned\n        \n        Your `content` crosses the API in trimmed, canonical form: leading and trailing blank lines are stripped, and a non-empty write always ends with exactly one newline. `"X"`, `"X\\n"`, `"\\nX\\n"`, and `"X\\n\\n"` all produce the same document \u2014 newlines at the edges of your content are not a channel for controlling layout, so there is nothing to get wrong.\n        \n        Blank-line separators are the API\'s job. At any joint where your content faces body text, the engine supplies the blank line that keeps it a separate block. Given a document containing:\n        \n        ```markdown\n        # One\n        \n        body of one\n        ```\n        \n        - `append` becomes a new block after the body \u2192 `# One\\n\\nbody of one\\n\\nX\\n`\n        - `prepend` becomes a new block before the body \u2192 `# One\\n\\nX\\n\\nbody of one\\n`\n        - `replace` swaps the body \u2192 `# One\\n\\nX\\n`\n        \n        Where no separator is owed, none is added \u2014 a heading line is self-delimiting, and existing blank lines, gaps between sections, and document edges are preserved rather than rewritten:\n        \n        - The blank line between a heading and its body is kept in place: `replace` swaps the body beneath it and `prepend` inserts below it. A document written flush (`# One\\nbody of one\\n`) keeps its flush style \u2014 `replace` gives `# One\\nX\\n` \u2014 and replacing a body with its own text is byte-identity in either style.\n        - Writing into an empty section lands flush under its heading (`# E\\nX\\n`), with the section\'s existing trailing gap serving as the separator below.\n        \n        One consequence worth knowing: a `content`-scope `append`/`prepend` always begins a new block \u2014 it can never continue an existing paragraph or list. To edit inline within an existing block, address the block itself, which puts you on the literal-splice path where content lands exactly as given and you own the joint. Two ways to do that: target the block via its reference (`^id`) if it has one, or add `within: <index>` to a heading instruction to pick one of the section\'s body blocks by position \u2014 no `^id` required. For example, to extend the last list of a section:\n        \n        ```json\n        { "targetType": "heading", "target": ["Log"], "within": -1, "operation": "append", "content": "\\n- new item" }\n        ```\n        \n        Because a `within` edit is literal, the leading `\\n` is yours to write \u2014 without it the text continues the block\'s last line. Indices are positional, so read the document map or section first, and pair the edit with `ifMatch` from that read so a concurrent change fails the patch rather than landing on the wrong block.\n        \n        ## Append, prepend, or replace content of a block reference\n        \n        To append "Hello" below the block referenced by `2d9b4a`:\n        \n        ```json\n        { "targetType": "block", "target": "2d9b4a", "operation": "append", "content": "Hello" }\n        ```\n        \n        ## Append, prepend, or replace table rows via a block reference\n        \n        To add a new city/population pair to the table referenced by `2c7cfa`, pass the row(s) as a 2-D JSON array in `value`:\n        \n        ```json\n        { "targetType": "block", "target": "2c7cfa", "operation": "append", "value": [["Chicago, IL", "16"]] }\n        ```\n        \n        `prepend` puts the new row first (right below the heading row); `replace` swaps all body rows for the ones you supply. Each row must have exactly as many cells as the table has columns; a mismatched row, or targeting a block that isn\'t a table, is rejected.\n        \n        Cells are content, not table source, so you don\'t format them: a `|` in a cell is escaped for you and stays in the cell it belongs to. A cell containing a line break is rejected, since a table row is a single line \u2014 if you need a visual break inside a cell, send `<br>` yourself.\n        \n        ## Setting a frontmatter field\n        \n        Frontmatter values are JSON, so they ride in `value` (not `content`). To set `alpha` to `2`:\n        \n        ```json\n        { "targetType": "frontmatter", "target": "alpha", "operation": "replace", "value": 2 }\n        ```\n        \n        Add `"createTargetIfMissing": true` to create a field that might not exist yet. For `append`/`prepend`, `value` is merged into the existing value (list concat, dict merge, string concat).\n        \n        ## Adding and removing tags\n        \n        Obsidian stores frontmatter tags in the `tags` field. To add `project/active`, merging into the list and creating it if absent:\n        \n        ```json\n        { "targetType": "frontmatter", "target": "tags", "operation": "append", "value": ["project/active"], "createTargetIfMissing": true }\n        ```\n        \n        There is no direct "remove item" operation. To remove a tag, read the current list (GET, or `vault_read` in the MCP API), filter it client-side, and replace the whole field:\n        \n        ```json\n        { "targetType": "frontmatter", "target": "tags", "operation": "replace", "value": ["remaining-tag-1", "remaining-tag-2"] }\n        ```\n        \n        ## Moving a heading section\n        \n        `scope: "parent"` with `operation: "replace"` re-parents (and re-levels) a section. To move "Details" under "Appendix" as its last child:\n        \n        ```json\n        {\n          "targetType": "heading",\n          "target": ["Overview", "Details"],\n          "operation": "replace",\n          "scope": "parent",\n          "destination": { "parent": ["Appendix"], "place": "last" }\n        }\n        ```\n        \n        `place` may be `"first"`, `"last"`, `{ "before": <heading path> }`, or `{ "after": <heading path> }`. Use `"parent": null` to move to the document root.\n        \n        ## Deleting\n        \n        `operation: "delete"` empties the `content` scope, removes the whole subtree (`markerAndContent`), or dissolves just the heading line (`marker`):\n        \n        ```json\n        { "targetType": "heading", "target": ["Heading 1", "Subheading 1:2"], "operation": "delete", "scope": "markerAndContent" }\n        ```\n        \n        ## Optimistic concurrency\n        \n        Pass `ifMatch` with the `version` token from a document map (see below). If the file changed since, the patch fails with `412` and the file is untouched \u2014 refetch and retry.\n        \n        ## Identifying patch targets in a file\n        \n        Issue a GET request to `/vault/{path}` with an `Accept` header of `application/vnd.olrapi.document-map+json` to get the headings, block references, and frontmatter fields present in the file (and its `version` token). If a heading has a duplicate sibling (same text, same parent) or a block reference ID repeats, only the first occurrence keeps its plain-text/id key \u2014 each later occurrence\'s key carries a non-printable marker suffix; copy it verbatim from the map into `target` rather than typing it by hand. See "Targeting a Sub-part of your Document" for details.\n        \n        # Raw-content mode (templating-friendly)\n        \n        Putting the whole instruction in a JSON body has one sharp edge: the `content` string must be JSON-escaped, which tools that *template* markdown into an HTTP body (Shortcuts, Tasker, curl with `--data` from a template) often cannot do reliably. Raw-content mode removes that requirement: the instruction\'s fields travel **outside** the body, and the body is the raw payload \u2014 no JSON escaping required.\n        \n        The target can ride in either of two places (never both \u2014 that\'s a `422`):\n        \n        - **URL path elements**, exactly as GET/PUT/POST use them: `PATCH /vault/note.md/heading/A/B`. No version header needed.\n        - **`Target-Type` / `Target` headers**, together with an explicit `Markdown-Patch-Version: 2`. The `Target` encoding is type-dependent, mirroring the instruction\'s `target` field: a heading Target is **JSON, percent-encoded** \u2014 `["A","B"]` sent as `%5B%22A%22%2C%22B%22%5D`, or `null` for the document root \u2014 while block and frontmatter Targets are the plain id/key (percent-encoded if non-ASCII). Because `Target` headers on a PATCH are ambiguous with the deprecated 1.x format, omitting the version header fails loudly with `400 PatchHeaderTargetingRequiresExplicitVersion` rather than guessing.\n        \n        The remaining fields map to headers: `Operation` (required), `Target-Scope` (all four scopes, including `parent`), `Within` (the instruction\'s `within` index as a plain integer, e.g. `-1` \u2014 splice into one of the section\'s body blocks instead of adding a new one), `Create-Target-If-Missing`, `Reject-If-Content-Preexists`, `If-Match` (the document-map `version` token, bare or ETag-quoted), and `Destination` (a move\'s destination object as percent-encoded JSON). The 1.x-only `Target-Delimiter` and `Trim-Target-Whitespace` headers are rejected.\n        \n        The body is the payload carrier, chosen by its content type:\n        \n        | Body | Instruction field |\n        | --- | --- |\n        | `text/markdown` (any `text/*`) | `content` |\n        | `application/json` | `value` |\n        | *(no body)* | none \u2014 a `delete`, or a move via `Destination` |\n        \n        An empty body deliberately maps to *no* carrier: a `replace` with an accidentally-empty template fails as a missing carrier instead of clearing the section. To clear content on purpose, use an instruction body with `"content": ""`.\n        \n        ```sh\n        # Append a templated line under a heading \u2014 no JSON escaping anywhere\n        curl -k -X PATCH \\\n          -H "Authorization: Bearer $API_KEY" \\\n          -H "Operation: append" \\\n          -H "Content-Type: text/markdown" \\\n          --data "- $TEMPLATED_CONTENT" \\\n          "https://127.0.0.1:27124/vault/notes/daily.md/heading/Log"\n        \n        # Extend the section\'s last list *in place* (not a new block below it):\n        # Within picks the block, and the leading newline in the body makes the\n        # spliced text a new item of that list\n        curl -k -X PATCH \\\n          -H "Authorization: Bearer $API_KEY" \\\n          -H "Operation: append" \\\n          -H "Within: -1" \\\n          -H "Content-Type: text/markdown" \\\n          --data $\'\\n- \'"$TEMPLATED_CONTENT" \\\n          "https://127.0.0.1:27124/vault/notes/daily.md/heading/Log"\n        \n        # The same edit with header targeting (note the explicit version and JSON Target)\n        curl -k -X PATCH \\\n          -H "Authorization: Bearer $API_KEY" \\\n          -H "Markdown-Patch-Version: 2" \\\n          -H "Target-Type: heading" \\\n          -H "Target: %5B%22Log%22%5D" \\\n          -H "Operation: append" \\\n          -H "Content-Type: text/markdown" \\\n          --data "- $TEMPLATED_CONTENT" \\\n          "https://127.0.0.1:27124/vault/notes/daily.md"\n        ```\n        \n        Everything downstream is identical to instruction mode: the same validation, the same warnings header, the same error mapping. A raw-mode request may also send `application/vnd.olrapi.patch-instruction+json` \u2014 but only as a *whole-instruction body* with no targeting elsewhere; combining it with URL or header targeting is a `422 ConflictingTargetSpecification`.\n        \n        > **Note:** on `/active/` endpoints, a URL suffix (e.g. `/active/heading/Log`) previously had no effect on PATCH \u2014 it was ignored and the whole file was patched. It now targets the addressed section, matching PUT/POST.\n        \n        # Deprecated: the 1.x header-driven format\n        \n        The earlier PATCH format spread the instruction across `Operation`, `Target-Type`, `Target`, `Target-Delimiter`, `Target-Scope`, `Create-Target-If-Missing`, `Reject-If-Content-Preexists`, and `Trim-Target-Whitespace` headers, with the payload in a `text/markdown` (or JSON-string) body. **It is deprecated and will be removed in 6.0.** Requests that use it still work, but every response carries a `Deprecation: true; sunset-version="6.0"` header.\n        \n        The JSON-instruction format described above is the default. To use the deprecated format, send `Markdown-Patch-Version: 1`; the header also selects the 1.x document map (`::`-joined heading paths, no `version`) on GET. Without any version header, a non-object body with no targeting is rejected with `400 InvalidPatchInstruction`, and `Target-Type`/`Target` headers are rejected with `400 PatchHeaderTargetingRequiresExplicitVersion` \u2014 those same header names are also raw-content mode\'s (with different `Target` encoding), so the request must explicitly pick `1` or `2`. To upgrade, drop the version header and either move each 1.x header into the JSON body as below, or switch to [raw-content mode](#raw-content-mode-templating-friendly) and keep your body as-is:\n        \n        | 1.x header | Instruction field |\n        | --- | --- |\n        | `Operation: append` | `"operation": "append"` (now also `"delete"`) |\n        | `Target-Type: heading` | `"targetType": "heading"` |\n        | `Target: A::B` (+ `Target-Delimiter`) | `"target": ["A", "B"]` (a real array \u2014 no delimiter) |\n        | `Target-Scope: content` | `"scope": "content"` (adds `"parent"` for moves) |\n        | body (`text/markdown`) | `"content": "..."` |\n        | body (`application/json` value) | `"value": <json>` |\n        | `Create-Target-If-Missing: true` | `"createTargetIfMissing": true` |\n        | `Reject-If-Content-Preexists: true` | `"rejectIfContentPreexists": true` |\n        | `Trim-Target-Whitespace` | *(dropped; the engine owns boundary whitespace)* |\n      parameters:\n        - description: |\n            Selects which markdown-patch format governs this request. You do not normally\n            need to send this header. By default (2.0), a PATCH carries its whole instruction\n            in the JSON request body, the document map returns a nested heading tree plus a\n            `version` token, and a sub-part of a document is targeted with URL path elements\n            (e.g. `.../heading/My%20Section`). Set it to `1` to opt into the deprecated 1.x\n            behavior: the header-driven PATCH format, header-based targeting\n            (`Target-Type`/`Target`/`Target-Delimiter`/`Target-Scope`) on GET/PUT/POST, and\n            the `::`-joined document map. Responses served by 1.x carry a\n            `Deprecation: true; sunset-version="6.0"` header. Any value other than `1` or `2`\n            returns `400 InvalidPatchVersionHeader`.\n            \n            One place an *explicit* `2` matters: PATCH\'s raw-content mode with header-based\n            targeting. Because `Target-Type`/`Target` headers on a PATCH are ambiguous between\n            the 1.x format and raw-content mode, a PATCH carrying them without this header is\n            rejected with `400 PatchHeaderTargetingRequiresExplicitVersion` \u2014 send `1` for the\n            deprecated engine or `2` for raw-content mode. On GET/PUT/POST, supplying those\n            targeting headers without `1` is rejected with `400 HeaderTargetingRequiresVersion1`\n            (use URL path elements instead), and PATCH URL-element targeting likewise needs no\n            version header.\n          in: "header"\n          name: "Markdown-Patch-Version"\n          required: false\n          schema:\n            default: "2"\n            enum:\n              - "1"\n              - "2"\n            type: "string"\n        - description: |\n            Raw-content mode: the type of node the instruction targets (`heading`,\n            `block`, or `frontmatter`). Must be used together with the `Target`\n            header and an explicit `Markdown-Patch-Version: 2`; alternatively, put\n            the target in the URL path (`.../heading/A/B`) and omit both headers.\n            Supplying both is rejected with `422 ConflictingTargetSpecification`.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            Raw-content mode: the node the instruction targets. The encoding is\n            type-dependent, mirroring the instruction\'s `target` field. For a\n            `heading`, the value is JSON \u2014 an array of heading texts from the top\n            level down, or `null` for the document root \u2014 then percent-encoded:\n            `["A","B"]` is sent as `%5B%22A%22%2C%22B%22%5D`. For a `block` or\n            `frontmatter` target, the value is the plain id/key, percent-encoded if\n            it contains non-ASCII characters. A heading value that does not decode\n            to JSON (e.g. a bare 1.x-style `A::B` path) is rejected with\n            `400 InvalidTargetHeader`.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: |\n            Raw-content mode: the instruction\'s `within` \u2014 a single integer (e.g.\n            `-1`) refining a heading target to one of the section\'s direct-body\n            top-level blocks (0-based document order, negative counting from the\n            end; isolated `^id` lines are not counted). With the default `content`\n            scope the body is spliced literally into that block \u2014 an `append`\n            *continues* it \u2014 and a bodiless `delete` removes it; with\n            `Target-Scope: markerAndContent`, `prepend`/`append` insert the body as\n            a new block beside it. Heading targets only; cannot be combined with\n            `Create-Target-If-Missing`.\n          in: "header"\n          name: "Within"\n          required: false\n          schema:\n            type: "string"\n        - description: |\n            Raw-content mode: the instruction\'s operation. Required whenever the\n            target rides in the URL path or the `Target-Type`/`Target` headers.\n          in: "header"\n          name: "Operation"\n          required: false\n          schema:\n            enum:\n              - "replace"\n              - "prepend"\n              - "append"\n              - "delete"\n            type: "string"\n        - description: |\n            Raw-content mode: the instruction\'s `scope` \u2014 `content` (default),\n            `marker`, `markerAndContent`, or `parent` (a move; carries its\n            destination in the `Destination` header). See the instruction-body\n            documentation for what each scope addresses.\n          in: "header"\n          name: "Target-Scope"\n          required: false\n          schema:\n            default: "content"\n            enum:\n              - "content"\n              - "marker"\n              - "markerAndContent"\n              - "parent"\n            type: "string"\n        - description: |\n            Raw-content mode: where a moved heading lands (`Target-Scope: parent`).\n            The instruction\'s `destination` object as JSON, then percent-encoded:\n            `{"parent":["Appendix"],"place":"last"}` is sent as\n            `%7B%22parent%22%3A%5B%22Appendix%22%5D%2C%22place%22%3A%22last%22%7D`.\n            A move carries no body.\n          in: "header"\n          name: "Destination"\n          required: false\n          schema:\n            type: "string"\n        - description: |\n            Raw-content mode: the instruction\'s `ifMatch` optimistic-concurrency\n            token \u2014 the `version` from a document map, bare or wrapped in one pair\n            of double quotes (RFC 9110 ETag style). A mismatch fails with `412` and\n            leaves the file untouched.\n          in: "header"\n          name: "If-Match"\n          required: false\n          schema:\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n      requestBody:\n        content:\n          application/json:\n            examples:\n              addTag:\n                summary: "Add a tag (merge into the tags list, creating it if absent)"\n                value:\n                  createTargetIfMissing: true\n                  operation: "append"\n                  target: "tags"\n                  targetType: "frontmatter"\n                  value:\n                    - "project/active"\n              appendToBlock:\n                summary: "Append text to a block addressed by its reference id"\n                value:\n                  content: "More detail for this block."\n                  operation: "append"\n                  target: "2c7cfa"\n                  targetType: "block"\n              appendUnderHeading:\n                summary: "Append text below a heading"\n                value:\n                  content: "Hello"\n                  operation: "append"\n                  target:\n                    - "Heading 1"\n                    - "Subheading 1:1:1"\n                  targetType: "heading"\n              continueList:\n                summary: "Continue an existing list in place (within: positional block edit)"\n                value:\n                  content: "\\n- new item"\n                  operation: "append"\n                  target:\n                    - "Log"\n                  targetType: "heading"\n                  within: -1\n              moveSection:\n                summary: "Move a heading section under a new parent"\n                value:\n                  destination:\n                    parent:\n                      - "Appendix"\n                    place: "last"\n                  operation: "replace"\n                  scope: "parent"\n                  target:\n                    - "Overview"\n                    - "Details"\n                  targetType: "heading"\n              setFrontmatter:\n                summary: "Set a frontmatter field to a JSON value"\n                value:\n                  operation: "replace"\n                  target: "alpha"\n                  targetType: "frontmatter"\n                  value: 2\n            schema:\n              "$ref": "#/components/schemas/PatchInstruction"\n          "application/vnd.olrapi.patch-instruction+json":\n            schema:\n              "$ref": "#/components/schemas/PatchInstruction"\n          text/markdown:\n            schema:\n              example: |\n                - A raw markdown line: no JSON escaping needed.\n              type: "string"\n        description: |\n          Instruction mode: a single patch instruction as JSON (`application/json`, or\n          `application/vnd.olrapi.patch-instruction+json` to declare it explicitly).\n          Raw-content mode: the raw payload \u2014 a `text/markdown` body is the instruction\'s\n          `content` carrier, an `application/json` body its `value` carrier, and no body at\n          all carries nothing (a delete, or a move via the `Destination` header). An empty\n          raw-mode body never clears content: a `replace` without a payload is rejected as a\n          missing carrier, so an accidentally-empty template cannot wipe a section (use an\n          instruction body with `"content": ""` to clear deliberately).\n        required: false\n      responses:\n        "200":\n          description: "Success. The body is the patched document. Any advisory warnings (e.g. a heading rebased past level 6) are JSON-encoded, then percent-encoded, in the `Markdown-Patch-Warnings` response header."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request; the instruction was malformed, the operation\xD7scope\xD7targetType combination is not part of the algebra, the `Markdown-Patch-Version` header was invalid, an instruction-mode request had a non-object body, or a raw-content-mode header could not be decoded (a heading `Target` that is not percent-encoded JSON, a malformed `Destination`, an unsupported body content type). Header-based targeting without an explicit `Markdown-Patch-Version` returns `PatchHeaderTargetingRequiresExplicitVersion` here. See response message for details."\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "The file, or the addressed target within it, does not exist (and `createTargetIfMissing` was not set)."\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n        "409":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "`rejectIfContentPreexists` was set and the content already appears in the target span."\n        "412":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Precondition Failed: the `ifMatch` token did not match the current document version; the file was not modified."\n        "422":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Conflicting target specifications: more than one of URL path elements, `Target-Type`/`Target` headers, and an `application/vnd.olrapi.patch-instruction+json` instruction body was supplied."\n      summary: |\n        Partially update content in the currently open note.\n      tags:\n        - "Active File"\n    post:\n      description: |\n        Appends content to the end of the currently-open note.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by embedding a target in the URL path, immediately after the note identifier. The first segment after the note is the target type, and the remaining segments address the target:\n        \n        - `.../heading/My%20Section` targets the section beneath the `My Section` heading \u2014 the body content below the heading line.\n        - For a nested heading, add one path segment per level: `.../heading/My%20Section/Subsection` targets `Subsection` under `My Section`. Because each level is its own segment, a heading whose text contains `::` (or any other delimiter) needs no escaping.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        \n        Percent-encode any segment that contains non-ASCII characters or a literal `/` (e.g. `H%C3%A9llo` for `H\xE9llo`, or `TODO%2FDONE` for a heading named `TODO/DONE`). Each URL path segment is decoded on its own, so an encoded `%2F` stays a literal slash *inside* that one segment rather than acting as a separator \u2014 that is what lets a heading name contain a slash. The same rule applies to the note path itself: because a file or folder name can never contain a slash, the note must be addressed with real `/` separators between its path components (`/vault/folder/note.md`), not with the separators encoded (`/vault/folder%2Fnote.md`), which no longer resolves.\n        \n        If a document has a duplicate sibling heading (the same text repeated under the same parent) or a duplicate block reference ID, only the first occurrence is addressable by its plain text/id. Each later occurrence gets its own address with a non-printable marker suffix appended by the server \u2014 fetch the document map (`Accept: application/vnd.olrapi.document-map+json`) and copy that occurrence\'s key verbatim; don\'t try to type or reconstruct the marker yourself.\n        \n        `GET` returns just the addressed section. By default that is the target\'s `content` scope; add a `Target-Scope` header to read the `marker` (the label \u2014 a heading\'s raw text, a block\'s bare id, a frontmatter key) or `markerAndContent` (the whole node, in exactly the shape a PATCH `replace` at that scope consumes \u2014 a heading subtree comes back with its own line as `# Title`, levels relative to its parent, so a read-modify-write never counts `#`s). `PUT` replaces the section and `POST` appends to it, with heading levels normalized and separator whitespace managed for you. `PATCH` also accepts a URL target \u2014 its raw-content mode \u2014 with the operation and other instruction fields in headers (`Operation`, `Target-Scope`, \u2026) and the raw payload as the body. For the full instruction algebra (renames, moves, deletes, typed frontmatter values), see the PATCH documentation.\n        \n        On `PUT` and `POST`, the `Content-Type` of your request body selects how the payload is interpreted, and not every target accepts both:\n        \n        - A `text/markdown` body is literal markdown. Valid for `heading` and `block` targets. On a `frontmatter` target it is stored as the field\'s plain string value.\n        - An `application/json` body is structured data. On a `block` target that addresses a table, it is a 2-D array of row cells (`[["Chicago", "16"]]`). On a `frontmatter` target it is the field\'s typed value (a list, dictionary, number, or string). A `heading` target has no structured form \u2014 its body is markdown text \u2014 so a JSON body there is rejected with `400 InvalidPatchInstruction` rather than being stringified into your note.\n        \n        ## Deprecated: header-based targeting\n        \n        Earlier releases addressed a sub-part with `Target-Type`, `Target`, and `Target-Delimiter` request headers (plus `Target-Scope` and `Trim-Target-Whitespace`) rather than URL path segments. **That form is deprecated and will be removed in 6.0.** It is only processed when you also send `Markdown-Patch-Version: 1`, and responses served that way carry a `Deprecation: true; sunset-version="6.0"` header. On GET/PUT/POST, supplying those targeting headers without that version is rejected with `400 HeaderTargetingRequiresVersion1` \u2014 reach the sub-part with URL path segments instead. (On PATCH, `Target-Type`/`Target` headers also have a *non-deprecated* meaning under an explicit `Markdown-Patch-Version: 2` \u2014 raw-content mode, with a different `Target` encoding; see the PATCH documentation.) Supplying both URL-path targeting and the header form in one request fails with `422 ConflictingTargetSpecification`.\n        \n        When a target is specified the content is appended within that section and the full updated file content is returned with a `200` status. Without a target, the content is appended to the end of the file and a `204` status is returned.\n        \n        If you need `prepend` or `replace` operations, use `PATCH` instead.\n      parameters:\n        - description: |\n            Selects which markdown-patch format governs this request. You do not normally\n            need to send this header. By default (2.0), a PATCH carries its whole instruction\n            in the JSON request body, the document map returns a nested heading tree plus a\n            `version` token, and a sub-part of a document is targeted with URL path elements\n            (e.g. `.../heading/My%20Section`). Set it to `1` to opt into the deprecated 1.x\n            behavior: the header-driven PATCH format, header-based targeting\n            (`Target-Type`/`Target`/`Target-Delimiter`/`Target-Scope`) on GET/PUT/POST, and\n            the `::`-joined document map. Responses served by 1.x carry a\n            `Deprecation: true; sunset-version="6.0"` header. Any value other than `1` or `2`\n            returns `400 InvalidPatchVersionHeader`.\n            \n            One place an *explicit* `2` matters: PATCH\'s raw-content mode with header-based\n            targeting. Because `Target-Type`/`Target` headers on a PATCH are ambiguous between\n            the 1.x format and raw-content mode, a PATCH carrying them without this header is\n            rejected with `400 PatchHeaderTargetingRequiresExplicitVersion` \u2014 send `1` for the\n            deprecated engine or `2` for raw-content mode. On GET/PUT/POST, supplying those\n            targeting headers without `1` is rejected with `400 HeaderTargetingRequiresVersion1`\n            (use URL path elements instead), and PATCH URL-element targeting likewise needs no\n            version header.\n          in: "header"\n          name: "Markdown-Patch-Version"\n          required: false\n          schema:\n            default: "2"\n            enum:\n              - "1"\n              - "2"\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n      requestBody:\n        content:\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content you would like to append."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; content appended to the targeted section (via URL path elements). The full updated file content is returned. Any advisory warnings (e.g. a heading rebased past level 6) are JSON-encoded, then percent-encoded, in the `Markdown-Patch-Warnings` response header."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "204":\n          description: "Success; content appended to end of file."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request"\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n        "409":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "`Reject-If-Content-Preexists` was set and the content already appears in the targeted section."\n      summary: |\n        Append content to the active file open in Obsidian.\n      tags:\n        - "Active File"\n    put:\n      description: |\n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by embedding a target in the URL path, immediately after the note identifier. The first segment after the note is the target type, and the remaining segments address the target:\n        \n        - `.../heading/My%20Section` targets the section beneath the `My Section` heading \u2014 the body content below the heading line.\n        - For a nested heading, add one path segment per level: `.../heading/My%20Section/Subsection` targets `Subsection` under `My Section`. Because each level is its own segment, a heading whose text contains `::` (or any other delimiter) needs no escaping.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        \n        Percent-encode any segment that contains non-ASCII characters or a literal `/` (e.g. `H%C3%A9llo` for `H\xE9llo`, or `TODO%2FDONE` for a heading named `TODO/DONE`). Each URL path segment is decoded on its own, so an encoded `%2F` stays a literal slash *inside* that one segment rather than acting as a separator \u2014 that is what lets a heading name contain a slash. The same rule applies to the note path itself: because a file or folder name can never contain a slash, the note must be addressed with real `/` separators between its path components (`/vault/folder/note.md`), not with the separators encoded (`/vault/folder%2Fnote.md`), which no longer resolves.\n        \n        If a document has a duplicate sibling heading (the same text repeated under the same parent) or a duplicate block reference ID, only the first occurrence is addressable by its plain text/id. Each later occurrence gets its own address with a non-printable marker suffix appended by the server \u2014 fetch the document map (`Accept: application/vnd.olrapi.document-map+json`) and copy that occurrence\'s key verbatim; don\'t try to type or reconstruct the marker yourself.\n        \n        `GET` returns just the addressed section. By default that is the target\'s `content` scope; add a `Target-Scope` header to read the `marker` (the label \u2014 a heading\'s raw text, a block\'s bare id, a frontmatter key) or `markerAndContent` (the whole node, in exactly the shape a PATCH `replace` at that scope consumes \u2014 a heading subtree comes back with its own line as `# Title`, levels relative to its parent, so a read-modify-write never counts `#`s). `PUT` replaces the section and `POST` appends to it, with heading levels normalized and separator whitespace managed for you. `PATCH` also accepts a URL target \u2014 its raw-content mode \u2014 with the operation and other instruction fields in headers (`Operation`, `Target-Scope`, \u2026) and the raw payload as the body. For the full instruction algebra (renames, moves, deletes, typed frontmatter values), see the PATCH documentation.\n        \n        On `PUT` and `POST`, the `Content-Type` of your request body selects how the payload is interpreted, and not every target accepts both:\n        \n        - A `text/markdown` body is literal markdown. Valid for `heading` and `block` targets. On a `frontmatter` target it is stored as the field\'s plain string value.\n        - An `application/json` body is structured data. On a `block` target that addresses a table, it is a 2-D array of row cells (`[["Chicago", "16"]]`). On a `frontmatter` target it is the field\'s typed value (a list, dictionary, number, or string). A `heading` target has no structured form \u2014 its body is markdown text \u2014 so a JSON body there is rejected with `400 InvalidPatchInstruction` rather than being stringified into your note.\n        \n        ## Deprecated: header-based targeting\n        \n        Earlier releases addressed a sub-part with `Target-Type`, `Target`, and `Target-Delimiter` request headers (plus `Target-Scope` and `Trim-Target-Whitespace`) rather than URL path segments. **That form is deprecated and will be removed in 6.0.** It is only processed when you also send `Markdown-Patch-Version: 1`, and responses served that way carry a `Deprecation: true; sunset-version="6.0"` header. On GET/PUT/POST, supplying those targeting headers without that version is rejected with `400 HeaderTargetingRequiresVersion1` \u2014 reach the sub-part with URL path segments instead. (On PATCH, `Target-Type`/`Target` headers also have a *non-deprecated* meaning under an explicit `Markdown-Patch-Version: 2` \u2014 raw-content mode, with a different `Target` encoding; see the PATCH documentation.) Supplying both URL-path targeting and the header form in one request fails with `422 ConflictingTargetSpecification`.\n        \n        When a target is specified the target section is replaced with the request body and the full updated file content is returned with a `200` status. If the target does not exist it will be created. Without a target, the entire file is replaced and a `204` status is returned.\n      parameters:\n        - description: |\n            Selects which markdown-patch format governs this request. You do not normally\n            need to send this header. By default (2.0), a PATCH carries its whole instruction\n            in the JSON request body, the document map returns a nested heading tree plus a\n            `version` token, and a sub-part of a document is targeted with URL path elements\n            (e.g. `.../heading/My%20Section`). Set it to `1` to opt into the deprecated 1.x\n            behavior: the header-driven PATCH format, header-based targeting\n            (`Target-Type`/`Target`/`Target-Delimiter`/`Target-Scope`) on GET/PUT/POST, and\n            the `::`-joined document map. Responses served by 1.x carry a\n            `Deprecation: true; sunset-version="6.0"` header. Any value other than `1` or `2`\n            returns `400 InvalidPatchVersionHeader`.\n            \n            One place an *explicit* `2` matters: PATCH\'s raw-content mode with header-based\n            targeting. Because `Target-Type`/`Target` headers on a PATCH are ambiguous between\n            the 1.x format and raw-content mode, a PATCH carrying them without this header is\n            rejected with `400 PatchHeaderTargetingRequiresExplicitVersion` \u2014 send `1` for the\n            deprecated engine or `2` for raw-content mode. On GET/PUT/POST, supplying those\n            targeting headers without `1` is rejected with `400 HeaderTargetingRequiresVersion1`\n            (use URL path elements instead), and PATCH URL-element targeting likewise needs no\n            version header.\n          in: "header"\n          name: "Markdown-Patch-Version"\n          required: false\n          schema:\n            default: "2"\n            enum:\n              - "1"\n              - "2"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n      requestBody:\n        content:\n          "*/*":\n            schema:\n              type: "string"\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content of the file you would like to upload."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; targeted section replaced (via URL path elements). The full updated file content is returned. Any advisory warnings (e.g. a heading rebased past level 6) are JSON-encoded, then percent-encoded, in the `Markdown-Patch-Warnings` response header."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "204":\n          description: "Success; entire file replaced."\n          headers:\n            Content-Location:\n              description: "Vault-relative path of the file that was acted on, e.g. `notes/file.md`. Non-ASCII characters are percent-encoded."\n              schema:\n                example: "notes/file.md"\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Incoming file could not be processed.  Make sure you have specified a reasonable file name, and make sure you have set a reasonable \'Content-Type\' header; if you are uploading a note, \'text/markdown\' is likely the right choice.\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n        "409":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "`Reject-If-Content-Preexists` was set and the content already appears in the targeted section."\n      summary: |\n        Update the content of the active file open in Obsidian.\n      tags:\n        - "Active File"\n  /commands/:\n    get:\n      responses:\n        "200":\n          content:\n            application/json:\n              example:\n                commands:\n                  - id: "global-search:open"\n                    name: "Search: Search in all files"\n                  - id: "graph:open"\n                    name: "Graph view: Open graph view"\n              schema:\n                properties:\n                  commands:\n                    items:\n                      properties:\n                        id:\n                          type: "string"\n                        name:\n                          type: "string"\n                      type: "object"\n                    type: "array"\n                type: "object"\n          description: "A list of available commands."\n      summary: |\n        Get a list of available commands.\n      tags:\n        - "Commands"\n  "/commands/{commandId}/":\n    post:\n      parameters:\n        - description: "The id of the command to execute"\n          in: "path"\n          name: "commandId"\n          required: true\n          schema:\n            type: "string"\n      responses:\n        "204":\n          description: "Success"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "The command you specified does not exist."\n      summary: |\n        Execute a command.\n      tags:\n        - "Commands"\n  /mcp/:\n    get:\n      description: |\n        Opens a long-lived SSE stream so the server can push messages to the client for an existing session. Requires the session ID returned by the `initialize` response.\n      parameters:\n        - description: "Session ID returned by the server on initialization."\n          in: "header"\n          name: "Mcp-Session-Id"\n          required: true\n          schema:\n            type: "string"\n        - description: "MCP protocol version negotiated during initialization (e.g. `2025-06-18`). Required on all requests after initialization. Unrecognised values are rejected with 400."\n          in: "header"\n          name: "MCP-Protocol-Version"\n          required: false\n          schema:\n            type: "string"\n      responses:\n        "200":\n          content:\n            text/event-stream:\n              schema:\n                type: "string"\n          description: "SSE stream opened. The server pushes JSON-RPC messages as server-sent events."\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Unsupported MCP-Protocol-Version."\n        "401":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "API key required."\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Session not found."\n      summary: |\n        Open a server-sent events stream for an existing MCP session.\n      tags:\n        - "MCP"\n    post:\n      description: |\n        Interact with this plugin\'s MCP server using the [Streamable HTTP transport](https://modelcontextprotocol.io/docs/concepts/transports#streamable-http).\n        \n        Point any MCP-compatible client (Claude Code, Cursor, or any MCP SDK client that supports the Streamable HTTP transport) at this endpoint and pass your API key as a bearer token. Send an `initialize` request via `POST /mcp/` to start a session; the server returns a session ID in the `Mcp-Session-Id` response header. Include that header on all subsequent requests.\n        \n        Include the `MCP-Protocol-Version` header on all requests after initialization, set to the protocol version negotiated during the `initialize` exchange (e.g. `2025-06-18`). Requests with an unrecognized version value are rejected with `400 Bad Request`.\n        \n        ## Available tools\n        \n        | Tool | Description |\n        |---|---|\n        | `vault_list` | List files and subdirectories inside a vault directory |\n        | `vault_read` | Read a file\'s full content, frontmatter, tags, and stat |\n        | `vault_write` | Create or overwrite a vault file |\n        | `vault_append` | Append content to the end of a vault file |\n        | `vault_patch` | Patch a specific heading, block reference, or frontmatter field |\n        | `vault_delete` | Delete a vault file (moves to trash by default) |\n        | `vault_move` | Move (rename) a vault file to a new path |\n        | `vault_copy` | Copy a vault file to a new path |\n        | `vault_get_document_map` | List the headings, block references, and frontmatter fields in a file |\n        | `active_file_get_path` | Return the vault path of the file currently open in Obsidian |\n        | `search_query` | Search using a JsonLogic query evaluated against each note\'s metadata |\n        | `search_simple` | Full-text search using Obsidian\'s built-in search |\n        | `tag_list` | List all tags across the vault with usage counts |\n        | `command_list` | List all registered Obsidian commands |\n        | `command_execute` | Execute an Obsidian command by ID |\n        | `open_file` | Open a file in the Obsidian UI |\n        \n        ## Available resources\n        \n        | URI | Description |\n        |---|---|\n        | `obsidian://local-rest-api/openapi.yaml` | Full OpenAPI specification for this REST API |\n      parameters:\n        - description: "Session ID returned by the server on initialization. Omit for the initial `initialize` request; required for all subsequent requests."\n          in: "header"\n          name: "Mcp-Session-Id"\n          required: false\n          schema:\n            type: "string"\n        - description: "MCP protocol version negotiated during initialization (e.g. `2025-06-18`). Required on all requests after initialization. Unrecognised values are rejected with 400."\n          in: "header"\n          name: "MCP-Protocol-Version"\n          required: false\n          schema:\n            type: "string"\n      requestBody:\n        content:\n          application/json:\n            examples:\n              call_vault_patch:\n                summary: "Patch a heading in a vault file (tools/call)"\n                value:\n                  id: 3\n                  jsonrpc: "2.0"\n                  method: "tools/call"\n                  params:\n                    arguments:\n                      content: |\n                        New line of content\n                      operation: "append"\n                      path: "path/to/note.md"\n                      target:\n                        - "My Section"\n                      targetType: "heading"\n                    name: "vault_patch"\n              call_vault_read:\n                summary: "Read a vault file (tools/call)"\n                value:\n                  id: 2\n                  jsonrpc: "2.0"\n                  method: "tools/call"\n                  params:\n                    arguments:\n                      path: "path/to/note.md"\n                    name: "vault_read"\n              list_tools:\n                summary: "List all available MCP tools"\n                value:\n                  id: 1\n                  jsonrpc: "2.0"\n                  method: "tools/list"\n                  params: {}\n              read_openapi_resource:\n                summary: "Read the OpenAPI spec resource (resources/read)"\n                value:\n                  id: 4\n                  jsonrpc: "2.0"\n                  method: "resources/read"\n                  params:\n                    uri: "obsidian://local-rest-api/openapi.yaml"\n            schema:\n              description: "A JSON-RPC 2.0 request message."\n              properties:\n                id:\n                  description: "Request identifier. Include for calls that expect a response; omit for notifications."\n                  oneOf:\n                    - type: "string"\n                    - type: "number"\n                jsonrpc:\n                  description: "JSON-RPC version. Must be \\"2.0\\"."\n                  enum:\n                    - "2.0"\n                  type: "string"\n                method:\n                  description: "MCP method to invoke."\n                  enum:\n                    - "initialize"\n                    - "tools/list"\n                    - "tools/call"\n                    - "resources/list"\n                    - "resources/read"\n                    - "prompts/list"\n                    - "prompts/get"\n                    - "ping"\n                  type: "string"\n                params:\n                  description: "Method-specific parameters."\n                  type: "object"\n              required:\n                - "jsonrpc"\n                - "method"\n              type: "object"\n        required: true\n      responses:\n        "200":\n          description: "Message handled. Response body contains the JSON-RPC result, or may be empty for notifications. On session initialization the `Mcp-Session-Id` response header contains the new session ID."\n          headers:\n            Mcp-Session-Id:\n              description: "Session ID assigned by the server. Present only on the `initialize` response."\n              schema:\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Unsupported MCP-Protocol-Version."\n        "401":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "API key required."\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Session not found."\n      summary: |\n        Send a JSON-RPC 2.0 message to the MCP server.\n      tags:\n        - "MCP"\n  /obsidian-local-rest-api.crt:\n    get:\n      responses:\n        "200":\n          description: "Success"\n      summary: |\n        Returns the certificate in use by this API.\n      tags:\n        - "System"\n  "/open/{filename}":\n    post:\n      description: |\n        Note: Obsidian will create a new document at the path you have\n        specified if such a document did not already exist.\n      parameters:\n        - description: |\n            Path to the file to return (relative to your vault root).\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n        - description: "Open this as a new leaf?"\n          in: "query"\n          name: "newLeaf"\n          required: false\n          schema:\n            type: "boolean"\n      responses:\n        "200":\n          description: "Success"\n      summary: |\n        Open the specified document in the Obsidian user interface.\n      tags:\n        - "Open"\n  /openapi.yaml:\n    get:\n      responses:\n        "200":\n          description: "Success"\n      summary: |\n        Returns OpenAPI YAML document describing the capabilities of this API.\n      tags:\n        - "System"\n  /search/:\n    post:\n      description: |\n        Evaluates a provided query against each file in your vault.\n        \n        This endpoint supports multiple query formats.  Your query should be specified in your request\'s body, and will be interpreted according to the `Content-type` header you specify from the below options. Additional query formats may be added in the future.\n        \n        # JsonLogic (`application/vnd.olrapi.jsonlogic+json`)\n        \n        Accepts a JsonLogic query specified as JSON.  See [JsonLogic](https://jsonlogic.com/operations.html)\'s documentation for information about the base set of operators available, but in addition to those operators the following operators are available:\n        \n        - `glob: [PATTERN, VALUE]`: Returns `true` if a string matches a glob pattern.  E.g.: `{"glob": ["*.foo", "bar.foo"]}` is `true` and `{"glob": ["*.bar", "bar.foo"]}` is `false`.\n        - `regexp: [PATTERN, VALUE]`: Returns `true` if a string matches a regular expression.  E.g.: `{"regexp": [".*\\.foo", "bar.foo"]` is `true` and `{"regexp": [".*\\.bar", "bar.foo"]}` is `false`.\n        \n        Returns only non-falsy results.  "Non-falsy" here treats the following values as "falsy":\n        \n        - `false`\n        - `null` or `undefined`\n        - `0`\n        - `[]`\n        - `{}`\n        \n        Files are represented as an object having the schema described\n        in the Schema named \'NoteJson\' at the bottom of this page.\n        Understanding the shape of a JSON object from a schema can be\n        tricky; so you may find it helpful to examine the generated metadata\n        for individual files in your vault to understand exactly what values\n        are returned.  To see that, access the `GET` `/vault/{filePath}`\n        route setting the header:\n        `Accept: application/vnd.olrapi.note+json`.  See examples below\n        for working examples of queries performing common search operations.\n      requestBody:\n        content:\n          "application/vnd.olrapi.jsonlogic+json":\n            examples:\n              find_by_frontmatter_url_glob:\n                summary: "Find notes having URL or a matching URL glob frontmatter field."\n                value: |\n                  {\n                    "or": [\n                      {"===": [{"var": "frontmatter.url"}, "https://myurl.com/some/path/"]},\n                      {"glob": [{"var": "frontmatter.url-glob"}, "https://myurl.com/some/path/"]}\n                    ]\n                  }\n              find_by_frontmatter_value:\n                summary: "Find notes having a certain frontmatter field value."\n                value: |\n                  {\n                    "==": [\n                      {"var": "frontmatter.myField"},\n                      "myValue"\n                    ]\n                  }\n              find_by_tag:\n                summary: "Find notes having a certain tag"\n                value: |\n                  {\n                    "in": [\n                      "myTag",\n                      {"var": "tags"}\n                    ]\n                  }\n            schema:\n              externalDocs:\n                url: "https://jsonlogic.com/operations.html"\n              type: "object"\n        required: true\n      responses:\n        "200":\n          content:\n            application/json:\n              schema:\n                items:\n                  properties:\n                    filename:\n                      description: "Path to the matching file"\n                      type: "string"\n                    result:\n                      oneOf:\n                        - type: "string"\n                        - type: "number"\n                        - items: {}\n                          type: "array"\n                        - type: "object"\n                        - type: "boolean"\n                  required:\n                    - "filename"\n                    - "result"\n                  type: "object"\n                type: "array"\n          description: "Success"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Bad request.  Make sure you have specified an acceptable\n            Content-Type for your search query.\n      summary: |\n        Search for documents matching a specified search query\n      tags:\n        - "Search"\n  /search/simple/:\n    post:\n      parameters:\n        - description: "Your search query"\n          in: "query"\n          name: "query"\n          required: true\n          schema:\n            type: "string"\n        - description: "How much context to return around the matching string"\n          in: "query"\n          name: "contextLength"\n          required: false\n          schema:\n            default: 100\n            type: "number"\n      responses:\n        "200":\n          content:\n            application/json:\n              schema:\n                items:\n                  properties:\n                    filename:\n                      description: "Path to the matching file"\n                      type: "string"\n                    matches:\n                      items:\n                        properties:\n                          context:\n                            type: "string"\n                          match:\n                            properties:\n                              end:\n                                type: "number"\n                              start:\n                                type: "number"\n                            required:\n                              - "start"\n                              - "end"\n                            type: "object"\n                        required:\n                          - "match"\n                          - "context"\n                        type: "object"\n                      type: "array"\n                    score:\n                      type: "number"\n                  type: "object"\n                type: "array"\n          description: "Success"\n      summary: |\n        Search for documents matching a specified text query\n      tags:\n        - "Search"\n  /tags/:\n    get:\n      description: |\n        Returns all tags found across all files in the vault, drawn from both inline (`#tag`) and frontmatter tag syntax. Each tag is returned without the `#` prefix. Hierarchical tags (e.g. `work/tasks`) also contribute a count to every parent prefix (e.g. `work`), mirroring how Obsidian displays tag counts in its sidebar.\n      responses:\n        "200":\n          content:\n            application/json:\n              example:\n                tags:\n                  - count: 3\n                    name: "project"\n                  - count: 1\n                    name: "important"\n                  - count: 2\n                    name: "work"\n                  - count: 2\n                    name: "work/tasks"\n              schema:\n                properties:\n                  tags:\n                    items:\n                      properties:\n                        count:\n                          description: "Number of times this tag is used across the vault."\n                          type: "number"\n                        name:\n                          description: "Tag name without the leading `#`."\n                          type: "string"\n                      type: "object"\n                    type: "array"\n                type: "object"\n          description: "A list of tags with their usage counts."\n      summary: |\n        Get a list of all tags with metadata.\n      tags:\n        - "Tags"\n  /vault/:\n    get:\n      description: |\n        Lists files in the root directory of your vault.\n        \n        Note: that this is exactly the same API endpoint as the below "List files that exist in the specified directory." and exists here only due to a quirk of this particular interactive tool.\n      responses:\n        "200":\n          content:\n            application/json:\n              example:\n                files:\n                  - "mydocument.md"\n                  - "somedirectory/"\n              schema:\n                properties:\n                  files:\n                    items:\n                      type: "string"\n                    type: "array"\n                type: "object"\n          description: "Success"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Directory does not exist"\n      summary: |\n        List files that exist in the root of your vault.\n      tags:\n        - "Vault Directories"\n  "/vault/{filename}":\n    additionalOperations:\n      copy:\n        description: |\n          Copies a file from its current location to a new location specified in the Destination header, leaving the source file in place.\n        parameters:\n          - description: |\n              The new path for the copy, relative to your vault root. The path must not escape the vault root (relative segments like `..` are permitted as long as the resolved path remains inside the vault). Absolute paths (starting with `/`) are rejected. If the path ends with a trailing slash, the source filename is preserved and the copy is placed in that directory (e.g. "archive/" copies "notes/todo.md" to "archive/todo.md"). If the path contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `r%C3%A9sum%C3%A9.md` for `r\xE9sum\xE9.md`).\n            in: "header"\n            name: "Destination"\n            required: true\n            schema:\n              format: "path"\n              type: "string"\n          - description: |\n              If "true", the copy proceeds even when a file already exists at the destination. Defaults to "false", which returns a 409 if the destination exists.\n            in: "header"\n            name: "Allow-Overwrite"\n            required: false\n            schema:\n              default: "false"\n              enum:\n                - "true"\n                - "false"\n              type: "string"\n          - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n            in: "path"\n            name: "filename"\n            required: true\n            schema:\n              format: "path"\n              type: "string"\n        responses:\n          "204":\n            description: "File successfully copied."\n            headers:\n              Content-Location:\n                description: "The vault-relative path of the newly-created copy (e.g. `archive/file.md`). Non-ASCII characters are percent-encoded."\n                schema:\n                  type: "string"\n          "400":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: |\n              Bad request - Missing Destination header, malformed percent-encoding, or path escapes the vault root (e.g. starts with "/").\n          "404":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: "Source file does not exist."\n          "405":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: |\n              Your path references a directory instead of a file; this request method is valid only for files.\n          "409":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: "Destination file already exists."\n        summary: |\n          Copy a file to a new location in your vault.\n        tags:\n          - "Vault Files"\n      move:\n        description: |\n          Moves a file from its current location to a new location specified in the Destination header. This operation preserves file history and updates internal links.\n        parameters:\n          - description: |\n              The new path for the file, relative to your vault root. The path must not escape the vault root (relative segments like `..` are permitted as long as the resolved path remains inside the vault). Absolute paths (starting with `/`) are rejected. If the path ends with a trailing slash, the source filename is preserved and the file is placed in that directory (e.g. "archive/" moves "notes/todo.md" to "archive/todo.md"). If the path contains non-ASCII characters (e.g. accented letters), percent-encode the value (e.g. `r%C3%A9sum%C3%A9.md` for `r\xE9sum\xE9.md`).\n            in: "header"\n            name: "Destination"\n            required: true\n            schema:\n              format: "path"\n              type: "string"\n          - description: |\n              If "true", the move proceeds even when a file already exists at the destination. Defaults to "false", which returns a 409 if the destination exists.\n            in: "header"\n            name: "Allow-Overwrite"\n            required: false\n            schema:\n              default: "false"\n              enum:\n                - "true"\n                - "false"\n              type: "string"\n          - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n            in: "path"\n            name: "filename"\n            required: true\n            schema:\n              format: "path"\n              type: "string"\n        responses:\n          "204":\n            description: "File successfully moved."\n            headers:\n              Content-Location:\n                description: "The vault-relative path of the file at its new location (e.g. `archive/file.md`). Non-ASCII characters are percent-encoded."\n                schema:\n                  type: "string"\n          "400":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: |\n              Bad request - Missing Destination header, malformed percent-encoding, or path escapes the vault root (e.g. starts with "/").\n          "404":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: "Source file does not exist."\n          "405":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: |\n              Your path references a directory instead of a file; this request method is valid only for files.\n          "409":\n            content:\n              application/json:\n                schema:\n                  "$ref": "#/components/schemas/Error"\n            description: "Destination file already exists."\n        summary: |\n          Move a file to a new location in your vault.\n        tags:\n          - "Vault Files"\n    delete:\n      parameters:\n        - description: |\n            If "true", the file is permanently deleted instead of being moved to trash. Defaults to "false", which moves the file to trash following the user\'s Obsidian "Deleted files" preference (either the ".trash" folder or the system trash).\n          in: "query"\n          name: "permanent"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n      responses:\n        "204":\n          description: "Success"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "File does not exist."\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n      summary: |\n        Delete a particular file in your vault.\n      tags:\n        - "Vault Files"\n    get:\n      description: |\n        Returns the content of the file at the specified path in your vault should the file exist.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by embedding a target in the URL path, immediately after the note identifier. The first segment after the note is the target type, and the remaining segments address the target:\n        \n        - `.../heading/My%20Section` targets the section beneath the `My Section` heading \u2014 the body content below the heading line.\n        - For a nested heading, add one path segment per level: `.../heading/My%20Section/Subsection` targets `Subsection` under `My Section`. Because each level is its own segment, a heading whose text contains `::` (or any other delimiter) needs no escaping.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        \n        Percent-encode any segment that contains non-ASCII characters or a literal `/` (e.g. `H%C3%A9llo` for `H\xE9llo`, or `TODO%2FDONE` for a heading named `TODO/DONE`). Each URL path segment is decoded on its own, so an encoded `%2F` stays a literal slash *inside* that one segment rather than acting as a separator \u2014 that is what lets a heading name contain a slash. The same rule applies to the note path itself: because a file or folder name can never contain a slash, the note must be addressed with real `/` separators between its path components (`/vault/folder/note.md`), not with the separators encoded (`/vault/folder%2Fnote.md`), which no longer resolves.\n        \n        If a document has a duplicate sibling heading (the same text repeated under the same parent) or a duplicate block reference ID, only the first occurrence is addressable by its plain text/id. Each later occurrence gets its own address with a non-printable marker suffix appended by the server \u2014 fetch the document map (`Accept: application/vnd.olrapi.document-map+json`) and copy that occurrence\'s key verbatim; don\'t try to type or reconstruct the marker yourself.\n        \n        `GET` returns just the addressed section. By default that is the target\'s `content` scope; add a `Target-Scope` header to read the `marker` (the label \u2014 a heading\'s raw text, a block\'s bare id, a frontmatter key) or `markerAndContent` (the whole node, in exactly the shape a PATCH `replace` at that scope consumes \u2014 a heading subtree comes back with its own line as `# Title`, levels relative to its parent, so a read-modify-write never counts `#`s). `PUT` replaces the section and `POST` appends to it, with heading levels normalized and separator whitespace managed for you. `PATCH` also accepts a URL target \u2014 its raw-content mode \u2014 with the operation and other instruction fields in headers (`Operation`, `Target-Scope`, \u2026) and the raw payload as the body. For the full instruction algebra (renames, moves, deletes, typed frontmatter values), see the PATCH documentation.\n        \n        On `PUT` and `POST`, the `Content-Type` of your request body selects how the payload is interpreted, and not every target accepts both:\n        \n        - A `text/markdown` body is literal markdown. Valid for `heading` and `block` targets. On a `frontmatter` target it is stored as the field\'s plain string value.\n        - An `application/json` body is structured data. On a `block` target that addresses a table, it is a 2-D array of row cells (`[["Chicago", "16"]]`). On a `frontmatter` target it is the field\'s typed value (a list, dictionary, number, or string). A `heading` target has no structured form \u2014 its body is markdown text \u2014 so a JSON body there is rejected with `400 InvalidPatchInstruction` rather than being stringified into your note.\n        \n        ## Deprecated: header-based targeting\n        \n        Earlier releases addressed a sub-part with `Target-Type`, `Target`, and `Target-Delimiter` request headers (plus `Target-Scope` and `Trim-Target-Whitespace`) rather than URL path segments. **That form is deprecated and will be removed in 6.0.** It is only processed when you also send `Markdown-Patch-Version: 1`, and responses served that way carry a `Deprecation: true; sunset-version="6.0"` header. On GET/PUT/POST, supplying those targeting headers without that version is rejected with `400 HeaderTargetingRequiresVersion1` \u2014 reach the sub-part with URL path segments instead. (On PATCH, `Target-Type`/`Target` headers also have a *non-deprecated* meaning under an explicit `Markdown-Patch-Version: 2` \u2014 raw-content mode, with a different `Target` encoding; see the PATCH documentation.) Supplying both URL-path targeting and the header form in one request fails with `422 ConflictingTargetSpecification`.\n        \n        # Retrieving Document Metadata\n        \n        ## Metadata\n        \n        If you specify the header `Accept: application/vnd.olrapi.note+json`, will return a JSON representation of your note including parsed tag and frontmatter data as well as filesystem metadata.\n        \n        ## Document Map\n        \n        If you specify the header `Accept: application/vnd.olrapi.document-map+json`, will return a JSON object outlining what PATCH targets exist. See "responses" below for details.\n        \n        ## Rendered HTML\n        \n        If you specify the header `Accept: text/html`, will return the note rendered to HTML using Obsidian\'s own Markdown renderer \u2014 the same rendering used in Obsidian\'s preview mode, including embeds, callouts, and other Obsidian-flavored Markdown extensions. If `Target-Type`/`Target` are specified with `heading` or `block`, only that section is rendered. `Target-Type: frontmatter` is not supported for this Accept type and returns a 400 error, since frontmatter has no HTML rendering.\n      parameters:\n        - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n        - description: |\n            Selects which markdown-patch format governs this request. You do not normally\n            need to send this header. By default (2.0), a PATCH carries its whole instruction\n            in the JSON request body, the document map returns a nested heading tree plus a\n            `version` token, and a sub-part of a document is targeted with URL path elements\n            (e.g. `.../heading/My%20Section`). Set it to `1` to opt into the deprecated 1.x\n            behavior: the header-driven PATCH format, header-based targeting\n            (`Target-Type`/`Target`/`Target-Delimiter`/`Target-Scope`) on GET/PUT/POST, and\n            the `::`-joined document map. Responses served by 1.x carry a\n            `Deprecation: true; sunset-version="6.0"` header. Any value other than `1` or `2`\n            returns `400 InvalidPatchVersionHeader`.\n            \n            One place an *explicit* `2` matters: PATCH\'s raw-content mode with header-based\n            targeting. Because `Target-Type`/`Target` headers on a PATCH are ambiguous between\n            the 1.x format and raw-content mode, a PATCH carrying them without this header is\n            rejected with `400 PatchHeaderTargetingRequiresExplicitVersion` \u2014 send `1` for the\n            deprecated engine or `2` for raw-content mode. On GET/PUT/POST, supplying those\n            targeting headers without `1` is rejected with `400 HeaderTargetingRequiresVersion1`\n            (use URL path elements instead), and PATCH URL-element targeting likewise needs no\n            version header.\n          in: "header"\n          name: "Markdown-Patch-Version"\n          required: false\n          schema:\n            default: "2"\n            enum:\n              - "1"\n              - "2"\n            type: "string"\n        - description: |\n            For a URL-path-targeted read: which part of the target to return\n            (default `content`), mirroring PATCH\'s scopes with a round-trip\n            guarantee \u2014 what a scope returns is exactly what a `replace` at that\n            scope consumes.\n            \n            - `content` (default): the node\'s body \u2014 a heading\'s body with its\n              levels made relative to the target, a block\'s text, a frontmatter\n              value.\n            - `marker`: the label \u2014 a heading\'s raw text (no `#`s, and without the\n              duplicate-marker suffix its map key may carry), a block\'s bare id, a\n              frontmatter key.\n            - `markerAndContent`: the whole node \u2014 a heading\'s subtree with its own\n              line as `# Title` (levels relative to its parent), a block\'s full\n              span including its `^id`, or a frontmatter entry as a `{key: value}`\n              JSON object.\n            \n            `parent` places a section but carries no readable value, and returns\n            `400 InvalidTargetScopeHeader`. Only meaningful when the URL path\n            addresses a sub-part of the note.\n          in: "header"\n          name: "Target-Scope"\n          required: false\n          schema:\n            default: "content"\n            enum:\n              - "content"\n              - "marker"\n              - "markerAndContent"\n            type: "string"\n      responses:\n        "200":\n          content:\n            application/json:\n              description: "Returned when the URL path targets a frontmatter field (`.../frontmatter/fieldName`); the JSON value of that field."\n              schema: {}\n            "application/vnd.olrapi.document-map+json":\n              schema:\n                description: |\n                  The document map. To receive the deprecated 1.x shape \u2014 heading paths as\n                  `::`-joined strings, block ids prefixed with `^`, and no `version` \u2014\n                  send `Markdown-Patch-Version: 1`.\n                properties:\n                  blocks:\n                    description: "Block reference ids, bare (no leading `^`), in document order."\n                    example:\n                      - "blockref1"\n                      - "anotherBlockRef"\n                    items:\n                      type: "string"\n                    type: "array"\n                  frontmatterFields:\n                    example:\n                      - "title"\n                      - "tags"\n                      - "dateCreated"\n                    items:\n                      type: "string"\n                    type: "array"\n                  headings:\n                    "$ref": "#/components/schemas/HeadingTree"\n                  version:\n                    description: "Content-hash token for the file; pass it back as a PATCH `ifMatch` to make an edit conditional on the file being unchanged."\n                    example: "a1b2c3"\n                    type: "string"\n                type: "object"\n            "application/vnd.olrapi.note+json":\n              schema:\n                "$ref": "#/components/schemas/NoteJson"\n            text/html:\n              description: |\n                Returned when `Accept: text/html` is specified. The note (or, if `Target-Type`/`Target` are specified with `heading` or `block`, just that section) rendered to HTML via Obsidian\'s Markdown renderer (embeds, callouts, etc. included). `Target-Type: frontmatter` is not supported for this Accept type and returns a 400 error.\n              schema:\n                example: |\n                  <h1>This is my document</h1>\n                  <p>something else here</p>\n                type: "string"\n            text/markdown:\n              schema:\n                example: |\n                  # This is my document\n                  \n                  something else here\n                type: "string"\n          description: "Success"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            The `Markdown-Patch-Version` header was invalid (not `1` or `2`), the deprecated `Target-Type`/`Target` headers were invalid, the `Target-Scope` header was not a readable scope (`content`, `marker`, `markerAndContent`), or a frontmatter target was combined with `Accept: text/html` (frontmatter has no HTML rendering).\n        "404":\n          description: "File or target section does not exist"\n      summary: |\n        Return the content of a single file in your vault.\n      tags:\n        - "Vault Files"\n    patch:\n      description: |\n        Modifies an existing note with a single structured instruction: an operation applied to a scope of a target \u2014 a heading, block reference, or frontmatter field within that document.\n        \n        Edit a document with a single structured instruction \u2014 an **operation** applied to a **scope** of a **target** node (a heading, block reference, or frontmatter field). By default the whole instruction travels as a JSON request body; [raw-content mode](#raw-content-mode-templating-friendly) instead carries the instruction\'s fields in URL path elements/headers with the raw payload as the body.\n        \n        > **Migrating from the header-driven format?** See [Deprecated: the 1.x header-driven format](#deprecated-the-1x-header-driven-format) at the end.\n        \n        # The algebra\n        \n        - **operation** \u2014 `replace`, `prepend`, `append`, or `delete`.\n        - **scope** (optional, default `content`):\n          - `content` \u2014 the node\'s body. For a heading, that\'s its whole subtree *below* the heading line.\n          - `marker` \u2014 the label only: a heading line, a block `^id`, or a frontmatter key. `replace` renames it.\n          - `markerAndContent` \u2014 the marker *and* the body together: for a heading, its heading line plus everything beneath it. Unlike `content`, the heading line is inside the edited span, so a `replace` here rewrites the heading itself. `prepend`/`append` insert a *sibling* before/after it.\n          - `parent` \u2014 a heading\'s place in the tree. Valid only with `replace`, and carries a `destination` (a **move**).\n        - **target** \u2014 for a heading, an array of heading texts from the top level down (`["Overview","Details"]`), or `null`/`[]` for the document root; for a block, the bare id without `^`; for a frontmatter field, the key.\n        - **within** (optional, heading targets only) \u2014 a positional refinement: an index picking one of the section\'s direct-body top-level blocks (a paragraph, list, table, code fence, \u2026), 0-based in document order, negative counting from the end (`-1` = last; isolated `^id` lines are not counted). The instruction then edits *that block*: with `content` scope, `replace`/`prepend`/`append` splice literally into it \u2014 you own the joint, so `append` with `\\n- item` *continues* a list \u2014 and `delete` removes it; with `markerAndContent` scope, `prepend`/`append` insert a new block immediately before/after it. Not combinable with `createTargetIfMissing`.\n        - **payload** \u2014 carried in exactly one field, chosen by what it is:\n          - `content` \u2014 a markdown/text string (heading & block bodies/labels, or a frontmatter key rename).\n          - `value` \u2014 arbitrary JSON (frontmatter values).\n          - `destination` \u2014 where a moved heading lands.\n        \n        Not every combination is meaningful; invalid ones are rejected with a `400`.\n        \n        **Relative heading levels.** Heading `#`-counts inside a `content` string are *relative* to the edited span, so you never count `#`s: under `content` scope a leading `#` becomes a direct child of the target; under `markerAndContent` (or a sibling insert) it lands at the target\'s own level. Nesting inside your content is preserved as you wrote it \u2014 replacing a `##` section with `# New\\n\\n## Child` yields `## New` and `### Child`. A level rebased past `######` (h6) is still written, but the response carries a `heading-depth-overflow` entry in the `Markdown-Patch-Warnings` header \u2014 percent-encoded JSON, since a warning message embeds document text verbatim and header values must be ASCII; run it through `decodeURIComponent` before parsing.\n        \n        > **Note:** because the heading line is part of the `markerAndContent` span, a `replace` whose content has *no* heading removes it \u2014 the section is dissolved into a plain paragraph. Include a leading `#` (at any depth; it is rebased for you) to keep it a heading.\n        \n        # How to Use & Examples\n        \n        All of the below examples assume you have a document that looks like this:\n        \n        ```markdown\n        ---\n        alpha: 1\n        beta: test\n        delta:\n        zeta: 1\n        yotta: 1\n        gamma:\n        - one\n        - two\n        ---\n        \n        # Heading 1\n        \n        This is the content for heading one\n        \n        Also references some [[#^484ef2]]\n        \n        ## Subheading 1:1\n        Content for Subheading 1:1\n        \n        ### Subsubheading 1:1:1\n        \n        ### Subsubheading 1:1:2\n        \n        Testing how block references work for a table.[[#^2c7cfa]]\n        Some content for Subsubheading 1:1:2\n        \n        More random text.\n        \n        ^2d9b4a\n        \n        ## Subheading 1:2\n        \n        Content for Subheading 1:2.\n        \n        some content with a block reference ^484ef2\n        \n        ## Subheading 1:3\n        | City         | Population |\n        | ------------ | ---------- |\n        | Seattle, WA  | 8          |\n        | Portland, OR | 4          |\n        \n        ^2c7cfa\n        ```\n        \n        ## Append, prepend, or replace content below a heading\n        \n        To append the content "Hello" below "Subsubheading 1:1:1" under "Heading 1":\n        \n        ```json\n        {\n          "targetType": "heading",\n          "target": ["Heading 1", "Subheading 1:1", "Subsubheading 1:1:1"],\n          "operation": "append",\n          "content": "Hello"\n        }\n        ```\n        \n        `prepend` and `replace` work the same way, with different results. Because `target` is an array, a heading whose text contains `::` needs no escaping.\n        \n        > **Note:** the heading line itself is not part of the `content` scope. When you `replace` a heading\'s content, supply only the body \u2014 do not include the heading line, or it will be duplicated. To rename the heading, see below.\n        \n        ## Renaming a heading\n        \n        Give the new text. That\'s all \u2014 no `#` characters, and nothing to look up:\n        \n        ```json\n        {\n          "targetType": "heading",\n          "target": ["Heading 1", "Subheading 1:1"],\n          "operation": "replace",\n          "scope": "marker",\n          "content": "New Name"\n        }\n        ```\n        \n        `marker` scope addresses the label rather than the line, so the heading keeps whatever level it had and the body underneath is untouched. You never need to know the heading\'s depth to rename it.\n        \n        > **Do not include `#` characters here.** They are not stripped \u2014 they become part of the heading text, so `"## New Name"` renames the heading to `## New Name` and renders as `## ## New Name`. (This is the reverse of the deprecated 1.x format, where the `#`s were required. If you are migrating, drop them.)\n        \n        The same instruction shape renames a block id (`targetType: "block"`, new id without `^`) or a frontmatter key (`targetType: "frontmatter"`, new key name in `content`).\n        \n        ## Whitespace is library-owned\n        \n        Your `content` crosses the API in trimmed, canonical form: leading and trailing blank lines are stripped, and a non-empty write always ends with exactly one newline. `"X"`, `"X\\n"`, `"\\nX\\n"`, and `"X\\n\\n"` all produce the same document \u2014 newlines at the edges of your content are not a channel for controlling layout, so there is nothing to get wrong.\n        \n        Blank-line separators are the API\'s job. At any joint where your content faces body text, the engine supplies the blank line that keeps it a separate block. Given a document containing:\n        \n        ```markdown\n        # One\n        \n        body of one\n        ```\n        \n        - `append` becomes a new block after the body \u2192 `# One\\n\\nbody of one\\n\\nX\\n`\n        - `prepend` becomes a new block before the body \u2192 `# One\\n\\nX\\n\\nbody of one\\n`\n        - `replace` swaps the body \u2192 `# One\\n\\nX\\n`\n        \n        Where no separator is owed, none is added \u2014 a heading line is self-delimiting, and existing blank lines, gaps between sections, and document edges are preserved rather than rewritten:\n        \n        - The blank line between a heading and its body is kept in place: `replace` swaps the body beneath it and `prepend` inserts below it. A document written flush (`# One\\nbody of one\\n`) keeps its flush style \u2014 `replace` gives `# One\\nX\\n` \u2014 and replacing a body with its own text is byte-identity in either style.\n        - Writing into an empty section lands flush under its heading (`# E\\nX\\n`), with the section\'s existing trailing gap serving as the separator below.\n        \n        One consequence worth knowing: a `content`-scope `append`/`prepend` always begins a new block \u2014 it can never continue an existing paragraph or list. To edit inline within an existing block, address the block itself, which puts you on the literal-splice path where content lands exactly as given and you own the joint. Two ways to do that: target the block via its reference (`^id`) if it has one, or add `within: <index>` to a heading instruction to pick one of the section\'s body blocks by position \u2014 no `^id` required. For example, to extend the last list of a section:\n        \n        ```json\n        { "targetType": "heading", "target": ["Log"], "within": -1, "operation": "append", "content": "\\n- new item" }\n        ```\n        \n        Because a `within` edit is literal, the leading `\\n` is yours to write \u2014 without it the text continues the block\'s last line. Indices are positional, so read the document map or section first, and pair the edit with `ifMatch` from that read so a concurrent change fails the patch rather than landing on the wrong block.\n        \n        ## Append, prepend, or replace content of a block reference\n        \n        To append "Hello" below the block referenced by `2d9b4a`:\n        \n        ```json\n        { "targetType": "block", "target": "2d9b4a", "operation": "append", "content": "Hello" }\n        ```\n        \n        ## Append, prepend, or replace table rows via a block reference\n        \n        To add a new city/population pair to the table referenced by `2c7cfa`, pass the row(s) as a 2-D JSON array in `value`:\n        \n        ```json\n        { "targetType": "block", "target": "2c7cfa", "operation": "append", "value": [["Chicago, IL", "16"]] }\n        ```\n        \n        `prepend` puts the new row first (right below the heading row); `replace` swaps all body rows for the ones you supply. Each row must have exactly as many cells as the table has columns; a mismatched row, or targeting a block that isn\'t a table, is rejected.\n        \n        Cells are content, not table source, so you don\'t format them: a `|` in a cell is escaped for you and stays in the cell it belongs to. A cell containing a line break is rejected, since a table row is a single line \u2014 if you need a visual break inside a cell, send `<br>` yourself.\n        \n        ## Setting a frontmatter field\n        \n        Frontmatter values are JSON, so they ride in `value` (not `content`). To set `alpha` to `2`:\n        \n        ```json\n        { "targetType": "frontmatter", "target": "alpha", "operation": "replace", "value": 2 }\n        ```\n        \n        Add `"createTargetIfMissing": true` to create a field that might not exist yet. For `append`/`prepend`, `value` is merged into the existing value (list concat, dict merge, string concat).\n        \n        ## Adding and removing tags\n        \n        Obsidian stores frontmatter tags in the `tags` field. To add `project/active`, merging into the list and creating it if absent:\n        \n        ```json\n        { "targetType": "frontmatter", "target": "tags", "operation": "append", "value": ["project/active"], "createTargetIfMissing": true }\n        ```\n        \n        There is no direct "remove item" operation. To remove a tag, read the current list (GET, or `vault_read` in the MCP API), filter it client-side, and replace the whole field:\n        \n        ```json\n        { "targetType": "frontmatter", "target": "tags", "operation": "replace", "value": ["remaining-tag-1", "remaining-tag-2"] }\n        ```\n        \n        ## Moving a heading section\n        \n        `scope: "parent"` with `operation: "replace"` re-parents (and re-levels) a section. To move "Details" under "Appendix" as its last child:\n        \n        ```json\n        {\n          "targetType": "heading",\n          "target": ["Overview", "Details"],\n          "operation": "replace",\n          "scope": "parent",\n          "destination": { "parent": ["Appendix"], "place": "last" }\n        }\n        ```\n        \n        `place` may be `"first"`, `"last"`, `{ "before": <heading path> }`, or `{ "after": <heading path> }`. Use `"parent": null` to move to the document root.\n        \n        ## Deleting\n        \n        `operation: "delete"` empties the `content` scope, removes the whole subtree (`markerAndContent`), or dissolves just the heading line (`marker`):\n        \n        ```json\n        { "targetType": "heading", "target": ["Heading 1", "Subheading 1:2"], "operation": "delete", "scope": "markerAndContent" }\n        ```\n        \n        ## Optimistic concurrency\n        \n        Pass `ifMatch` with the `version` token from a document map (see below). If the file changed since, the patch fails with `412` and the file is untouched \u2014 refetch and retry.\n        \n        ## Identifying patch targets in a file\n        \n        Issue a GET request to `/vault/{path}` with an `Accept` header of `application/vnd.olrapi.document-map+json` to get the headings, block references, and frontmatter fields present in the file (and its `version` token). If a heading has a duplicate sibling (same text, same parent) or a block reference ID repeats, only the first occurrence keeps its plain-text/id key \u2014 each later occurrence\'s key carries a non-printable marker suffix; copy it verbatim from the map into `target` rather than typing it by hand. See "Targeting a Sub-part of your Document" for details.\n        \n        # Raw-content mode (templating-friendly)\n        \n        Putting the whole instruction in a JSON body has one sharp edge: the `content` string must be JSON-escaped, which tools that *template* markdown into an HTTP body (Shortcuts, Tasker, curl with `--data` from a template) often cannot do reliably. Raw-content mode removes that requirement: the instruction\'s fields travel **outside** the body, and the body is the raw payload \u2014 no JSON escaping required.\n        \n        The target can ride in either of two places (never both \u2014 that\'s a `422`):\n        \n        - **URL path elements**, exactly as GET/PUT/POST use them: `PATCH /vault/note.md/heading/A/B`. No version header needed.\n        - **`Target-Type` / `Target` headers**, together with an explicit `Markdown-Patch-Version: 2`. The `Target` encoding is type-dependent, mirroring the instruction\'s `target` field: a heading Target is **JSON, percent-encoded** \u2014 `["A","B"]` sent as `%5B%22A%22%2C%22B%22%5D`, or `null` for the document root \u2014 while block and frontmatter Targets are the plain id/key (percent-encoded if non-ASCII). Because `Target` headers on a PATCH are ambiguous with the deprecated 1.x format, omitting the version header fails loudly with `400 PatchHeaderTargetingRequiresExplicitVersion` rather than guessing.\n        \n        The remaining fields map to headers: `Operation` (required), `Target-Scope` (all four scopes, including `parent`), `Within` (the instruction\'s `within` index as a plain integer, e.g. `-1` \u2014 splice into one of the section\'s body blocks instead of adding a new one), `Create-Target-If-Missing`, `Reject-If-Content-Preexists`, `If-Match` (the document-map `version` token, bare or ETag-quoted), and `Destination` (a move\'s destination object as percent-encoded JSON). The 1.x-only `Target-Delimiter` and `Trim-Target-Whitespace` headers are rejected.\n        \n        The body is the payload carrier, chosen by its content type:\n        \n        | Body | Instruction field |\n        | --- | --- |\n        | `text/markdown` (any `text/*`) | `content` |\n        | `application/json` | `value` |\n        | *(no body)* | none \u2014 a `delete`, or a move via `Destination` |\n        \n        An empty body deliberately maps to *no* carrier: a `replace` with an accidentally-empty template fails as a missing carrier instead of clearing the section. To clear content on purpose, use an instruction body with `"content": ""`.\n        \n        ```sh\n        # Append a templated line under a heading \u2014 no JSON escaping anywhere\n        curl -k -X PATCH \\\n          -H "Authorization: Bearer $API_KEY" \\\n          -H "Operation: append" \\\n          -H "Content-Type: text/markdown" \\\n          --data "- $TEMPLATED_CONTENT" \\\n          "https://127.0.0.1:27124/vault/notes/daily.md/heading/Log"\n        \n        # Extend the section\'s last list *in place* (not a new block below it):\n        # Within picks the block, and the leading newline in the body makes the\n        # spliced text a new item of that list\n        curl -k -X PATCH \\\n          -H "Authorization: Bearer $API_KEY" \\\n          -H "Operation: append" \\\n          -H "Within: -1" \\\n          -H "Content-Type: text/markdown" \\\n          --data $\'\\n- \'"$TEMPLATED_CONTENT" \\\n          "https://127.0.0.1:27124/vault/notes/daily.md/heading/Log"\n        \n        # The same edit with header targeting (note the explicit version and JSON Target)\n        curl -k -X PATCH \\\n          -H "Authorization: Bearer $API_KEY" \\\n          -H "Markdown-Patch-Version: 2" \\\n          -H "Target-Type: heading" \\\n          -H "Target: %5B%22Log%22%5D" \\\n          -H "Operation: append" \\\n          -H "Content-Type: text/markdown" \\\n          --data "- $TEMPLATED_CONTENT" \\\n          "https://127.0.0.1:27124/vault/notes/daily.md"\n        ```\n        \n        Everything downstream is identical to instruction mode: the same validation, the same warnings header, the same error mapping. A raw-mode request may also send `application/vnd.olrapi.patch-instruction+json` \u2014 but only as a *whole-instruction body* with no targeting elsewhere; combining it with URL or header targeting is a `422 ConflictingTargetSpecification`.\n        \n        > **Note:** on `/active/` endpoints, a URL suffix (e.g. `/active/heading/Log`) previously had no effect on PATCH \u2014 it was ignored and the whole file was patched. It now targets the addressed section, matching PUT/POST.\n        \n        # Deprecated: the 1.x header-driven format\n        \n        The earlier PATCH format spread the instruction across `Operation`, `Target-Type`, `Target`, `Target-Delimiter`, `Target-Scope`, `Create-Target-If-Missing`, `Reject-If-Content-Preexists`, and `Trim-Target-Whitespace` headers, with the payload in a `text/markdown` (or JSON-string) body. **It is deprecated and will be removed in 6.0.** Requests that use it still work, but every response carries a `Deprecation: true; sunset-version="6.0"` header.\n        \n        The JSON-instruction format described above is the default. To use the deprecated format, send `Markdown-Patch-Version: 1`; the header also selects the 1.x document map (`::`-joined heading paths, no `version`) on GET. Without any version header, a non-object body with no targeting is rejected with `400 InvalidPatchInstruction`, and `Target-Type`/`Target` headers are rejected with `400 PatchHeaderTargetingRequiresExplicitVersion` \u2014 those same header names are also raw-content mode\'s (with different `Target` encoding), so the request must explicitly pick `1` or `2`. To upgrade, drop the version header and either move each 1.x header into the JSON body as below, or switch to [raw-content mode](#raw-content-mode-templating-friendly) and keep your body as-is:\n        \n        | 1.x header | Instruction field |\n        | --- | --- |\n        | `Operation: append` | `"operation": "append"` (now also `"delete"`) |\n        | `Target-Type: heading` | `"targetType": "heading"` |\n        | `Target: A::B` (+ `Target-Delimiter`) | `"target": ["A", "B"]` (a real array \u2014 no delimiter) |\n        | `Target-Scope: content` | `"scope": "content"` (adds `"parent"` for moves) |\n        | body (`text/markdown`) | `"content": "..."` |\n        | body (`application/json` value) | `"value": <json>` |\n        | `Create-Target-If-Missing: true` | `"createTargetIfMissing": true` |\n        | `Reject-If-Content-Preexists: true` | `"rejectIfContentPreexists": true` |\n        | `Trim-Target-Whitespace` | *(dropped; the engine owns boundary whitespace)* |\n      parameters:\n        - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n        - description: |\n            Selects which markdown-patch format governs this request. You do not normally\n            need to send this header. By default (2.0), a PATCH carries its whole instruction\n            in the JSON request body, the document map returns a nested heading tree plus a\n            `version` token, and a sub-part of a document is targeted with URL path elements\n            (e.g. `.../heading/My%20Section`). Set it to `1` to opt into the deprecated 1.x\n            behavior: the header-driven PATCH format, header-based targeting\n            (`Target-Type`/`Target`/`Target-Delimiter`/`Target-Scope`) on GET/PUT/POST, and\n            the `::`-joined document map. Responses served by 1.x carry a\n            `Deprecation: true; sunset-version="6.0"` header. Any value other than `1` or `2`\n            returns `400 InvalidPatchVersionHeader`.\n            \n            One place an *explicit* `2` matters: PATCH\'s raw-content mode with header-based\n            targeting. Because `Target-Type`/`Target` headers on a PATCH are ambiguous between\n            the 1.x format and raw-content mode, a PATCH carrying them without this header is\n            rejected with `400 PatchHeaderTargetingRequiresExplicitVersion` \u2014 send `1` for the\n            deprecated engine or `2` for raw-content mode. On GET/PUT/POST, supplying those\n            targeting headers without `1` is rejected with `400 HeaderTargetingRequiresVersion1`\n            (use URL path elements instead), and PATCH URL-element targeting likewise needs no\n            version header.\n          in: "header"\n          name: "Markdown-Patch-Version"\n          required: false\n          schema:\n            default: "2"\n            enum:\n              - "1"\n              - "2"\n            type: "string"\n        - description: |\n            Raw-content mode: the type of node the instruction targets (`heading`,\n            `block`, or `frontmatter`). Must be used together with the `Target`\n            header and an explicit `Markdown-Patch-Version: 2`; alternatively, put\n            the target in the URL path (`.../heading/A/B`) and omit both headers.\n            Supplying both is rejected with `422 ConflictingTargetSpecification`.\n          in: "header"\n          name: "Target-Type"\n          required: false\n          schema:\n            enum:\n              - "heading"\n              - "block"\n              - "frontmatter"\n            type: "string"\n        - description: |\n            Raw-content mode: the node the instruction targets. The encoding is\n            type-dependent, mirroring the instruction\'s `target` field. For a\n            `heading`, the value is JSON \u2014 an array of heading texts from the top\n            level down, or `null` for the document root \u2014 then percent-encoded:\n            `["A","B"]` is sent as `%5B%22A%22%2C%22B%22%5D`. For a `block` or\n            `frontmatter` target, the value is the plain id/key, percent-encoded if\n            it contains non-ASCII characters. A heading value that does not decode\n            to JSON (e.g. a bare 1.x-style `A::B` path) is rejected with\n            `400 InvalidTargetHeader`.\n          in: "header"\n          name: "Target"\n          required: false\n          schema:\n            type: "string"\n        - description: |\n            Raw-content mode: the instruction\'s `within` \u2014 a single integer (e.g.\n            `-1`) refining a heading target to one of the section\'s direct-body\n            top-level blocks (0-based document order, negative counting from the\n            end; isolated `^id` lines are not counted). With the default `content`\n            scope the body is spliced literally into that block \u2014 an `append`\n            *continues* it \u2014 and a bodiless `delete` removes it; with\n            `Target-Scope: markerAndContent`, `prepend`/`append` insert the body as\n            a new block beside it. Heading targets only; cannot be combined with\n            `Create-Target-If-Missing`.\n          in: "header"\n          name: "Within"\n          required: false\n          schema:\n            type: "string"\n        - description: |\n            Raw-content mode: the instruction\'s operation. Required whenever the\n            target rides in the URL path or the `Target-Type`/`Target` headers.\n          in: "header"\n          name: "Operation"\n          required: false\n          schema:\n            enum:\n              - "replace"\n              - "prepend"\n              - "append"\n              - "delete"\n            type: "string"\n        - description: |\n            Raw-content mode: the instruction\'s `scope` \u2014 `content` (default),\n            `marker`, `markerAndContent`, or `parent` (a move; carries its\n            destination in the `Destination` header). See the instruction-body\n            documentation for what each scope addresses.\n          in: "header"\n          name: "Target-Scope"\n          required: false\n          schema:\n            default: "content"\n            enum:\n              - "content"\n              - "marker"\n              - "markerAndContent"\n              - "parent"\n            type: "string"\n        - description: |\n            Raw-content mode: where a moved heading lands (`Target-Scope: parent`).\n            The instruction\'s `destination` object as JSON, then percent-encoded:\n            `{"parent":["Appendix"],"place":"last"}` is sent as\n            `%7B%22parent%22%3A%5B%22Appendix%22%5D%2C%22place%22%3A%22last%22%7D`.\n            A move carries no body.\n          in: "header"\n          name: "Destination"\n          required: false\n          schema:\n            type: "string"\n        - description: |\n            Raw-content mode: the instruction\'s `ifMatch` optimistic-concurrency\n            token \u2014 the `version` from a document map, bare or wrapped in one pair\n            of double quotes (RFC 9110 ETag style). A mismatch fails with `412` and\n            leaves the file untouched.\n          in: "header"\n          name: "If-Match"\n          required: false\n          schema:\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n      requestBody:\n        content:\n          application/json:\n            examples:\n              addTag:\n                summary: "Add a tag (merge into the tags list, creating it if absent)"\n                value:\n                  createTargetIfMissing: true\n                  operation: "append"\n                  target: "tags"\n                  targetType: "frontmatter"\n                  value:\n                    - "project/active"\n              appendToBlock:\n                summary: "Append text to a block addressed by its reference id"\n                value:\n                  content: "More detail for this block."\n                  operation: "append"\n                  target: "2c7cfa"\n                  targetType: "block"\n              appendUnderHeading:\n                summary: "Append text below a heading"\n                value:\n                  content: "Hello"\n                  operation: "append"\n                  target:\n                    - "Heading 1"\n                    - "Subheading 1:1:1"\n                  targetType: "heading"\n              continueList:\n                summary: "Continue an existing list in place (within: positional block edit)"\n                value:\n                  content: "\\n- new item"\n                  operation: "append"\n                  target:\n                    - "Log"\n                  targetType: "heading"\n                  within: -1\n              moveSection:\n                summary: "Move a heading section under a new parent"\n                value:\n                  destination:\n                    parent:\n                      - "Appendix"\n                    place: "last"\n                  operation: "replace"\n                  scope: "parent"\n                  target:\n                    - "Overview"\n                    - "Details"\n                  targetType: "heading"\n              setFrontmatter:\n                summary: "Set a frontmatter field to a JSON value"\n                value:\n                  operation: "replace"\n                  target: "alpha"\n                  targetType: "frontmatter"\n                  value: 2\n            schema:\n              "$ref": "#/components/schemas/PatchInstruction"\n          "application/vnd.olrapi.patch-instruction+json":\n            schema:\n              "$ref": "#/components/schemas/PatchInstruction"\n          text/markdown:\n            schema:\n              example: |\n                - A raw markdown line: no JSON escaping needed.\n              type: "string"\n        description: |\n          Instruction mode: a single patch instruction as JSON (`application/json`, or\n          `application/vnd.olrapi.patch-instruction+json` to declare it explicitly).\n          Raw-content mode: the raw payload \u2014 a `text/markdown` body is the instruction\'s\n          `content` carrier, an `application/json` body its `value` carrier, and no body at\n          all carries nothing (a delete, or a move via the `Destination` header). An empty\n          raw-mode body never clears content: a `replace` without a payload is rejected as a\n          missing carrier, so an accidentally-empty template cannot wipe a section (use an\n          instruction body with `"content": ""` to clear deliberately).\n        required: false\n      responses:\n        "200":\n          description: "Success. The body is the patched document. Any advisory warnings (e.g. a heading rebased past level 6) are JSON-encoded, then percent-encoded, in the `Markdown-Patch-Warnings` response header."\n          headers:\n            Markdown-Patch-Warnings:\n              description: "Present only when the patch produced warnings: a percent-encoded JSON array of `{ code, message }` objects (percent-encoded because a warning message embeds document text verbatim, which may contain non-ASCII characters that are not valid in a raw header value). Decode with `decodeURIComponent` before parsing as JSON."\n              schema:\n                type: "string"\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request; the instruction was malformed, the operation\xD7scope\xD7targetType combination is not part of the algebra, the `Markdown-Patch-Version` header was invalid, an instruction-mode request had a non-object body, or a raw-content-mode header could not be decoded (a heading `Target` that is not percent-encoded JSON, a malformed `Destination`, an unsupported body content type). Header-based targeting without an explicit `Markdown-Patch-Version` returns `PatchHeaderTargetingRequiresExplicitVersion` here. See response message for details."\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "The file, or the addressed target within it, does not exist (and `createTargetIfMissing` was not set)."\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n        "409":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "`rejectIfContentPreexists` was set and the content already appears in the target span."\n        "412":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Precondition Failed: the `ifMatch` token did not match the current document version; the file was not modified."\n        "422":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Conflicting target specifications: more than one of URL path elements, `Target-Type`/`Target` headers, and an `application/vnd.olrapi.patch-instruction+json` instruction body was supplied."\n      summary: |\n        Partially update content in an existing note.\n      tags:\n        - "Vault Files"\n    post:\n      description: |\n        Appends content to the end of an existing note. If the specified file does not yet exist, it will be created as an empty file.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by embedding a target in the URL path, immediately after the note identifier. The first segment after the note is the target type, and the remaining segments address the target:\n        \n        - `.../heading/My%20Section` targets the section beneath the `My Section` heading \u2014 the body content below the heading line.\n        - For a nested heading, add one path segment per level: `.../heading/My%20Section/Subsection` targets `Subsection` under `My Section`. Because each level is its own segment, a heading whose text contains `::` (or any other delimiter) needs no escaping.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        \n        Percent-encode any segment that contains non-ASCII characters or a literal `/` (e.g. `H%C3%A9llo` for `H\xE9llo`, or `TODO%2FDONE` for a heading named `TODO/DONE`). Each URL path segment is decoded on its own, so an encoded `%2F` stays a literal slash *inside* that one segment rather than acting as a separator \u2014 that is what lets a heading name contain a slash. The same rule applies to the note path itself: because a file or folder name can never contain a slash, the note must be addressed with real `/` separators between its path components (`/vault/folder/note.md`), not with the separators encoded (`/vault/folder%2Fnote.md`), which no longer resolves.\n        \n        If a document has a duplicate sibling heading (the same text repeated under the same parent) or a duplicate block reference ID, only the first occurrence is addressable by its plain text/id. Each later occurrence gets its own address with a non-printable marker suffix appended by the server \u2014 fetch the document map (`Accept: application/vnd.olrapi.document-map+json`) and copy that occurrence\'s key verbatim; don\'t try to type or reconstruct the marker yourself.\n        \n        `GET` returns just the addressed section. By default that is the target\'s `content` scope; add a `Target-Scope` header to read the `marker` (the label \u2014 a heading\'s raw text, a block\'s bare id, a frontmatter key) or `markerAndContent` (the whole node, in exactly the shape a PATCH `replace` at that scope consumes \u2014 a heading subtree comes back with its own line as `# Title`, levels relative to its parent, so a read-modify-write never counts `#`s). `PUT` replaces the section and `POST` appends to it, with heading levels normalized and separator whitespace managed for you. `PATCH` also accepts a URL target \u2014 its raw-content mode \u2014 with the operation and other instruction fields in headers (`Operation`, `Target-Scope`, \u2026) and the raw payload as the body. For the full instruction algebra (renames, moves, deletes, typed frontmatter values), see the PATCH documentation.\n        \n        On `PUT` and `POST`, the `Content-Type` of your request body selects how the payload is interpreted, and not every target accepts both:\n        \n        - A `text/markdown` body is literal markdown. Valid for `heading` and `block` targets. On a `frontmatter` target it is stored as the field\'s plain string value.\n        - An `application/json` body is structured data. On a `block` target that addresses a table, it is a 2-D array of row cells (`[["Chicago", "16"]]`). On a `frontmatter` target it is the field\'s typed value (a list, dictionary, number, or string). A `heading` target has no structured form \u2014 its body is markdown text \u2014 so a JSON body there is rejected with `400 InvalidPatchInstruction` rather than being stringified into your note.\n        \n        ## Deprecated: header-based targeting\n        \n        Earlier releases addressed a sub-part with `Target-Type`, `Target`, and `Target-Delimiter` request headers (plus `Target-Scope` and `Trim-Target-Whitespace`) rather than URL path segments. **That form is deprecated and will be removed in 6.0.** It is only processed when you also send `Markdown-Patch-Version: 1`, and responses served that way carry a `Deprecation: true; sunset-version="6.0"` header. On GET/PUT/POST, supplying those targeting headers without that version is rejected with `400 HeaderTargetingRequiresVersion1` \u2014 reach the sub-part with URL path segments instead. (On PATCH, `Target-Type`/`Target` headers also have a *non-deprecated* meaning under an explicit `Markdown-Patch-Version: 2` \u2014 raw-content mode, with a different `Target` encoding; see the PATCH documentation.) Supplying both URL-path targeting and the header form in one request fails with `422 ConflictingTargetSpecification`.\n        \n        When a target is specified the content is appended within that section and the full updated file content is returned with a `200` status. Without a target, the content is appended to the end of the file and a `204` status is returned.\n        \n        If you need `prepend` or `replace` operations, use `PATCH` instead.\n      parameters:\n        - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n        - description: |\n            Selects which markdown-patch format governs this request. You do not normally\n            need to send this header. By default (2.0), a PATCH carries its whole instruction\n            in the JSON request body, the document map returns a nested heading tree plus a\n            `version` token, and a sub-part of a document is targeted with URL path elements\n            (e.g. `.../heading/My%20Section`). Set it to `1` to opt into the deprecated 1.x\n            behavior: the header-driven PATCH format, header-based targeting\n            (`Target-Type`/`Target`/`Target-Delimiter`/`Target-Scope`) on GET/PUT/POST, and\n            the `::`-joined document map. Responses served by 1.x carry a\n            `Deprecation: true; sunset-version="6.0"` header. Any value other than `1` or `2`\n            returns `400 InvalidPatchVersionHeader`.\n            \n            One place an *explicit* `2` matters: PATCH\'s raw-content mode with header-based\n            targeting. Because `Target-Type`/`Target` headers on a PATCH are ambiguous between\n            the 1.x format and raw-content mode, a PATCH carrying them without this header is\n            rejected with `400 PatchHeaderTargetingRequiresExplicitVersion` \u2014 send `1` for the\n            deprecated engine or `2` for raw-content mode. On GET/PUT/POST, supplying those\n            targeting headers without `1` is rejected with `400 HeaderTargetingRequiresVersion1`\n            (use URL path elements instead), and PATCH URL-element targeting likewise needs no\n            version header.\n          in: "header"\n          name: "Markdown-Patch-Version"\n          required: false\n          schema:\n            default: "2"\n            enum:\n              - "1"\n              - "2"\n            type: "string"\n        - description: "If the specified Target does not exist, create it?"\n          in: "header"\n          name: "Create-Target-If-Missing"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n      requestBody:\n        content:\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content you would like to append."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; content appended to the targeted section (via URL path elements). The full updated file content is returned. Any advisory warnings (e.g. a heading rebased past level 6) are JSON-encoded, then percent-encoded, in the `Markdown-Patch-Warnings` response header."\n          headers:\n            Markdown-Patch-Warnings:\n              description: "Present only when the write produced warnings: a percent-encoded JSON array of `{ code, message }` objects. Decode with `decodeURIComponent` before parsing as JSON."\n              schema:\n                type: "string"\n        "204":\n          description: "Success; content appended to end of file."\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Bad Request"\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n        "409":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "`Reject-If-Content-Preexists` was set and the content already appears in the targeted section."\n      summary: |\n        Append content to a new or existing file.\n      tags:\n        - "Vault Files"\n    put:\n      description: |\n        Creates a new file in your vault or updates the content of an existing one if the specified file already exists.\n        \n        # Targeting a Sub-part of your Document\n        \n        You can operate on a specific section of a note instead of the whole file by embedding a target in the URL path, immediately after the note identifier. The first segment after the note is the target type, and the remaining segments address the target:\n        \n        - `.../heading/My%20Section` targets the section beneath the `My Section` heading \u2014 the body content below the heading line.\n        - For a nested heading, add one path segment per level: `.../heading/My%20Section/Subsection` targets `Subsection` under `My Section`. Because each level is its own segment, a heading whose text contains `::` (or any other delimiter) needs no escaping.\n        - `.../block/abc123` targets the block with reference ID `abc123`.\n        - `.../frontmatter/fieldName` targets the `fieldName` frontmatter field.\n        \n        Percent-encode any segment that contains non-ASCII characters or a literal `/` (e.g. `H%C3%A9llo` for `H\xE9llo`, or `TODO%2FDONE` for a heading named `TODO/DONE`). Each URL path segment is decoded on its own, so an encoded `%2F` stays a literal slash *inside* that one segment rather than acting as a separator \u2014 that is what lets a heading name contain a slash. The same rule applies to the note path itself: because a file or folder name can never contain a slash, the note must be addressed with real `/` separators between its path components (`/vault/folder/note.md`), not with the separators encoded (`/vault/folder%2Fnote.md`), which no longer resolves.\n        \n        If a document has a duplicate sibling heading (the same text repeated under the same parent) or a duplicate block reference ID, only the first occurrence is addressable by its plain text/id. Each later occurrence gets its own address with a non-printable marker suffix appended by the server \u2014 fetch the document map (`Accept: application/vnd.olrapi.document-map+json`) and copy that occurrence\'s key verbatim; don\'t try to type or reconstruct the marker yourself.\n        \n        `GET` returns just the addressed section. By default that is the target\'s `content` scope; add a `Target-Scope` header to read the `marker` (the label \u2014 a heading\'s raw text, a block\'s bare id, a frontmatter key) or `markerAndContent` (the whole node, in exactly the shape a PATCH `replace` at that scope consumes \u2014 a heading subtree comes back with its own line as `# Title`, levels relative to its parent, so a read-modify-write never counts `#`s). `PUT` replaces the section and `POST` appends to it, with heading levels normalized and separator whitespace managed for you. `PATCH` also accepts a URL target \u2014 its raw-content mode \u2014 with the operation and other instruction fields in headers (`Operation`, `Target-Scope`, \u2026) and the raw payload as the body. For the full instruction algebra (renames, moves, deletes, typed frontmatter values), see the PATCH documentation.\n        \n        On `PUT` and `POST`, the `Content-Type` of your request body selects how the payload is interpreted, and not every target accepts both:\n        \n        - A `text/markdown` body is literal markdown. Valid for `heading` and `block` targets. On a `frontmatter` target it is stored as the field\'s plain string value.\n        - An `application/json` body is structured data. On a `block` target that addresses a table, it is a 2-D array of row cells (`[["Chicago", "16"]]`). On a `frontmatter` target it is the field\'s typed value (a list, dictionary, number, or string). A `heading` target has no structured form \u2014 its body is markdown text \u2014 so a JSON body there is rejected with `400 InvalidPatchInstruction` rather than being stringified into your note.\n        \n        ## Deprecated: header-based targeting\n        \n        Earlier releases addressed a sub-part with `Target-Type`, `Target`, and `Target-Delimiter` request headers (plus `Target-Scope` and `Trim-Target-Whitespace`) rather than URL path segments. **That form is deprecated and will be removed in 6.0.** It is only processed when you also send `Markdown-Patch-Version: 1`, and responses served that way carry a `Deprecation: true; sunset-version="6.0"` header. On GET/PUT/POST, supplying those targeting headers without that version is rejected with `400 HeaderTargetingRequiresVersion1` \u2014 reach the sub-part with URL path segments instead. (On PATCH, `Target-Type`/`Target` headers also have a *non-deprecated* meaning under an explicit `Markdown-Patch-Version: 2` \u2014 raw-content mode, with a different `Target` encoding; see the PATCH documentation.) Supplying both URL-path targeting and the header form in one request fails with `422 ConflictingTargetSpecification`.\n        \n        When a target is specified the target section is replaced with the request body and the full updated file content is returned with a `200` status. If the target does not exist it will be created. Without a target, the entire file is replaced and a `204` status is returned.\n      parameters:\n        - description: "Path to the relevant file (relative to your vault root).\\n Optionally, you may include a reference to target a sub-part of the document; see \\"Targeting a Sub-part of your Document\\" for details."\n          in: "path"\n          name: "filename"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n        - description: |\n            Selects which markdown-patch format governs this request. You do not normally\n            need to send this header. By default (2.0), a PATCH carries its whole instruction\n            in the JSON request body, the document map returns a nested heading tree plus a\n            `version` token, and a sub-part of a document is targeted with URL path elements\n            (e.g. `.../heading/My%20Section`). Set it to `1` to opt into the deprecated 1.x\n            behavior: the header-driven PATCH format, header-based targeting\n            (`Target-Type`/`Target`/`Target-Delimiter`/`Target-Scope`) on GET/PUT/POST, and\n            the `::`-joined document map. Responses served by 1.x carry a\n            `Deprecation: true; sunset-version="6.0"` header. Any value other than `1` or `2`\n            returns `400 InvalidPatchVersionHeader`.\n            \n            One place an *explicit* `2` matters: PATCH\'s raw-content mode with header-based\n            targeting. Because `Target-Type`/`Target` headers on a PATCH are ambiguous between\n            the 1.x format and raw-content mode, a PATCH carrying them without this header is\n            rejected with `400 PatchHeaderTargetingRequiresExplicitVersion` \u2014 send `1` for the\n            deprecated engine or `2` for raw-content mode. On GET/PUT/POST, supplying those\n            targeting headers without `1` is rejected with `400 HeaderTargetingRequiresVersion1`\n            (use URL path elements instead), and PATCH URL-element targeting likewise needs no\n            version header.\n          in: "header"\n          name: "Markdown-Patch-Version"\n          required: false\n          schema:\n            default: "2"\n            enum:\n              - "1"\n              - "2"\n            type: "string"\n        - description: "If patch data already exists in Target, reject the patch?"\n          in: "header"\n          name: "Reject-If-Content-Preexists"\n          required: false\n          schema:\n            default: "false"\n            enum:\n              - "true"\n              - "false"\n            type: "string"\n      requestBody:\n        content:\n          "*/*":\n            schema:\n              type: "string"\n          text/markdown:\n            schema:\n              example: |\n                # This is my document\n                \n                something else here\n              type: "string"\n        description: "Content of the file you would like to upload."\n        required: true\n      responses:\n        "200":\n          content:\n            text/markdown:\n              schema:\n                type: "string"\n          description: "Success; targeted section replaced (via URL path elements). The full updated file content is returned. Any advisory warnings (e.g. a heading rebased past level 6) are JSON-encoded, then percent-encoded, in the `Markdown-Patch-Warnings` response header."\n          headers:\n            Markdown-Patch-Warnings:\n              description: "Present only when the write produced warnings: a percent-encoded JSON array of `{ code, message }` objects. Decode with `decodeURIComponent` before parsing as JSON."\n              schema:\n                type: "string"\n        "204":\n          description: "Success; entire file replaced."\n        "400":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Incoming file could not be processed.  Make sure you have specified a reasonable file name, and make sure you have set a reasonable \'Content-Type\' header; if you are uploading a note, \'text/markdown\' is likely the right choice.\n        "405":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: |\n            Your path references a directory instead of a file; this request method is valid only for updating files.\n        "409":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "`Reject-If-Content-Preexists` was set and the content already appears in the targeted section."\n      summary: |\n        Create a new file in your vault or update the content of an existing one.\n      tags:\n        - "Vault Files"\n  "/vault/{pathToDirectory}/":\n    get:\n      parameters:\n        - description: |\n            Path to list files from (relative to your vault root).  Note that empty directories will not be returned.\n            \n            Note: this particular interactive tool requires that you provide an argument for this field, but the API itself will allow you to list the root folder of your vault. If you would like to try listing content in the root of your vault using this interactive tool, use the above "List files that exist in the root of your vault" form above.\n          in: "path"\n          name: "pathToDirectory"\n          required: true\n          schema:\n            format: "path"\n            type: "string"\n      responses:\n        "200":\n          content:\n            application/json:\n              example:\n                files:\n                  - "mydocument.md"\n                  - "somedirectory/"\n              schema:\n                properties:\n                  files:\n                    items:\n                      type: "string"\n                    type: "array"\n                type: "object"\n          description: "Success"\n        "404":\n          content:\n            application/json:\n              schema:\n                "$ref": "#/components/schemas/Error"\n          description: "Directory does not exist"\n      summary: |\n        List files that exist in the specified directory.\n      tags:\n        - "Vault Directories"\nsecurity:\n  - apiKeyAuth: []\nservers:\n  - description: "HTTPS (Secure Mode)"\n    url: "https://{host}:{port}"\n    variables:\n      host:\n        default: "127.0.0.1"\n        description: "Binding host"\n      port:\n        default: "27124"\n        description: "HTTPS port"\n  - description: "HTTP (Insecure Mode)"\n    url: "http://{host}:{port}"\n    variables:\n      host:\n        default: "127.0.0.1"\n        description: "Binding host"\n      port:\n        default: "27123"\n        description: "HTTP port"\ntags:\n  - name: "Vault Files"\n  - name: "Active File"\n  - name: "Vault Directories"\n  - name: "Search"\n  - name: "Commands"\n  - name: "Open"\n  - name: "System"\n  - name: "MCP"\nx-topics:\n  - content: |\n      # Migrating from 1.x to 2.x\n      \n      Version 5.0 of this plugin upgraded its markdown-editing engine ([markdown-patch](https://github.com/coddingtonbear/markdown-patch)) from 1.x to 2.x, and the 2.x conventions are now the **default** for PATCH requests, sub-document targeting, and the document map.\n      \n      > **Version numbers, disambiguated:** "1.x" and "2.x" in this guide refer to the *markdown-patch format*, selected per-request with the `Markdown-Patch-Version` header. The *plugin* switched defaults in its 5.0 release and will remove the 1.x format entirely in 6.0.\n      \n      The 1.x format still works \u2014 send `Markdown-Patch-Version: 1` \u2014 but it is **deprecated and will be removed in plugin 6.0**. Every response served the 1.x way carries a `Deprecation: true; sunset-version="6.0"` header so you can spot lingering legacy traffic in your client logs.\n      \n      # Am I affected?\n      \n      You are affected if you:\n      \n      - send **PATCH** requests that spread the instruction across `Operation`, `Target-Type`, `Target`, `Target-Delimiter`, `Target-Scope`, `Create-Target-If-Missing`, `Reject-If-Content-Preexists`, or `Trim-Target-Whitespace` headers;\n      - target a heading, block, or frontmatter field on **GET, PUT, or POST** using `Target-Type` / `Target` / `Target-Delimiter` headers;\n      - consume the **document map** (`Accept: application/vnd.olrapi.document-map+json`);\n      - parse the **`MD-Patch-Warnings`** response header;\n      - use the **MCP tools** `vault_patch`, `vault_read` (with a heading target), or `vault_get_document_map`.\n      \n      You are **not** affected if you only read and write whole files, search, or use the active-file endpoints without section targeting.\n      \n      # Nothing fails silently\n      \n      Old-style requests sent without a version header are rejected loudly rather than reinterpreted:\n      \n      | Legacy request shape (no version header) | Result |\n      | --- | --- |\n      | GET/PUT/POST with `Target-Type`/`Target` headers | `400 HeaderTargetingRequiresVersion1` |\n      | PATCH with `Target-Type`/`Target` headers | `400 PatchHeaderTargetingRequiresExplicitVersion` |\n      | PATCH with a non-object body and no targeting | `400 InvalidPatchInstruction` |\n      | Any `Markdown-Patch-Version` other than `1` or `2` | `400 InvalidPatchVersionHeader` |\n      \n      (The PATCH header case is ambiguous by design: `Target-Type`/`Target` on a PATCH mean the deprecated 1.x format under version `1`, but [raw-content mode](#raw-content-mode-the-low-effort-migration) under an explicit version `2` \u2014 so the server refuses to guess.)\n      \n      **The stopgap:** add `Markdown-Patch-Version: 1` to every affected request and everything behaves exactly as before \u2014 including the `::`-joined document map on GET. That buys you until plugin 6.0, no other changes required.\n      \n      # Migrating PATCH requests\n      \n      The 2.x PATCH carries the whole instruction as one JSON body instead of scattering it across headers.\n      \n      **Before (1.x):**\n      \n      ```sh\n      curl -k -X PATCH \\\n        -H "Authorization: Bearer $API_KEY" \\\n        -H "Operation: append" \\\n        -H "Target-Type: heading" \\\n        -H "Target: Heading 1::Subheading 1:1" \\\n        -H "Content-Type: text/markdown" \\\n        --data "Hello" \\\n        "https://127.0.0.1:27124/vault/note.md"\n      ```\n      \n      **After (2.x):**\n      \n      ```sh\n      curl -k -X PATCH \\\n        -H "Authorization: Bearer $API_KEY" \\\n        -H "Content-Type: application/json" \\\n        --data \'{"targetType": "heading", "target": ["Heading 1", "Subheading 1:1"], "operation": "append", "content": "Hello"}\' \\\n        "https://127.0.0.1:27124/vault/note.md"\n      ```\n      \n      Field-by-field:\n      \n      | 1.x header | 2.x instruction field |\n      | --- | --- |\n      | `Operation: append` | `"operation": "append"` (now also `"delete"`) |\n      | `Target-Type: heading` | `"targetType": "heading"` |\n      | `Target: A::B` (+ `Target-Delimiter`) | `"target": ["A", "B"]` \u2014 a real array, no delimiter |\n      | `Target-Scope: content` | `"scope": "content"` (adds `"parent"` for moves) |\n      | body (`text/markdown`) | `"content": "..."` |\n      | body (`application/json` value) | `"value": <json>` |\n      | `Create-Target-If-Missing: true` | `"createTargetIfMissing": true` |\n      | `Reject-If-Content-Preexists: true` | `"rejectIfContentPreexists": true` |\n      | `Trim-Target-Whitespace` | *(dropped \u2014 see below)* |\n      \n      Things that changed meaning along the way:\n      \n      - **Heading targets are arrays.** `"target": ["A", "B"]` replaces `A::B`. A heading whose text contains `::` (or any other would-be delimiter) needs no escaping, and `Target-Delimiter` is gone. For a block, `target` is the bare id without `^`; for frontmatter, the key name.\n      - **Renaming a heading no longer takes `#` characters.** Under 1.x you supplied the full heading line (`## New Name`); under 2.x, `scope: "marker"` with `"content": "New Name"` renames the heading while preserving its level. The `#`s are *not* stripped anymore \u2014 if you keep sending them, they become literal text in the heading. If you are migrating, drop them.\n      - **Frontmatter values are typed JSON.** Send them in `"value"` (a list, dict, number, or string), not as a serialized string body.\n      \n      See the PATCH operation documentation for the full instruction algebra \u2014 scopes, moves (`scope: "parent"` with a `destination`), deletes, and table-row writes.\n      \n      ## Raw-content mode: the low-effort migration\n      \n      If your client *templates* markdown into the request body (Shortcuts, Tasker, curl from a shell variable), JSON-escaping that content is fragile. Raw-content mode keeps the 1.x posture \u2014 instruction outside the body, raw payload in it \u2014 but moves the target into URL path elements:\n      \n      ```sh\n      curl -k -X PATCH \\\n        -H "Authorization: Bearer $API_KEY" \\\n        -H "Operation: append" \\\n        -H "Content-Type: text/markdown" \\\n        --data "- $TEMPLATED_CONTENT" \\\n        "https://127.0.0.1:27124/vault/note.md/heading/Heading%201/Subheading%201:1"\n      ```\n      \n      For many 1.x clients this migration is just "delete the `Target-Type`/`Target`/`Target-Delimiter` headers and append the target to the URL, one path segment per heading level." `Operation`, `Target-Scope` (all four scopes), `Create-Target-If-Missing`, and `Reject-If-Content-Preexists` headers all still work here; `Target-Delimiter` and `Trim-Target-Whitespace` are rejected. A `text/*` body carries `content`, an `application/json` body carries `value`, and no body carries nothing (a `delete`, or a move via a `Destination` header).\n      \n      Header-based targeting (`Target-Type`/`Target` instead of URL elements) also exists in raw-content mode, but requires an explicit `Markdown-Patch-Version: 2` and encodes a heading `Target` as percent-encoded JSON \u2014 see the PATCH operation documentation.\n      \n      # Migrating targeted GET/PUT/POST requests\n      \n      Header-based targeting on reads and writes is deprecated wholesale; the URL is the target now.\n      \n      **Before (1.x):**\n      \n      ```sh\n      curl -k -H "Authorization: Bearer $API_KEY" \\\n        -H "Target-Type: heading" \\\n        -H "Target: Heading 1::Subheading 1:1" \\\n        "https://127.0.0.1:27124/vault/note.md"\n      ```\n      \n      **After (2.x):**\n      \n      ```sh\n      curl -k -H "Authorization: Bearer $API_KEY" \\\n        "https://127.0.0.1:27124/vault/note.md/heading/Heading%201/Subheading%201:1"\n      ```\n      \n      Each nested heading level is its own path segment. Percent-encode any segment containing non-ASCII characters or a literal `/` (`TODO%2FDONE` for a heading named `TODO/DONE` \u2014 each segment is decoded individually, so an encoded slash stays inside its segment). `block` and `frontmatter` targets work the same way: `.../block/abc123`, `.../frontmatter/fieldName`.\n      \n      Sending both URL-path targeting and the header form in one request fails with `422 ConflictingTargetSpecification`.\n      \n      # The document map changed shape\n      \n      `GET /vault/{path}` with `Accept: application/vnd.olrapi.document-map+json` now returns the 2.0 map.\n      \n      **Before (1.x):**\n      \n      ```json\n      {\n        "headings": ["Heading 1", "Heading 1::Subheading 1:1", "Heading 2"],\n        "blocks": ["484ef2"],\n        "frontmatterFields": ["alpha", "beta"]\n      }\n      ```\n      \n      **After (2.x):**\n      \n      ```json\n      {\n        "headings": {\n          "Heading 1": { "Subheading 1:1": {} },\n          "Heading 2": {}\n        },\n        "blocks": ["484ef2"],\n        "frontmatterFields": ["alpha", "beta"],\n        "version": "3f9a1c"\n      }\n      ```\n      \n      - **`headings` is a nested tree**, not a flat list of `::`-joined paths. Each key maps to its child headings; a path through the tree is exactly the array you send as a heading `target`.\n      - **`version` is new**: a content-hash token. Pass it back as `ifMatch` in a PATCH instruction (or an `If-Match` header in raw-content mode) for optimistic concurrency \u2014 if the file changed in between, the patch fails with `412` and the file is untouched.\n      - **Duplicates are now addressable.** If a heading has a duplicate sibling (same text, same parent) or a block id repeats, the first occurrence keeps its plain key and each later occurrence\'s key carries a non-printable marker suffix. Copy that key verbatim from the map into your `target` \u2014 don\'t try to type or reconstruct the marker.\n      \n      Sending `Markdown-Patch-Version: 1` still returns the old flat map (with the `Deprecation` header) until plugin 6.0.\n      \n      # Behavior changes to watch for\n      \n      - **Whitespace is library-owned.** The 2.x engine reduces your `content` to trimmed, canonical form (leading and trailing blank lines are meaningless) and itself supplies the blank line wherever inserted content faces body text, so a naive `append` or `prepend` always lands as its own block and can never merge into an existing paragraph; `Trim-Target-Whitespace` is gone because there is nothing left for it to fix. If your 1.x client added `\\n` padding to manage spacing, it is now ignored \u2014 and a `content`-scope `append` can no longer continue an existing list or paragraph (use a `^id` block target for inline edits).\n      - **Heading levels in `content` are relative.** A leading `#` becomes a direct child of the target regardless of the target\'s own depth \u2014 you never count `#`s. A level rebased past h6 still writes, but adds a `heading-depth-overflow` warning.\n      - **The warnings header was renamed** from `MD-Patch-Warnings` to `Markdown-Patch-Warnings`, and its JSON value is now percent-encoded so warnings can embed non-ASCII document text. Run it through `decodeURIComponent` before parsing.\n      - **URL targets on `/active/` PATCH now work.** Previously a suffix like `/active/heading/Log` was silently ignored on PATCH and the whole file was patched; it now targets the addressed section, matching PUT/POST.\n      - **Cleaner error mapping.** Unparseable frontmatter YAML is a `400`, a frontmatter key collision is a `409`, a mismatched table row or a cell containing a line break is a `400`, and an `ifMatch`/`If-Match` mismatch is a `412` \u2014 cases that previously surfaced as generic errors or `500`s.\n      \n      # MCP tool changes\n      \n      The MCP tools moved to 2.x with no version escape hatch:\n      \n      - **`vault_patch`** accepts only the 2.0 JSON instruction shape described above.\n      - **`vault_read`** requires a heading target to be an array of heading texts; a bare `"A::B"` string is rejected rather than split on `::`.\n      - **`vault_get_document_map`** returns the nested-tree map with the `version` token.\n      \n      # What\'s new that you couldn\'t do before\n      \n      Migrating unlocks more than parity:\n      \n      - `operation: "delete"` \u2014 remove a section, its body, or just its heading line, without a read-modify-write.\n      - `scope: "parent"` \u2014 move a heading section elsewhere in the tree, with levels rebased for you.\n      - Optimistic concurrency via `version`/`ifMatch` (`412` on conflict).\n      - Table-row writes: pass a 2-D JSON array in `value` to a block target that addresses a table; cell content is escaped for you.\n      - Duplicate headings and repeated block ids are individually addressable via the document map.\n      - Headings containing `::` or `/` are targetable with no escaping gymnastics.\n      \n      # Timeline\n      \n      | Plugin version | markdown-patch 1.x format | markdown-patch 2.x format |\n      | --- | --- | --- |\n      | < 5.0 | default | \u2014 |\n      | 5.0 | deprecated; opt in with `Markdown-Patch-Version: 1` (responses carry `Deprecation: true; sunset-version="6.0"`) | **default** |\n      | 6.0 | **removed** | default |\n    title: "Migrating from 1.x to 2.x"\n';
+
+// src/mcpHandler.ts
+var READ_ONLY_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false
+};
 var McpHandler = class {
   constructor(ops, settings) {
     this.ops = ops;
@@ -84648,19 +90203,22 @@ var McpHandler = class {
       server.resource(spec.name, spec.uri, spec.meta, spec.handler);
     }
     for (const spec of this.toolSpecs.values()) {
-      toolHandles.set(spec.name, server.tool(spec.name, spec.description, spec.schema, spec.callback));
+      toolHandles.set(spec.name, server.tool(spec.name, spec.description, spec.schema, spec.annotations, spec.callback));
     }
     return { server, toolHandles };
   }
   addResourceSpec(name, uri, meta, handler) {
     this.resourceSpecs.push({ name, uri, meta, handler });
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tool(name, description, schema, callback) {
+  // Args is inferred from the callback's own parameter annotation; the schema is kept
+  // opaque rather than tied to Args via z.objectOutputType to avoid the same SDK type
+  // evaluation blowup described on MinimalMcpServer above.
+  tool(name, description, schema, annotations, callback) {
     const spec = {
       name,
       description,
       schema,
+      annotations,
       callback: async (args) => {
         try {
           const result = await callback(args);
@@ -84678,7 +90236,7 @@ var McpHandler = class {
     };
     this.toolSpecs.set(spec.name, spec);
     for (const session of this.sessions.values()) {
-      session.toolHandles.set(spec.name, session.server.tool(spec.name, spec.description, spec.schema, spec.callback));
+      session.toolHandles.set(spec.name, session.server.tool(spec.name, spec.description, spec.schema, spec.annotations, spec.callback));
     }
     return {
       remove: () => {
@@ -84693,7 +90251,7 @@ var McpHandler = class {
       }
     };
   }
-  registerTool(name, description, schema, callback) {
+  registerTool(name, description, schema, callback, annotations) {
     if (this.toolSpecs.has(name)) {
       throw new Error(
         `Cannot register MCP tool "${name}" \u2014 a tool with this name is already registered.`
@@ -84703,6 +90261,7 @@ var McpHandler = class {
       name,
       description,
       schema,
+      annotations ?? {},
       async (args) => this.text(await callback(args))
     );
     return () => registered.remove();
@@ -84752,7 +90311,7 @@ var McpHandler = class {
       "obsidian://local-rest-api/openapi.yaml",
       {
         mimeType: "application/yaml",
-        description: "Full OpenAPI specification for the Obsidian Local REST API. Contains complete request/response schemas, parameter descriptions, and usage examples for every endpoint."
+        description: dedent`Full OpenAPI specification for the Obsidian Local REST API. Contains complete request/response schemas, parameter descriptions, and usage examples for every endpoint.`
       },
       async (uri) => ({
         contents: [
@@ -84768,8 +90327,9 @@ var McpHandler = class {
   registerTools() {
     this.tool(
       "vault_list",
-      "List files and subdirectories inside a vault directory. Returns an array of names; directory entries end with '/'. Omit path or pass an empty string to list the vault root.",
+      dedent`List files and subdirectories inside a vault directory. Returns an array of names; directory entries end with '/'. Omit path or pass an empty string to list the vault root.`,
       { path: external_exports.string().optional().describe("Directory path relative to vault root (default: root)") },
+      READ_ONLY_ANNOTATIONS,
       async ({ path: path2 }) => {
         const files = await this.ops.listVaultDirectory(path2 ?? "");
         return this.text({ files });
@@ -84777,29 +90337,54 @@ var McpHandler = class {
     );
     this.tool(
       "vault_read",
-      "Read a vault file's content and metadata. Returns a JSON object with: content (full markdown text), path, tags (array of tag strings), frontmatter (parsed YAML front-matter as an object), stat ({ctime, mtime, size}), links (array of vault-relative paths this file links to), and backlinks (array of vault-relative paths of files that link here). Throws if the file does not exist.\n\nWhen targetType and target are both provided, returns only the matched section as a plain string (markdown) or JSON value (frontmatter) instead of the full object. Use vault_get_document_map first to discover available targets.",
+      dedent`
+        Read a vault file's content and metadata. Returns a JSON object with: content (full markdown text), path, tags (array of tag strings), frontmatter (parsed YAML front-matter as an object), stat ({ctime, mtime, size}), links (array of vault-relative paths this file links to), backlinks (array of vault-relative paths of files that link here), and unresolvedLinks (array of link text in this file that does not resolve to an existing vault file). Throws if the file does not exist.
+
+        When targetType and target are both provided, returns only the matched section as a plain string (markdown) or JSON value (frontmatter) instead of the full object. To save context, call vault_get_document_map first to identify headings, block IDs, or frontmatter keys, and prefer targeted reads over full reads for anything but short files.
+      `,
       {
         path: external_exports.string().describe("File path relative to vault root"),
         targetType: external_exports.enum(["heading", "block", "frontmatter"]).optional().describe("Type of section to extract: 'heading', 'block' reference, or 'frontmatter' key"),
-        target: external_exports.string().optional().describe(
-          "Section to extract. Heading text, block reference ID (without '^'), or frontmatter key. Separate nested heading levels with '::' (e.g. 'Heading 1::Subheading')."
+        target: external_exports.union([external_exports.array(external_exports.string()), external_exports.string()]).optional().describe(
+          dedent`Section to extract. For a heading: an array of heading texts naming the path from the top level down to the target (e.g. ["Heading 1","Subheading"]) — a bare string is rejected, even for a single top-level heading. If a heading is a duplicate of an earlier sibling, its map key carries an extra non-printable marker suffix; copy that key verbatim from vault_get_document_map, don't retype it. For a block: the bare block id without '^' — likewise, a duplicate block id's later occurrence carries the same kind of marker suffix in vault_get_document_map's blocks list. For a frontmatter field: the key name. Use vault_get_document_map to discover valid heading paths and block ids.`
         ),
-        targetDelimiter: external_exports.string().optional().describe("Delimiter for nested heading paths (default: '::')")
+        scope: external_exports.enum(["content", "marker", "markerAndContent"]).optional().describe(
+          dedent`Which part of the target to read (default 'content'), mirroring vault_patch's scopes: what a scope returns is exactly what a 'replace' at that scope consumes. 'content': the node's body — a heading's body with levels made relative to it, a block's text, a frontmatter value. 'marker': the label — a heading's raw text (no '#'s, no duplicate-marker suffix), a block's bare id, a frontmatter key. 'markerAndContent': the whole node — a heading's subtree with its own line as '# Title' (levels relative to its parent), a block's full span including its '^id', a frontmatter entry as a {key: value} object. Requires targetType and target.`
+        )
       },
+      READ_ONLY_ANNOTATIONS,
       async ({
         path: path2,
         targetType,
         target,
-        targetDelimiter
+        scope
       }) => {
         const file = this.ops.app.vault.getAbstractFileByPath(path2);
         if (!(file instanceof import_obsidian2.TFile)) throw new Error(`File not found: ${path2}`);
         if (targetType == null !== (target == null)) {
           throw new Error("targetType and target must be provided together");
         }
-        if (targetType && target) {
-          const section = await this.ops.readFileSection(file, targetType, target, targetDelimiter);
-          return this.text(section);
+        if (scope !== void 0 && (targetType == null || target == null)) {
+          throw new Error("scope requires targetType and target");
+        }
+        if (targetType && target != null) {
+          let address;
+          if (targetType === "heading") {
+            if (!Array.isArray(target)) {
+              throw new Error("A heading target must be an array of heading texts, not a bare string");
+            }
+            address = { targetType: "heading", target };
+          } else {
+            if (Array.isArray(target)) {
+              throw new Error(`A ${targetType} target must be a string, not an array`);
+            }
+            address = { targetType, target };
+          }
+          if (scope !== void 0) {
+            address.scope = scope;
+          }
+          const result = await this.ops.readFileSectionMdp2(file, address);
+          return this.text(result.kind === "frontmatter" ? result.value : result.content);
         }
         const meta = await this.ops.getFileMetadataObject(file);
         return this.text(meta);
@@ -84807,11 +90392,12 @@ var McpHandler = class {
     );
     this.tool(
       "vault_write",
-      "Create or overwrite a vault file with the given content. Creates any missing parent directories automatically. Overwrites without warning if the file already exists.",
+      dedent`Create or overwrite a vault file with the given content. Creates any missing parent directories automatically. Overwrites without warning if the file already exists.`,
       {
         path: external_exports.string().describe("File path relative to vault root"),
         content: external_exports.string().describe("Full file content (markdown text)")
       },
+      { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
       async ({ path: path2, content }) => {
         await this.ops.writeFileContent(path2, content);
         return this.text({ message: "OK" });
@@ -84819,11 +90405,12 @@ var McpHandler = class {
     );
     this.tool(
       "vault_append",
-      "Append content to the end of a vault file. Creates the file if it does not already exist.",
+      dedent`Append content to the end of a vault file. Creates the file if it does not already exist.`,
       {
         path: external_exports.string().describe("File path relative to vault root"),
         content: external_exports.string().describe("Content to append")
       },
+      { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
       async ({ path: path2, content }) => {
         await this.ops.appendFileContent(path2, content);
         return this.text({ message: "OK" });
@@ -84831,77 +90418,93 @@ var McpHandler = class {
     );
     this.tool(
       "vault_patch",
-      "Patch a specific section of a vault file by targeting a heading, block reference, or frontmatter field.\n\n- targetType: 'heading' targets the content beneath a markdown heading (the heading line itself is not part of the section and must not appear in the supplied content); 'block' targets a block reference (the ID after '^'); 'frontmatter' targets a YAML front-matter key.\n- target: the heading text, block ID, or frontmatter key. For nested headings use '::' as delimiter (e.g. 'Heading 1::Subheading'); customise with targetDelimiter.\n- operation: 'append' adds content after the section, 'prepend' adds before, 'replace' replaces entirely.\n- contentType: 'text/markdown' (default) treats content as markdown. 'application/json' parses it as JSON \u2014 useful for setting typed frontmatter values or appending rows to a table (pass a 2-D array of row cells).\n- createTargetIfMissing: set to true to create the heading or frontmatter key if it does not exist yet.\n- trimTargetWhitespace: strip leading/trailing whitespace from the target section before patching.\n- rejectIfContentPreexists: fail the patch if the content string already appears in the target section \u2014 use this as an idempotency guard so a retry does not duplicate content.\n- targetScope: controls what portion of the target the operation acts on. 'content' (default) patches only the content below the heading or at the block; 'marker' patches only the heading line or block-ID token itself; 'markerAndContent' patches the heading/block-ID together with its content. Only applicable to heading and block targets.\n\nTo discover valid heading names and block IDs before patching, call vault_get_document_map first.",
+      dedent`
+        Edit a vault file with a single structured instruction: an operation applied to a scope of a target node.
+
+        - operation: 'replace', 'prepend', 'append', or 'delete'.
+        - scope (default 'content'): 'content' = the node's body; 'marker' = its label (heading line / block '^id' / frontmatter key); 'markerAndContent' = the whole node/subtree; 'parent' = the node's place in the tree (heading move only).
+        - The payload rides in exactly one field, chosen by what it is: 'content' (a markdown/text string), 'value' (arbitrary JSON — a frontmatter value, or a 2-D array of row cells to write table rows on a block target's 'content' cell), or 'destination' (where a moved heading lands).
+
+        Heading levels inside a 'content' string are relative to the target (a leading '#' becomes a direct child), so you never count '#'s. To discover valid heading paths and block IDs first, call vault_get_document_map.
+
+        To continue an existing block instead of starting a new one, add 'within' (heading targets only): an index picking one of the section's top-level body blocks (0-based, negative from the end; isolated '^id' lines are not counted). 'content'-scope edits then splice literally into that block — append with '\\n- item' extends a list — and 'markerAndContent' prepend/append insert a new block beside it. Read the file first to count blocks, and pair with 'ifMatch'.
+      `,
       {
         path: external_exports.string().describe("File path relative to vault root"),
-        targetType: external_exports.enum(["heading", "block", "frontmatter"]).describe("Type of target section: 'heading', 'block' reference, or 'frontmatter' key"),
-        target: external_exports.string().describe(
-          "The section to patch. Heading text, block reference ID (without '^'), or frontmatter key. Separate nested heading levels with '::' (e.g. 'Heading 1::Subheading')."
-        ),
-        operation: external_exports.enum(["replace", "prepend", "append"]).describe("How to apply the content: replace the section, prepend before it, or append after it"),
-        content: external_exports.unknown().describe("Content to apply. For contentType 'text/markdown' pass a string. For contentType 'application/json' you may pass a native JSON value (number, boolean, array, object) and it will be serialised automatically."),
-        contentType: external_exports.string().optional().describe(
-          "MIME type of content. 'text/markdown' (default) or 'application/json'. Use 'application/json' to set typed frontmatter values or to append/prepend table rows (2-D array)."
-        ),
-        createTargetIfMissing: external_exports.boolean().optional().describe("Create the heading or frontmatter key if it does not already exist (default: false)"),
-        trimTargetWhitespace: external_exports.boolean().optional().describe("Trim whitespace from the target section before applying the operation (default: false)"),
-        rejectIfContentPreexists: external_exports.boolean().optional().describe("If true, fail the patch when the content already appears in the target section (default: false). Use to make append/prepend operations idempotent on retry."),
-        targetDelimiter: external_exports.string().optional().describe("Delimiter for nested heading paths (default: '::')"),
-        targetScope: external_exports.enum(["content", "marker", "markerAndContent"]).optional().describe(
-          "Controls which part of the target the operation acts on. 'content' (default): patch the content below the heading or at the block. 'marker': patch only the heading line or block-ID token. 'markerAndContent': patch the heading/block-ID together with its content. Only applicable to heading and block targets."
-        )
+        // The instruction fields (targetType, target, operation, scope,
+        // content, value, destination, ifMatch, and the two flags) come
+        // straight from markdown-patch-2's published schema, so the tool input,
+        // the engine's validation, and the OpenAPI `PatchInstruction` component
+        // are all one definition and cannot drift.
+        ...import_markdown_patch_22.InstructionInputObjectSchema.shape
       },
+      { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
       async ({
         path: path2,
         targetType,
         target,
+        within,
         operation,
+        scope,
         content,
-        contentType: contentType2,
+        value,
+        destination,
+        ifMatch,
         createTargetIfMissing,
-        trimTargetWhitespace,
-        rejectIfContentPreexists,
-        targetDelimiter,
-        targetScope
+        rejectIfContentPreexists
       }) => {
+        const instruction = {
+          targetType,
+          target,
+          operation,
+          ...within !== void 0 ? { within } : {},
+          ...scope !== void 0 ? { scope } : {},
+          ...content !== void 0 ? { content } : {},
+          ...value !== void 0 ? { value } : {},
+          ...destination !== void 0 ? { destination } : {},
+          ...ifMatch !== void 0 ? { ifMatch } : {},
+          ...createTargetIfMissing !== void 0 ? { createTargetIfMissing } : {},
+          ...rejectIfContentPreexists !== void 0 ? { rejectIfContentPreexists } : {}
+        };
         try {
-          await this.ops.patchFileSection(
+          const result = await this.ops.patchFileSectionMdp2(
             path2,
-            targetType,
-            target,
-            operation,
-            content,
-            contentType2 ?? "text/markdown",
-            { createTargetIfMissing, trimTargetWhitespace, rejectIfContentPreexists, targetDelimiter, targetScope }
+            instruction
           );
+          return result.warnings.length > 0 ? this.text({ message: "OK", warnings: result.warnings }) : this.text({ message: "OK" });
         } catch (e) {
-          if (e instanceof import_markdown_patch3.PatchFailed) {
-            throw new Error(e.message);
-          }
-          throw e;
+          throw e instanceof Error ? e : new Error(String(e));
         }
-        return this.text({ message: "OK" });
       }
     );
     this.tool(
       "vault_delete",
-      "Delete a file from the vault. Throws if the file does not exist.",
-      { path: external_exports.string().describe("File path relative to vault root") },
-      async ({ path: path2 }) => {
-        await this.ops.deleteVaultFile(path2);
+      dedent`Delete a file from the vault. Throws if the file does not exist. By default, moves the file to trash (following the user's Obsidian "Deleted files" preference — either the ".trash" folder or the system trash) rather than deleting it permanently.`,
+      {
+        path: external_exports.string().describe("File path relative to vault root"),
+        permanent: external_exports.boolean().optional().describe(
+          "If true, permanently deletes the file instead of moving it to trash (default: false)."
+        )
+      },
+      { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+      async ({ path: path2, permanent }) => {
+        await this.ops.deleteVaultFile(path2, permanent ?? false);
         return this.text({ message: "OK" });
       }
     );
     this.tool(
       "vault_move",
-      "Move (rename) a vault file to a new path. Creates any missing parent directories at the destination automatically. Preserves file history and updates internal Obsidian links. Throws if the source file does not exist. Throws if the destination already exists and allowOverwrite is not set to true.\n\nThe destination must be a vault-relative path (e.g. 'archive/notes/todo.md'). If the destination ends with '/', the source filename is preserved and the file is placed in that directory (e.g. destination 'archive/' moves 'notes/todo.md' to 'archive/todo.md'). The destination must not escape the vault root (i.e. the resolved path must remain within the vault).",
+      dedent`Move (rename) a vault file to a new path. Creates any missing parent directories at the destination automatically. Preserves file history and updates internal Obsidian links. Throws if the source file does not exist.`,
       {
         path: external_exports.string().describe("Source file path relative to vault root"),
         destination: external_exports.string().describe(
-          "Destination path relative to vault root. May end with '/' to preserve the source filename in the target directory."
+          dedent`Destination path relative to vault root; must not escape the vault root. May end with '/' to preserve the source filename in the target directory (e.g. destination 'archive/' moves 'notes/todo.md' to 'archive/todo.md').`
         ),
-        allowOverwrite: external_exports.boolean().optional().describe("If true, move proceeds even when a file already exists at the destination (default: false)")
+        allowOverwrite: external_exports.boolean().optional().describe(
+          dedent`If true, move proceeds even when a file already exists at the destination; otherwise the move throws (default: false).`
+        )
       },
+      { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
       async ({
         path: path2,
         destination,
@@ -84927,61 +90530,115 @@ var McpHandler = class {
       }
     );
     this.tool(
+      "vault_copy",
+      dedent`Copy a vault file to a new path. Creates any missing parent directories at the destination automatically. Throws if the source file does not exist.`,
+      {
+        path: external_exports.string().describe("Source file path relative to vault root"),
+        destination: external_exports.string().describe(
+          dedent`Destination path relative to vault root; must not escape the vault root. May end with '/' to preserve the source filename in the target directory (e.g. destination 'archive/' copies 'notes/todo.md' to 'archive/todo.md').`
+        ),
+        allowOverwrite: external_exports.boolean().optional().describe(
+          dedent`If true, copy proceeds even when a file already exists at the destination; otherwise the copy throws (default: false).`
+        )
+      },
+      { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+      async ({
+        path: path2,
+        destination,
+        allowOverwrite
+      }) => {
+        const normalized = destination.trim().replace(/\\/g, "/").replace(/\/+/g, "/");
+        if (normalized.startsWith("/")) {
+          throw new Error(
+            "Destination path must be relative and must not escape the vault root."
+          );
+        }
+        const syntheticRoot = "/vault";
+        const resolved = import_path2.posix.resolve(syntheticRoot, normalized);
+        if (resolved !== syntheticRoot && !resolved.startsWith(syntheticRoot + "/")) {
+          throw new Error(
+            "Destination path must be relative and must not escape the vault root."
+          );
+        }
+        const sourceFilename = path2.includes("/") ? path2.slice(path2.lastIndexOf("/") + 1) : path2;
+        const resolvedDestination = !normalized || normalized.endsWith("/") ? normalized + sourceFilename : normalized;
+        const actualPath = await this.ops.copyVaultFile(path2, resolvedDestination, allowOverwrite ?? false);
+        return this.text({ message: "OK", sourcePath: path2, newPath: actualPath });
+      }
+    );
+    this.tool(
       "vault_get_document_map",
-      "Return the structure of a vault file as a document map: the list of heading paths, block reference IDs, and frontmatter field names present in the file. Use this before vault_read or vault_patch with targeting to discover what targets are available without parsing the full markdown content yourself.",
+      dedent`
+        Return the structure of a vault file as a document map: its heading tree, block reference IDs, and frontmatter field names, plus a version token. Use this before vault_read or vault_patch with targeting to discover what targets are available without parsing the full markdown content yourself.
+
+        headings is a nested object mirroring the document's heading nesting: each heading's text maps to an object of its child headings, and a leaf heading maps to {} (e.g. {"Overview": {"Details": {}}}). To target a heading, use the path of keys from the top level down to it (e.g. ['Overview', 'Details']) as a vault_patch or vault_read heading target. Every occurrence of a heading gets its own key, even a duplicate: the first occurrence keeps its plain text, and each later occurrence's key has an opaque, non-printable marker suffix appended by the server — given '## Log' twice, the tree is {"Log": {}, "Log<marker>": {}}, and both are separately addressable. Always copy such a key verbatim from this response into a vault_read/vault_patch target array; never retype or reconstruct one yourself. blocks are bare reference IDs (no '^'), one entry per block in document order; a duplicate block id gets the same disambiguation treatment as a heading — the first occurrence's entry is the plain id, and each later occurrence's entry carries the same kind of marker suffix, again to be copied verbatim. frontmatterFields are top-level key names. version is a content hash of the file — pass it back as vault_patch's ifMatch to make an edit conditional on the file being unchanged.
+      `,
       { path: external_exports.string().describe("File path relative to vault root") },
+      READ_ONLY_ANNOTATIONS,
       async ({ path: path2 }) => {
         const file = this.ops.app.vault.getAbstractFileByPath(path2);
         if (!(file instanceof import_obsidian2.TFile)) throw new Error(`File not found: ${path2}`);
-        const map = await this.ops.getDocumentMapObject(file);
+        const map = await this.ops.getDocumentMapV2Object(file);
         return this.text(map);
       }
     );
     this.tool(
       "active_file_get_path",
-      "Return the vault-relative path of the file currently open in Obsidian. Use this path with vault_read, vault_write, vault_append, vault_patch, vault_get_document_map, or vault_delete to operate on the active file. Throws if no file is active.",
+      dedent`Return the vault-relative path of the file currently open in Obsidian. Use this path with vault_read, vault_write, vault_append, vault_patch, vault_get_document_map, or vault_delete to operate on the active file. Throws if no file is active.`,
       {},
+      READ_ONLY_ANNOTATIONS,
       async () => {
         const file = this.getActiveFile();
         return this.text({ path: file.path });
       }
     );
     this.tool(
-      "periodic_note_get_path",
-      "Return the vault-relative path of the current periodic note for the given period (daily, weekly, monthly, quarterly, or yearly). Creates the note file if it does not already exist, applying any configured template. Requires the Periodic Notes or Calendar plugin to be installed and configured. Use the returned path with vault_read, vault_write, vault_append, vault_patch, or vault_get_document_map to operate on the note.",
-      {
-        period: external_exports.enum(PERIODS).describe("Periodic note period: 'daily', 'weekly', 'monthly', 'quarterly', or 'yearly'")
-      },
-      async ({ period }) => {
-        const [file, err] = await this.ops.periodicGetOrCreateNote(period, Date.now());
-        if (err || !file)
-          throw new Error(
-            `Could not get or create periodic note: ${err != null ? ERROR_CODE_MESSAGES[err] : "unknown error"}`
-          );
-        return this.text({ path: file.path });
-      }
-    );
-    this.tool(
       "search_query",
-      `Search vault files using a JsonLogic query evaluated against each note's metadata.
+      dedent`
+        Search vault files using a JsonLogic query evaluated against each note's metadata.
 
-The query is a JSON object following the JsonLogic spec (https://jsonlogic.com/operations.html). It is evaluated against a NoteJson object for each file; files where the result is truthy are returned.
+        The query is a JSON object evaluated against a NoteJson object for each file; files where the result is truthy are returned.
 
-Each NoteJson has: path (string), content (string), tags (string[]), frontmatter (object), stat ({ctime, mtime, size}), links (string[]), backlinks (string[]).
+        Example NoteJson shape:
+        {
+          "path": "journal/2024-01-15.md",
+          "content": "# My note\\n\\nSome content here.",
+          "tags": ["daily", "work"],
+          "frontmatter": { "status": "done", "url": "https://example.com", "priority": 2 },
+          "stat": { "ctime": 1705276800000, "mtime": 1705363200000, "size": 1024 },
+          "links": ["projects/foo.md"],
+          "backlinks": ["index.md"],
+          "unresolvedLinks": ["not-yet-created.md"]
+        }
 
-Extra operators available beyond standard JsonLogic:
-- {"glob": ["*.foo", {"var": "path"}]} \u2014 glob pattern match
-- {"regexp": ["^daily/", {"var": "path"}]} \u2014 regular expression match
+        Call vault_read on any file (without targeting) to see the exact shape for a real file in this vault, including its actual frontmatter fields.
 
-Returns an array of {filename, result} objects where result is the truthy value the query produced for that file.
+        Useful JsonLogic operators:
+        - {"==": [a, b]} — equal
+        - {"!=": [a, b]} — not equal
+        - {"in": [value, array]} — array contains value
+        - {"<": [a, b]}, {">": [a, b]}, {"<=": [a, b]}, {">=": [a, b]} — numeric/string comparison
+        - {"and": [...]}, {"or": [...]}, {"!": expr} — boolean logic
+        - {"var": "path"} — access a field (use dot notation for nested: "frontmatter.status")
+        - {"if": [cond, then, else]} — conditional
 
-Examples:
-- Find by tag: {"in": ["myTag", {"var": "tags"}]}
-- Find by frontmatter field: {"==": [{"var": "frontmatter.status"}, "done"]}
-- Find by path glob: {"glob": ["journal/*", {"var": "path"}]}`,
+        Extra operators beyond standard JsonLogic:
+        - {"glob": ["*.foo", {"var": "path"}]} — glob pattern match
+        - {"regexp": ["^daily/", {"var": "path"}]} — regular expression match
+
+        Returns an array of {filename, result} objects where result is the truthy value the query produced for that file.
+
+        Examples:
+        - Find by tag: {"in": ["myTag", {"var": "tags"}]}
+        - Find by frontmatter field: {"==": [{"var": "frontmatter.status"}, "done"]}
+        - Find by path glob: {"glob": ["journal/*", {"var": "path"}]}
+        - Modified after a date: {">": [{"var": "stat.mtime"}, 1704067200000]}
+        - Multiple conditions: {"and": [{"in": ["work", {"var": "tags"}]}, {"==": [{"var": "frontmatter.status"}, "done"]}]}
+      `,
       {
         query: external_exports.record(external_exports.unknown()).describe("JsonLogic query object to evaluate against each note")
       },
+      READ_ONLY_ANNOTATIONS,
       async ({ query }) => {
         const results = await this.ops.searchJsonLogic(query);
         return this.text(results);
@@ -84989,11 +90646,12 @@ Examples:
     );
     this.tool(
       "search_simple",
-      "Search vault files using Obsidian's built-in simple search. Returns an array of {filename, score, matches} objects sorted by relevance score. Each match includes the matched text and surrounding context characters (controlled by contextLength).",
+      dedent`Search vault files using Obsidian's built-in simple search. Returns an array of {filename, score, matches} objects sorted by relevance score. Each match includes the matched text and surrounding context characters (controlled by contextLength).`,
       {
         query: external_exports.string().describe("Search query string"),
         contextLength: external_exports.number().optional().describe("Number of characters of surrounding context to return per match (default: 100)")
       },
+      READ_ONLY_ANNOTATIONS,
       async ({ query, contextLength }) => {
         const results = await this.ops.simpleSearch(query, contextLength);
         return this.text(results);
@@ -85001,24 +90659,29 @@ Examples:
     );
     this.tool(
       "tag_list",
-      `Return all tags used across the vault, each with a usage count. Tag names do not include the leading '#'. This tool is read-only. To add a tag to a specific file, use vault_patch with targetType 'frontmatter', target 'tags', operation 'append', contentType 'application/json', and content ["tag-name"] (set createTargetIfMissing to true if the file may have no tags yet). To remove a tag, read the current tags list with vault_read, filter client-side, then replace the whole field with vault_patch using operation 'replace'. For full examples, read the OpenAPI spec resource at obsidian://local-rest-api/openapi.yaml.`,
+      dedent`Return all tags used across the vault, each with a usage count. Tag names do not include the leading '#'. This tool is read-only. To add a tag to a specific file, use vault_patch with targetType 'frontmatter', target 'tags', operation 'append', and value ["tag-name"] (set createTargetIfMissing to true if the file may have no tags yet). To remove a tag, read the current tags list with vault_read, filter client-side, then replace the whole field with vault_patch using operation 'replace' and value set to the filtered list. For full examples, read the OpenAPI spec resource at obsidian://local-rest-api/openapi.yaml.`,
       {},
+      READ_ONLY_ANNOTATIONS,
       async () => {
         return this.text({ tags: this.ops.getAllTags() });
       }
     );
     this.tool(
       "command_list",
-      "Return all registered Obsidian commands. Each entry has an 'id' and a human-readable 'name'. Pass the 'id' to command_execute to run a command.",
+      dedent`Return all registered Obsidian commands. Each entry has an 'id' and a human-readable 'name'. Pass the 'id' to command_execute to run a command.`,
       {},
+      READ_ONLY_ANNOTATIONS,
       async () => {
         return this.text({ commands: this.ops.listCommands() });
       }
     );
     this.tool(
       "command_execute",
-      "Execute an Obsidian command by its ID. Use command_list to discover available command IDs. Throws if the command ID does not exist.",
+      dedent`Execute an Obsidian command by its ID. Use command_list to discover available command IDs. Throws if the command ID does not exist.`,
       { commandId: external_exports.string().describe("The command ID to execute (e.g. 'editor:toggle-bold')") },
+      // Command effects are arbitrary and unpredictable (any registered Obsidian command), so
+      // this is annotated conservatively as destructive and non-idempotent rather than assumed safe.
+      { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
       async ({ commandId }) => {
         this.ops.executeCommand(commandId);
         return this.text({ message: "OK" });
@@ -85026,11 +90689,12 @@ Examples:
     );
     this.tool(
       "open_file",
-      "Open a file in the Obsidian UI. If the file does not exist, Obsidian will create a new document at that path. Set newLeaf to true to open in a new pane rather than the current one.",
+      dedent`Open a file in the Obsidian UI. If the file does not exist, Obsidian will create a new document at that path. Set newLeaf to true to open in a new pane rather than the current one.`,
       {
         path: external_exports.string().describe("File path relative to vault root"),
         newLeaf: external_exports.boolean().optional().describe("Open in a new leaf/pane (default: false)")
       },
+      { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
       async ({ path: path2, newLeaf }) => {
         this.ops.openVaultFile(path2, newLeaf);
         return this.text({ message: "OK" });
@@ -85040,6 +90704,14 @@ Examples:
 };
 
 // src/requestHandler.ts
+var MARKDOWN_PATCH_VERSION_HEADER = "Markdown-Patch-Version";
+var MARKDOWN_PATCH_V1_SUNSET = "6.0";
+function resolvePatchVersion(req) {
+  const raw = req.get(MARKDOWN_PATCH_VERSION_HEADER);
+  if (raw === void 0 || raw === "2") return 2;
+  if (raw === "1") return 1;
+  return null;
+}
 var RequestHandler = class {
   constructor(app, manifest, settings) {
     this.apiExtensions = /* @__PURE__ */ new Map();
@@ -85049,7 +90721,7 @@ var RequestHandler = class {
     this.settings = settings;
     this.apiExtensionRouter = import_express.default.Router();
     this.publicApiExtensionRouter = import_express.default.Router();
-    this.operations = new VaultOperations(this.app);
+    this.operations = new VaultOperations(this.app, this.settings);
     this.mcpHandler = new McpHandler(this.operations, this.settings);
     this.api.set("json spaces", 2);
   }
@@ -85103,8 +90775,14 @@ var RequestHandler = class {
   async getDocumentMapObject(file) {
     return this.operations.getDocumentMapObject(file);
   }
+  async getDocumentMapV2Object(file) {
+    return this.operations.getDocumentMapV2Object(file);
+  }
   async getFileMetadataObject(file) {
     return this.operations.getFileMetadataObject(file);
+  }
+  async renderFileToHtml(file, content) {
+    return content !== void 0 ? this.operations.renderFileToHtml(file, content) : this.operations.renderFileToHtml(file);
   }
   getResponseMessage({
     statusCode = 400,
@@ -85168,29 +90846,89 @@ var RequestHandler = class {
       })) : void 0
     });
   }
-  async _vaultGet(path2, req, res) {
-    const normalizedPath = path2.endsWith("/") ? path2.slice(0, -1) : path2;
-    let filePath = normalizedPath;
+  /** The vault path from the request, split into decoded segments.
+   *
+   *  `req.path` is the raw, still-encoded path, so it is split on its *real*
+   *  slashes and each segment is decoded individually. A `%2F` therefore stays a
+   *  literal `/` inside the one segment it belongs to (e.g. a heading named
+   *  "A/B") instead of re-forming a path boundary the way a decode-then-split
+   *  would. Returns null (and sends a 400) on malformed encoding or a path that
+   *  escapes the vault root. */
+  extractVaultPath(req, res) {
+    const rawRemainder = req.path.slice(req.path.indexOf("/", 1) + 1);
+    let segments;
+    try {
+      segments = rawRemainder.split("/").map((s) => decodeURIComponent(s));
+    } catch {
+      this.returnCannedResponse(res, { errorCode: 40021 /* PathTraversalNotAllowed */ });
+      return null;
+    }
+    const syntheticRoot = "/vault";
+    const resolved = import_path3.posix.resolve(syntheticRoot, segments.join("/"));
+    if (resolved !== syntheticRoot && !resolved.startsWith(syntheticRoot + "/")) {
+      this.returnCannedResponse(res, { errorCode: 40021 /* PathTraversalNotAllowed */ });
+      return null;
+    }
+    return segments;
+  }
+  /** Join decoded segments into a whole-file path, or null when a segment holds
+   *  a literal `/` (a decoded `%2F`). A file or folder name can never contain a
+   *  slash, so such a segment can only belong to a target address — this is what
+   *  stops `folder%2Fnote.md` (one segment "folder/note.md") from resolving as a
+   *  file. A trailing empty segment (a trailing slash) is preserved so the
+   *  whole-file handlers still reject a directory path. */
+  wholeFilePath(segments) {
+    if (segments.some((segment) => segment.includes("/"))) return null;
+    return segments.join("/");
+  }
+  /** The wildcard suffix of an `/active/*` route, split into
+   *  decoded segments. Express decodes the `req.params[0]` wildcard capture
+   *  before the handler runs — collapsing a `%2F` to a boundary — so the raw
+   *  suffix is recovered from `req.path` (still encoded) and each segment decoded
+   *  individually, mirroring {@link extractVaultPath}. The static prefix length
+   *  comes from the matched route pattern. Returns null (and sends a 400) on
+   *  malformed encoding. */
+  rawSuffixSegments(req, res) {
+    const route = req.route;
+    const routePath = route?.path ?? "";
+    const prefixLength = routePath.split("/").length - 1;
+    const rawSegments = req.path.split("/").slice(prefixLength).filter((segment) => segment.length > 0);
+    try {
+      return rawSegments.map((segment) => decodeURIComponent(segment));
+    } catch {
+      this.returnCannedResponse(res, { errorCode: 40021 /* PathTraversalNotAllowed */ });
+      return null;
+    }
+  }
+  async _vaultGet(segments, req, res) {
+    const wholeFilePath = this.wholeFilePath(segments);
+    const normalizedPath = wholeFilePath === null ? null : wholeFilePath.endsWith("/") ? wholeFilePath.slice(0, -1) : wholeFilePath;
+    let filePath = normalizedPath ?? "";
     let urlTargetType;
     let urlTarget;
+    let urlTargetSegments;
     let exactStat = null;
-    try {
-      exactStat = normalizedPath ? await this.app.vault.adapter.stat(normalizedPath) : null;
-    } catch {
+    if (normalizedPath !== null) {
+      try {
+        exactStat = normalizedPath ? await this.app.vault.adapter.stat(normalizedPath) : null;
+      } catch {
+      }
     }
     if (!exactStat || exactStat.type !== "file") {
-      const prefix = normalizedPath ? normalizedPath + "/" : "";
-      const hasChildren = this.app.vault.getFiles().some((f) => f.path.startsWith(prefix));
-      if (!normalizedPath || hasChildren) {
-        const files = await this.operations.listVaultDirectory(normalizedPath);
-        if (files.length === 0 && normalizedPath) {
-          this.returnCannedResponse(res, { statusCode: 404 });
+      if (normalizedPath !== null) {
+        const prefix = normalizedPath ? normalizedPath + "/" : "";
+        const hasChildren = this.app.vault.getFiles().some((f) => f.path.startsWith(prefix));
+        if (!normalizedPath || hasChildren) {
+          const files = await this.operations.listVaultDirectory(normalizedPath);
+          if (files.length === 0 && normalizedPath) {
+            this.returnCannedResponse(res, { statusCode: 404 });
+            return;
+          }
+          res.json({ files });
           return;
         }
-        res.json({ files });
-        return;
       }
-      const resolved = await this._resolvePathAndTarget(normalizedPath);
+      const resolved = await this._resolvePathAndTarget(segments);
       if (!resolved?.targetType) {
         this.returnCannedResponse(res, { statusCode: 404 });
         return;
@@ -85198,6 +90936,7 @@ var RequestHandler = class {
       filePath = resolved.filePath;
       urlTargetType = resolved.targetType;
       urlTarget = resolved.target;
+      urlTargetSegments = resolved.targetSegments;
     }
     const content = await this.app.vault.adapter.readBinary(filePath);
     const mimeType = import_mime_types.default.lookup(filePath);
@@ -85224,10 +90963,36 @@ var RequestHandler = class {
         this.returnCannedResponse(res, { statusCode: 404 });
         return;
       }
+      const version2 = resolvePatchVersion(req);
+      if (version2 === null) {
+        this.returnCannedResponse(res, { errorCode: 40082 /* InvalidPatchVersionHeader */ });
+        return;
+      }
       res.setHeader("Content-Type", "application/vnd.olrapi.document-map+json" /* olrapiDocumentMap */);
-      res.send(
-        JSON.stringify(await this.getDocumentMapObject(file), null, 2)
-      );
+      let mapJson;
+      try {
+        mapJson = version2 === 1 ? JSON.stringify(await this.getDocumentMapObject(file), null, 2) : JSON.stringify(await this.getDocumentMapV2Object(file), null, 2);
+      } catch (e) {
+        if (e instanceof import_markdown_patch3.FrontmatterParseError || e instanceof import_markdown_patch_23.FrontmatterParseError) {
+          this.returnCannedResponse(res, {
+            errorCode: 40005 /* InvalidFrontmatter */,
+            message: e.message
+          });
+          return;
+        }
+        if (e instanceof import_markdown_patch_23.ReservedDuplicateMarkerError) {
+          this.returnCannedResponse(res, {
+            errorCode: 40080 /* PatchFailed */,
+            message: e.message
+          });
+          return;
+        }
+        throw e;
+      }
+      if (version2 === 1) {
+        res.setHeader("Deprecation", `true; sunset-version="${MARKDOWN_PATCH_V1_SUNSET}"`);
+      }
+      res.send(mapJson);
       return;
     }
     if (urlTargetType !== void 0 && (req.get("Target-Type") || req.get("Target"))) {
@@ -85236,11 +91001,25 @@ var RequestHandler = class {
       });
       return;
     }
+    const isHeaderTargeting = urlTargetType === void 0;
+    let resolvedTarget;
     const targetType = urlTargetType ?? req.get("Target-Type");
     if (targetType) {
       if (!["heading", "block", "frontmatter"].includes(targetType)) {
         this.returnCannedResponse(res, {
-          errorCode: 40054 /* InvalidTargetTypeHeader */
+          errorCode: 40054 /* InvalidTargetTypeHeader */,
+          message: isHeaderTargeting ? "It was supplied in the 'Target-Type' header." : `It was supplied as the URL path element '${targetType}', immediately after the note.`
+        });
+        return;
+      }
+      const version2 = resolvePatchVersion(req);
+      if (version2 === null) {
+        this.returnCannedResponse(res, { errorCode: 40082 /* InvalidPatchVersionHeader */ });
+        return;
+      }
+      if (isHeaderTargeting && version2 !== 1) {
+        this.returnCannedResponse(res, {
+          errorCode: 40083 /* HeaderTargetingRequiresVersion1 */
         });
         return;
       }
@@ -85260,45 +91039,131 @@ var RequestHandler = class {
         return;
       }
       const fileContent = Buffer.from(content).toString("utf-8");
-      const documentMap = (0, import_markdown_patch4.getDocumentMap)(fileContent);
       const targetDelimiter = req.get("Target-Delimiter") || "::";
+      if (version2 === 2) {
+        const address = targetType === "heading" ? { targetType: "heading", target: urlTargetSegments ?? rawTarget.split(targetDelimiter) } : targetType === "block" ? { targetType: "block", target: rawTarget } : { targetType: "frontmatter", target: rawTarget };
+        const rawScope = req.get("Target-Scope");
+        if (rawScope !== void 0) {
+          if (!isV2ReadScope(rawScope)) {
+            this.returnCannedResponse(res, {
+              errorCode: 40059 /* InvalidTargetScopeHeader */,
+              message: "Valid values for a read are 'content', 'marker', and 'markerAndContent'."
+            });
+            return;
+          }
+          address.scope = rawScope;
+        }
+        let result;
+        try {
+          result = (0, import_markdown_patch_23.readTarget)(fileContent, address);
+        } catch (e) {
+          if (e instanceof import_markdown_patch_23.TargetNotFoundError) {
+            this.returnCannedResponse(res, { statusCode: 404 });
+            return;
+          }
+          if (e instanceof import_markdown_patch_23.FrontmatterParseError) {
+            this.returnCannedResponse(res, {
+              errorCode: 40005 /* InvalidFrontmatter */,
+              message: e.message
+            });
+            return;
+          }
+          if (e instanceof import_markdown_patch_23.ReservedDuplicateMarkerError) {
+            this.returnCannedResponse(res, {
+              errorCode: 40080 /* PatchFailed */,
+              message: e.message
+            });
+            return;
+          }
+          throw e;
+        }
+        if (req.headers.accept === "text/html" /* html */) {
+          if (result.kind === "frontmatter") {
+            this.returnCannedResponse(res, {
+              errorCode: 40054 /* InvalidTargetTypeHeader */
+            });
+            return;
+          }
+          const file = this.app.vault.getAbstractFileByPath(filePath);
+          if (!(file instanceof import_obsidian3.TFile)) {
+            this.returnCannedResponse(res, { statusCode: 404 });
+            return;
+          }
+          res.setHeader("Content-Type", "text/html" /* html */ + "; charset=utf-8");
+          res.send(await this.renderFileToHtml(file, result.content));
+          return;
+        }
+        if (result.kind === "frontmatter") {
+          res.setHeader("Content-Type", "application/json" /* json */);
+          res.json(result.value);
+        } else {
+          res.setHeader("Content-Type", "text/markdown" /* markdown */ + "; charset=utf-8");
+          res.send(result.content);
+        }
+        return;
+      }
+      res.setHeader("Deprecation", `true; sunset-version="${MARKDOWN_PATCH_V1_SUNSET}"`);
+      const documentMap = (0, import_markdown_patch3.getDocumentMap)(fileContent);
       if (targetType === "frontmatter") {
         const value = documentMap.frontmatter[rawTarget];
         if (value === void 0) {
           this.returnCannedResponse(res, { statusCode: 404 });
           return;
         }
-        res.setHeader("Content-Type", "application/json" /* json */);
-        res.json(value);
-        return;
+        resolvedTarget = { targetType: "frontmatter", value };
+      } else {
+        const mapKey = targetType === "heading" ? rawTarget.split(targetDelimiter).join("") : rawTarget;
+        const entry = targetType === "heading" ? documentMap.heading[mapKey] : documentMap.block[mapKey];
+        if (!entry) {
+          this.returnCannedResponse(res, { statusCode: 404 });
+          return;
+        }
+        resolvedTarget = {
+          targetType: targetType === "heading" ? "heading" : "block",
+          content: fileContent.substring(entry.content.start, entry.content.end)
+        };
       }
-      const mapKey = targetType === "heading" ? rawTarget.split(targetDelimiter).join("") : rawTarget;
-      const entry = targetType === "heading" ? documentMap.heading[mapKey] : documentMap.block[mapKey];
-      if (!entry) {
+    }
+    if (req.headers.accept === "text/html" /* html */) {
+      const file = this.app.vault.getAbstractFileByPath(filePath);
+      if (!(file instanceof import_obsidian3.TFile)) {
         this.returnCannedResponse(res, { statusCode: 404 });
         return;
       }
-      const sectionContent = fileContent.substring(
-        entry.content.start,
-        entry.content.end
+      if (resolvedTarget?.targetType === "frontmatter") {
+        this.returnCannedResponse(res, {
+          errorCode: 40054 /* InvalidTargetTypeHeader */
+        });
+        return;
+      }
+      res.setHeader("Content-Type", "text/html" /* html */ + "; charset=utf-8");
+      res.send(
+        resolvedTarget ? await this.renderFileToHtml(file, resolvedTarget.content) : await this.renderFileToHtml(file)
       );
+      return;
+    }
+    if (resolvedTarget) {
+      if (resolvedTarget.targetType === "frontmatter") {
+        res.setHeader("Content-Type", "application/json" /* json */);
+        res.json(resolvedTarget.value);
+        return;
+      }
       res.setHeader("Content-Type", "text/markdown" /* markdown */ + "; charset=utf-8");
-      res.send(sectionContent);
+      res.send(resolvedTarget.content);
       return;
     }
     res.send(Buffer.from(content));
   }
   async vaultGet(req, res) {
-    const path2 = decodeURIComponent(
-      req.path.slice(req.path.indexOf("/", 1) + 1)
-    );
-    return this._vaultGet(path2, req, res);
+    const segments = this.extractVaultPath(req, res);
+    if (segments === null) return;
+    return this._vaultGet(segments, req, res);
   }
   /** Resolves a raw path (possibly containing a URL-embedded target) into a
    *  file path and optional target type + target string.  Returns null when no
    *  vault file can be found at any prefix of the path. */
-  async _resolvePathAndTarget(rawPath) {
-    return this.operations.resolvePathAndTarget(rawPath);
+  async _resolvePathAndTarget(segments) {
+    return this.operations.resolvePathAndTarget(segments);
   }
   /** Reads Target-Type / Target headers, validates them, and returns the
    *  decoded values.  If either header is invalid or missing when the other is
@@ -85339,6 +91204,70 @@ var RequestHandler = class {
     }
     return { targetType: rawTargetType, target };
   }
+  /** Parse the Target-Type/Target headers for a raw-content-mode PATCH.
+   *
+   *  Unlike the deprecated 1.x `_getHeaderTarget` (delimiter-joined strings),
+   *  the encoding here is type-dependent, mirroring the 2.0 instruction's
+   *  target shapes: a heading Target is percent-encoded JSON (an array of
+   *  heading texts, or `null` for the document root), while block and
+   *  frontmatter Targets are plain percent-encoded strings. Returns null when
+   *  an error response has already been sent. */
+  _getPatchHeaderTarget(req, res) {
+    const rawTargetType = req.get("Target-Type");
+    const rawTarget = req.get("Target");
+    if (!rawTargetType) {
+      this.returnCannedResponse(res, {
+        errorCode: 40053 /* MissingTargetTypeHeader */
+      });
+      return null;
+    }
+    if (!isV2TargetType(rawTargetType)) {
+      this.returnCannedResponse(res, {
+        errorCode: 40054 /* InvalidTargetTypeHeader */
+      });
+      return null;
+    }
+    if (!rawTarget) {
+      this.returnCannedResponse(res, {
+        errorCode: 40055 /* MissingTargetHeader */
+      });
+      return null;
+    }
+    let decoded;
+    try {
+      decoded = decodeURIComponent(rawTarget);
+    } catch {
+      this.returnCannedResponse(res, {
+        errorCode: 40058 /* InvalidTargetHeader */,
+        message: "The 'Target' header could not be percent-decoded."
+      });
+      return null;
+    }
+    if (rawTargetType === "heading") {
+      let parsed;
+      try {
+        parsed = JSON.parse(decoded);
+      } catch {
+        parsed = void 0;
+      }
+      const isHeadingAddress = parsed === null || Array.isArray(parsed) && parsed.every((segment) => typeof segment === "string");
+      if (parsed === void 0 || !isHeadingAddress) {
+        this.returnCannedResponse(res, {
+          errorCode: 40058 /* InvalidTargetHeader */,
+          message: "A heading 'Target' header must be percent-encoded JSON: an array of heading texts (e.g. %5B%22A%22%2C%22B%22%5D) or null for the document root."
+        });
+        return null;
+      }
+      return { targetType: rawTargetType, target: parsed };
+    }
+    if (!decoded) {
+      this.returnCannedResponse(res, {
+        errorCode: 40055 /* MissingTargetHeader */
+      });
+      return null;
+    }
+    return { targetType: rawTargetType, target: decoded };
+  }
   async _vaultPut(filepath, req, res) {
     if (!filepath || filepath.endsWith("/")) {
       this.returnCannedResponse(res, {
@@ -85351,12 +91280,11 @@ var RequestHandler = class {
     return;
   }
   async vaultPut(req, res) {
-    const rawPath = decodeURIComponent(
-      req.path.slice(req.path.indexOf("/", 1) + 1)
-    );
-    const resolved = await this._resolvePathAndTarget(rawPath);
+    const segments = this.extractVaultPath(req, res);
+    if (segments === null) return;
+    const resolved = await this._resolvePathAndTarget(segments);
     if (resolved === null) {
-      if (rawPath.split("/").some((s) => ["heading", "block", "frontmatter"].includes(s))) {
+      if (segments.some((s) => ["heading", "block", "frontmatter"].includes(s))) {
         this.returnCannedResponse(res, { statusCode: 404 });
         return;
       }
@@ -85374,29 +91302,89 @@ var RequestHandler = class {
         "replace",
         req,
         res,
-        { createTargetIfMissing: true }
+        { createTargetIfMissing: true, source: "path", targetSegments: resolved.targetSegments }
       );
+    }
+    const filePath = this.wholeFilePath(segments);
+    if (filePath === null) {
+      this.returnCannedResponse(res, { statusCode: 404 });
+      return;
     }
     const headerTarget = this._getHeaderTarget(req, res);
     if (headerTarget !== void 0) {
       if (!headerTarget) return;
       return this._vaultPatchTargeted(
-        rawPath,
+        filePath,
         headerTarget.targetType,
         headerTarget.target,
         "replace",
         req,
         res,
-        { createTargetIfMissing: true }
+        { createTargetIfMissing: true, source: "header" }
       );
     }
-    return this._vaultPut(rawPath, req, res);
+    return this._vaultPut(filePath, req, res);
   }
-  async _vaultPatch(path2, req, res) {
+  async _vaultPatch(path2, req, res, urlTarget) {
     if (!path2 || path2.endsWith("/")) {
       this.returnCannedResponse(res, { errorCode: 40510 /* RequestMethodValidOnlyForFiles */ });
       return;
     }
+    const version2 = resolvePatchVersion(req);
+    if (version2 === null) {
+      this.returnCannedResponse(res, { errorCode: 40082 /* InvalidPatchVersionHeader */ });
+      return;
+    }
+    const headerTargeting = !!(req.get("Target-Type") || req.get("Target"));
+    const baseContentType = (req.get("Content-Type") ?? "").split(";")[0].trim().toLowerCase();
+    const isInstructionBody = baseContentType === "application/vnd.olrapi.patch-instruction+json" /* olrapiPatchInstruction */;
+    if (urlTarget && headerTargeting || isInstructionBody && (urlTarget || headerTargeting)) {
+      this.returnCannedResponse(res, {
+        errorCode: 42200 /* ConflictingTargetSpecification */
+      });
+      return;
+    }
+    if (version2 === 2) {
+      if (urlTarget) {
+        return this._vaultPatchRawContent(
+          path2,
+          {
+            targetType: urlTarget.targetType,
+            target: urlTarget.targetType === "heading" ? urlTarget.targetSegments ?? [urlTarget.target ?? ""] : urlTarget.target ?? ""
+          },
+          req,
+          res
+        );
+      }
+      if (headerTargeting) {
+        if (req.get(MARKDOWN_PATCH_VERSION_HEADER) !== "2") {
+          this.returnCannedResponse(res, {
+            errorCode: 40084 /* PatchHeaderTargetingRequiresExplicitVersion */
+          });
+          return;
+        }
+        const parsed = this._getPatchHeaderTarget(req, res);
+        if (!parsed) return;
+        return this._vaultPatchRawContent(path2, parsed, req, res);
+      }
+      const body = req.body;
+      if (typeof body !== "object" || body === null || Array.isArray(body)) {
+        this.returnCannedResponse(res, {
+          errorCode: 40081 /* InvalidPatchInstruction */,
+          message: "A PATCH expects a JSON instruction object as the request body (send Content-Type: application/json or application/vnd.olrapi.patch-instruction+json). For raw-content mode, target via URL path elements or Target-Type/Target headers with 'Markdown-Patch-Version: 2'. To use the deprecated 1.x header-driven format, set the 'Markdown-Patch-Version: 1' header."
+        });
+        return;
+      }
+      return this._vaultPatchMdp2(path2, body, res);
+    }
+    if (urlTarget) {
+      this.returnCannedResponse(res, {
+        errorCode: 40082 /* InvalidPatchVersionHeader */,
+        message: "URL path-element targeting is a markdown-patch 2.0 feature; drop the 'Markdown-Patch-Version: 1' header, or use the deprecated 1.x Target-Type/Target headers instead."
+      });
+      return;
+    }
+    res.setHeader("Deprecation", `true; sunset-version="${MARKDOWN_PATCH_V1_SUNSET}"`);
     const operation = req.get("Operation");
     const targetType = req.get("Target-Type");
     const rawTarget = decodeURIComponent(req.get("Target") ?? "");
@@ -85424,6 +91412,13 @@ var RequestHandler = class {
       return;
     }
     if (targetScope && !isPatchTargetScope(targetScope)) {
+      this.returnCannedResponse(res, {
+        errorCode: 40059 /* InvalidTargetScopeHeader */,
+        message: "Valid values are 'content', 'marker', and 'markerAndContent'."
+      });
+      return;
+    }
+    if (targetType === "frontmatter" && targetScope && targetScope !== "content") {
       this.returnCannedResponse(res, { errorCode: 40059 /* InvalidTargetScopeHeader */ });
       return;
     }
@@ -85445,63 +91440,312 @@ var RequestHandler = class {
     } catch (e) {
       if (e instanceof FileNotFoundError) {
         this.returnCannedResponse(res, { statusCode: 404 });
-      } else if (e instanceof import_markdown_patch4.PatchFailed) {
+      } else if (e instanceof import_markdown_patch3.PatchFailed) {
         this.returnCannedResponse(res, { errorCode: 40080 /* PatchFailed */, message: e.reason });
+      } else if (e instanceof import_markdown_patch3.FrontmatterParseError) {
+        this.returnCannedResponse(res, { errorCode: 40005 /* InvalidFrontmatter */, message: e.message });
       } else {
         this.returnCannedResponse(res, { statusCode: 500, message: e.message });
       }
     }
   }
   async vaultPatch(req, res) {
-    const rawPath = decodeURIComponent(
-      req.path.slice(req.path.indexOf("/", 1) + 1)
-    );
-    return this._vaultPatch(rawPath, req, res);
-  }
-  async _vaultPatchTargeted(filePath, targetType, target, operation, req, res, extraOpts) {
-    const contentType2 = req.get("Content-Type");
-    const createTargetIfMissing = extraOpts?.createTargetIfMissing ?? req.get("Create-Target-If-Missing") == "true";
-    const rejectIfContentPreexists = req.get("Reject-If-Content-Preexists") == "true";
-    const trimTargetWhitespace = req.get("Trim-Target-Whitespace") == "true";
-    const targetDelimiter = req.get("Target-Delimiter") || "::";
-    const rawTargetScope = req.get("Target-Scope");
-    const targetScope = rawTargetScope || void 0;
-    if (!isPatchTargetType(targetType)) {
-      this.returnCannedResponse(res, { errorCode: 40054 /* InvalidTargetTypeHeader */ });
+    const segments = this.extractVaultPath(req, res);
+    if (segments === null) return;
+    const resolved = await this._resolvePathAndTarget(segments);
+    if (resolved === null) {
+      if (segments.some((s) => ["heading", "block", "frontmatter"].includes(s))) {
+        this.returnCannedResponse(res, { statusCode: 404 });
+        return;
+      }
+    } else if (resolved.targetType) {
+      return this._vaultPatch(resolved.filePath, req, res, {
+        targetType: resolved.targetType,
+        target: resolved.target,
+        targetSegments: resolved.targetSegments
+      });
+    }
+    const filePath = this.wholeFilePath(segments);
+    if (filePath === null) {
+      this.returnCannedResponse(res, { statusCode: 404 });
       return;
     }
+    return this._vaultPatch(filePath, req, res);
+  }
+  /** The markdown-patch 2.0 PATCH path. ("Mdp2" = markdown-patch 2.0, not the
+   *  removed API version 2.0 heading-based PATCH.) `_vaultPatch` routes here
+   *  when a request omits the Target-Type header and carries an object body: the
+   *  whole instruction is that JSON body (an `InstructionInput`), and the URL
+   *  supplies only the file. On success the patched document is returned as the
+   *  body, with any advisory warnings JSON- then percent-encoded into the
+   *  `Markdown-Patch-Warnings` response header. */
+  async _vaultPatchMdp2(path2, candidate, res) {
+    const parsed = import_markdown_patch_23.InstructionInputSchema.safeParse(candidate);
+    if (!parsed.success) {
+      this.returnCannedResponse(res, {
+        errorCode: 40081 /* InvalidPatchInstruction */,
+        message: parsed.error.issues.map(
+          (issue2) => issue2.path.length ? `${issue2.path.join(".")}: ${issue2.message}` : issue2.message
+        ).join("; ")
+      });
+      return;
+    }
+    return this._respondMdp2(path2, candidate, res);
+  }
+  /** Assemble a 2.0 instruction for a raw-content-mode PATCH: the target comes
+   *  from URL path elements or the Target-Type/Target headers (already parsed
+   *  by the caller), the remaining instruction fields from headers, and the
+   *  payload carrier from the raw request body — `text/*` is `content`,
+   *  `application/json` is `value`, and an empty body carries nothing (a
+   *  delete, or a move whose `destination` rides in the Destination header).
+   *  This exists so templating-oriented clients can splice unescaped markdown
+   *  into the body instead of JSON-escaping it into an instruction document.
+   *  The assembled candidate funnels through `_vaultPatchMdp2`, so validation
+   *  and error mapping are identical to the JSON-instruction mode. */
+  async _vaultPatchRawContent(path2, target, req, res) {
+    if (req.get("Target-Delimiter") || req.get("Trim-Target-Whitespace")) {
+      this.returnCannedResponse(res, {
+        errorCode: 40084 /* PatchHeaderTargetingRequiresExplicitVersion */
+      });
+      return;
+    }
+    const operation = req.get("Operation");
+    if (!operation) {
+      this.returnCannedResponse(res, { errorCode: 40056 /* MissingOperation */ });
+      return;
+    }
+    if (!isV2Operation(operation)) {
+      this.returnCannedResponse(res, { errorCode: 40057 /* InvalidOperation */ });
+      return;
+    }
+    const scope = req.get("Target-Scope");
+    if (scope !== void 0 && !isV2Scope(scope)) {
+      this.returnCannedResponse(res, {
+        errorCode: 40059 /* InvalidTargetScopeHeader */,
+        message: "Valid values are 'content', 'marker', 'markerAndContent', and 'parent'."
+      });
+      return;
+    }
+    let destination;
+    const rawDestination = req.get("Destination");
+    if (rawDestination !== void 0) {
+      try {
+        destination = JSON.parse(decodeURIComponent(rawDestination));
+      } catch {
+        this.returnCannedResponse(res, {
+          errorCode: 40022 /* InvalidDestinationHeader */,
+          message: "The 'Destination' header must be percent-encoded JSON, e.g. %7B%22parent%22%3A%5B%22Appendix%22%5D%2C%22place%22%3A%22last%22%7D."
+        });
+        return;
+      }
+    }
+    let within;
+    const rawWithin = req.get("Within");
+    if (rawWithin !== void 0) {
+      if (!/^-?\d+$/.test(rawWithin.trim())) {
+        this.returnCannedResponse(res, {
+          errorCode: 40023 /* InvalidWithinHeader */
+        });
+        return;
+      }
+      within = Number(rawWithin.trim());
+    }
+    const rawIfMatch = req.get("If-Match");
+    const ifMatch = rawIfMatch !== void 0 && rawIfMatch.length >= 2 && rawIfMatch.startsWith('"') && rawIfMatch.endsWith('"') ? rawIfMatch.slice(1, -1) : rawIfMatch;
+    const candidate = {
+      targetType: target.targetType,
+      target: target.target,
+      operation
+    };
+    if (within !== void 0) candidate.within = within;
+    if (scope !== void 0) candidate.scope = scope;
+    if (destination !== void 0) candidate.destination = destination;
+    if (ifMatch !== void 0) candidate.ifMatch = ifMatch;
+    if (req.get("Create-Target-If-Missing") === "true") {
+      candidate.createTargetIfMissing = true;
+    }
+    if (req.get("Reject-If-Content-Preexists") === "true") {
+      candidate.rejectIfContentPreexists = true;
+    }
+    const contentLength = req.get("Content-Length");
+    const hasBodyBytes = contentLength !== void 0 && contentLength !== "0" || req.get("Transfer-Encoding") !== void 0;
+    const body = req.body;
+    const bodyIsEmpty = !hasBodyBytes || body === void 0 || typeof body === "string" && body.length === 0 || Buffer.isBuffer(body) && body.length === 0;
+    if (!bodyIsEmpty) {
+      const baseContentType = (req.get("Content-Type") ?? "").split(";")[0].trim().toLowerCase();
+      if (baseContentType.startsWith("text/") && typeof body === "string") {
+        candidate.content = body;
+      } else if (baseContentType === "application/json" /* json */) {
+        candidate.value = body;
+      } else {
+        this.returnCannedResponse(res, {
+          errorCode: 40012 /* InvalidContentType */,
+          message: "A raw-content-mode PATCH accepts a text/* body (the `content` carrier), an application/json body (the `value` carrier), or no body at all (a delete, or a move via the Destination header)."
+        });
+        return;
+      }
+    }
+    return this._vaultPatchMdp2(path2, candidate, res);
+  }
+  /** Apply a single markdown-patch 2.0 instruction and write the standard 2.0
+   *  response: the patched document as the body, any advisory warnings
+   *  (percent-encoded JSON) in the `Markdown-Patch-Warnings` header, and the engine's
+   *  typed failures mapped to HTTP status codes. Shared by the JSON-body PATCH
+   *  endpoint and the path-element targeted GET/PUT/POST writes. */
+  async _respondMdp2(filePath, instruction, res) {
+    try {
+      const result = await this.operations.patchFileSectionMdp2(
+        filePath,
+        instruction
+      );
+      if (result.warnings.length > 0) {
+        res.setHeader(
+          "Markdown-Patch-Warnings",
+          encodeURIComponent(JSON.stringify(result.warnings))
+        );
+      }
+      res.setHeader("Content-Type", "text/markdown" /* markdown */ + "; charset=utf-8");
+      res.status(200).send(result.document);
+    } catch (e) {
+      if (e instanceof FileNotFoundError) {
+        this.returnCannedResponse(res, { statusCode: 404 });
+      } else if (e instanceof import_markdown_patch_23.PreconditionFailedError) {
+        this.returnCannedResponse(res, { statusCode: 412, message: e.message });
+      } else if (e instanceof import_markdown_patch_23.TargetNotFoundError) {
+        this.returnCannedResponse(res, { statusCode: 404, message: e.message });
+      } else if (e instanceof import_markdown_patch_23.ContentPreexistsError || e instanceof import_markdown_patch_23.FrontmatterKeyCollisionError) {
+        this.returnCannedResponse(res, { statusCode: 409, message: e.message });
+      } else if (e instanceof import_markdown_patch_23.InvalidCellError || e instanceof import_markdown_patch_23.InvalidInstructionError || e instanceof import_markdown_patch_23.InvalidCellContentError) {
+        this.returnCannedResponse(res, {
+          errorCode: 40081 /* InvalidPatchInstruction */,
+          message: e.message
+        });
+      } else if (e instanceof import_markdown_patch_23.FrontmatterParseError) {
+        this.returnCannedResponse(res, {
+          errorCode: 40005 /* InvalidFrontmatter */,
+          message: e.message
+        });
+      } else {
+        this.returnCannedResponse(res, {
+          errorCode: 40080 /* PatchFailed */,
+          message: e.message
+        });
+      }
+    }
+  }
+  /** Apply a targeted PUT/POST write to a sub-part of a document.
+   *
+   *  `source` records how the target was addressed:
+   *  - `"path"` — URL path elements (`.../heading/A/B`). The going-forward 2.0
+   *    way: routed through the 2.0 engine (heading levels normalized, engine owns
+   *    boundary whitespace), addressed array-natively via `targetSegments`.
+   *  - `"header"` — the deprecated `Target-Type`/`Target` headers. Only processed
+   *    when the caller opts into 1.x with `Markdown-Patch-Version: 1`; otherwise
+   *    rejected so a header-targeted write never silently clobbers the whole file.
+   *
+   *  Every 1.x request (either source under `Markdown-Patch-Version: 1`) carries
+   *  the sunset `Deprecation` advisory. */
+  async _vaultPatchTargeted(filePath, targetType, target, operation, req, res, extraOpts) {
+    const version2 = resolvePatchVersion(req);
+    if (version2 === null) {
+      this.returnCannedResponse(res, { errorCode: 40082 /* InvalidPatchVersionHeader */ });
+      return;
+    }
+    if (extraOpts.source === "header" && version2 !== 1) {
+      this.returnCannedResponse(res, { errorCode: 40083 /* HeaderTargetingRequiresVersion1 */ });
+      return;
+    }
+    const contentType2 = req.get("Content-Type");
     if (!isContentType(contentType2)) {
       this.returnCannedResponse(res, { errorCode: 40012 /* InvalidContentType */ });
       return;
     }
-    if (targetScope && !isPatchTargetScope(targetScope)) {
-      this.returnCannedResponse(res, { errorCode: 40059 /* InvalidTargetScopeHeader */ });
+    const createTargetIfMissing = extraOpts.createTargetIfMissing ?? req.get("Create-Target-If-Missing") == "true";
+    const rejectIfContentPreexists = req.get("Reject-If-Content-Preexists") == "true";
+    if (version2 === 1) {
+      res.setHeader("Deprecation", `true; sunset-version="${MARKDOWN_PATCH_V1_SUNSET}"`);
+      const trimTargetWhitespace = req.get("Trim-Target-Whitespace") == "true";
+      const targetDelimiter = req.get("Target-Delimiter") || "::";
+      const rawTargetScope = req.get("Target-Scope");
+      const targetScope = rawTargetScope || void 0;
+      if (!isPatchTargetType(targetType)) {
+        this.returnCannedResponse(res, { errorCode: 40054 /* InvalidTargetTypeHeader */ });
+        return;
+      }
+      if (targetScope && !isPatchTargetScope(targetScope)) {
+        this.returnCannedResponse(res, {
+          errorCode: 40059 /* InvalidTargetScopeHeader */,
+          message: "Valid values are 'content', 'marker', and 'markerAndContent'."
+        });
+        return;
+      }
+      if (!target) {
+        this.returnCannedResponse(res, { errorCode: 40055 /* MissingTargetHeader */ });
+        return;
+      }
+      try {
+        const patched = await this.operations.patchFileSection(
+          filePath,
+          targetType,
+          target,
+          operation,
+          req.body,
+          contentType2,
+          { createTargetIfMissing, rejectIfContentPreexists, trimTargetWhitespace, targetDelimiter, targetScope }
+        );
+        res.status(200).send(patched);
+      } catch (e) {
+        if (e instanceof FileNotFoundError) {
+          this.returnCannedResponse(res, { statusCode: 404 });
+        } else if (e instanceof import_markdown_patch3.PatchFailed) {
+          this.returnCannedResponse(res, { errorCode: 40080 /* PatchFailed */, message: e.reason });
+        } else if (e instanceof import_markdown_patch3.FrontmatterParseError) {
+          this.returnCannedResponse(res, { errorCode: 40005 /* InvalidFrontmatter */, message: e.message });
+        } else {
+          this.returnCannedResponse(res, { statusCode: 500, message: e.message });
+        }
+      }
+      return;
+    }
+    if (req.get("Target-Scope") || req.get("Target-Delimiter") || req.get("Trim-Target-Whitespace")) {
+      this.returnCannedResponse(res, { errorCode: 40083 /* HeaderTargetingRequiresVersion1 */ });
+      return;
+    }
+    if (!isV2TargetType(targetType)) {
+      this.returnCannedResponse(res, { errorCode: 40054 /* InvalidTargetTypeHeader */ });
       return;
     }
     if (!target) {
       this.returnCannedResponse(res, { errorCode: 40055 /* MissingTargetHeader */ });
       return;
     }
-    try {
-      const patched = await this.operations.patchFileSection(
-        filePath,
-        targetType,
-        target,
-        operation,
-        req.body,
-        contentType2,
-        { createTargetIfMissing, rejectIfContentPreexists, trimTargetWhitespace, targetDelimiter, targetScope }
-      );
-      res.status(200).send(patched);
-    } catch (e) {
-      if (e instanceof FileNotFoundError) {
-        this.returnCannedResponse(res, { statusCode: 404 });
-      } else if (e instanceof import_markdown_patch4.PatchFailed) {
-        this.returnCannedResponse(res, { errorCode: 40080 /* PatchFailed */, message: e.reason });
-      } else {
-        this.returnCannedResponse(res, { statusCode: 500, message: e.message });
-      }
-    }
+    const isStructuredBody = typeof req.body !== "string";
+    const instruction = targetType === "frontmatter" ? {
+      targetType: "frontmatter",
+      target,
+      operation,
+      scope: "content",
+      value: req.body,
+      createTargetIfMissing,
+      rejectIfContentPreexists
+    } : isStructuredBody ? {
+      targetType,
+      target: targetType === "heading" ? extraOpts.targetSegments ?? [target] : target,
+      operation,
+      scope: "content",
+      value: req.body,
+      createTargetIfMissing,
+      rejectIfContentPreexists
+    } : {
+      targetType,
+      target: targetType === "heading" ? extraOpts.targetSegments ?? [target] : target,
+      operation,
+      scope: "content",
+      content: req.body,
+      createTargetIfMissing,
+      rejectIfContentPreexists
+    };
+    return this._respondMdp2(filePath, instruction, res);
   }
   async _vaultPost(filepath, req, res) {
     if (!filepath || filepath.endsWith("/")) {
@@ -85521,12 +91765,11 @@ var RequestHandler = class {
     return;
   }
   async vaultPost(req, res) {
-    const rawPath = decodeURIComponent(
-      req.path.slice(req.path.indexOf("/", 1) + 1)
-    );
-    const resolved = await this._resolvePathAndTarget(rawPath);
+    const segments = this.extractVaultPath(req, res);
+    if (segments === null) return;
+    const resolved = await this._resolvePathAndTarget(segments);
     if (resolved === null) {
-      if (rawPath.split("/").some((s) => ["heading", "block", "frontmatter"].includes(s))) {
+      if (segments.some((s) => ["heading", "block", "frontmatter"].includes(s))) {
         this.returnCannedResponse(res, { statusCode: 404 });
         return;
       }
@@ -85543,32 +91786,40 @@ var RequestHandler = class {
         resolved.target ?? "",
         "append",
         req,
-        res
+        res,
+        { source: "path", targetSegments: resolved.targetSegments }
       );
+    }
+    const filePath = this.wholeFilePath(segments);
+    if (filePath === null) {
+      this.returnCannedResponse(res, { statusCode: 404 });
+      return;
     }
     const headerTarget = this._getHeaderTarget(req, res);
     if (headerTarget !== void 0) {
       if (!headerTarget) return;
       return this._vaultPatchTargeted(
-        rawPath,
+        filePath,
         headerTarget.targetType,
         headerTarget.target,
         "append",
         req,
-        res
+        res,
+        { source: "header" }
       );
     }
-    return this._vaultPost(rawPath, req, res);
+    return this._vaultPost(filePath, req, res);
   }
-  async _vaultDelete(path2, _req, res) {
+  async _vaultDelete(path2, req, res) {
     if (!path2 || path2.endsWith("/")) {
       this.returnCannedResponse(res, {
         errorCode: 40510 /* RequestMethodValidOnlyForFiles */
       });
       return;
     }
+    const permanent = req.query.permanent === "true";
     try {
-      await this.operations.deleteVaultFile(path2);
+      await this.operations.deleteVaultFile(path2, permanent);
     } catch (e) {
       if (e instanceof FileNotFoundError) {
         this.returnCannedResponse(res, { statusCode: 404 });
@@ -85581,10 +91832,9 @@ var RequestHandler = class {
     return;
   }
   async vaultDelete(req, res) {
-    const rawPath = decodeURIComponent(
-      req.path.slice(req.path.indexOf("/", 1) + 1)
-    );
-    const resolved = await this._resolvePathAndTarget(rawPath);
+    const segments = this.extractVaultPath(req, res);
+    if (segments === null) return;
+    const resolved = await this._resolvePathAndTarget(segments);
     if (resolved?.targetType) {
       this.returnCannedResponse(res, {
         statusCode: 405,
@@ -85592,7 +91842,12 @@ var RequestHandler = class {
       });
       return;
     }
-    return this._vaultDelete(rawPath, req, res);
+    const filePath = this.wholeFilePath(segments);
+    if (filePath === null) {
+      this.returnCannedResponse(res, { statusCode: 404 });
+      return;
+    }
+    return this._vaultDelete(filePath, req, res);
   }
   async _vaultMove(path2, req, res) {
     if (!path2 || path2.endsWith("/")) {
@@ -85655,198 +91910,89 @@ var RequestHandler = class {
     }
   }
   async vaultMove(req, res) {
-    const path2 = decodeURIComponent(
-      req.path.slice(req.path.indexOf("/", 1) + 1)
-    );
-    return this._vaultMove(path2, req, res);
+    const segments = this.extractVaultPath(req, res);
+    if (segments === null) return;
+    const filePath = this.wholeFilePath(segments);
+    if (filePath === null) {
+      this.returnCannedResponse(res, { statusCode: 404 });
+      return;
+    }
+    return this._vaultMove(filePath, req, res);
   }
-  getPeriodicNoteInterface() {
-    return this.operations.getPeriodicNoteInterface();
+  async _vaultCopy(path2, req, res) {
+    if (!path2 || path2.endsWith("/")) {
+      this.returnCannedResponse(res, {
+        errorCode: 40510 /* RequestMethodValidOnlyForFiles */
+      });
+      return;
+    }
+    const rawDestination = req.header("Destination");
+    const allowOverwrite = req.header("Allow-Overwrite") === "true";
+    if (rawDestination === void 0) {
+      this.returnCannedResponse(res, {
+        errorCode: 40020 /* MissingDestinationHeader */
+      });
+      return;
+    }
+    const sourceFilename = path2.includes("/") ? path2.slice(path2.lastIndexOf("/") + 1) : path2;
+    let normalized;
+    try {
+      normalized = decodeURIComponent(rawDestination.trim()).replace(/\\/g, "/").replace(/\/+/g, "/");
+    } catch {
+      this.returnCannedResponse(res, {
+        errorCode: 40022 /* InvalidDestinationHeader */
+      });
+      return;
+    }
+    if (normalized.startsWith("/")) {
+      this.returnCannedResponse(res, {
+        errorCode: 40021 /* PathTraversalNotAllowed */
+      });
+      return;
+    }
+    const syntheticRoot = "/vault";
+    const resolved = import_path3.posix.resolve(syntheticRoot, normalized);
+    if (resolved !== syntheticRoot && !resolved.startsWith(syntheticRoot + "/")) {
+      this.returnCannedResponse(res, {
+        errorCode: 40021 /* PathTraversalNotAllowed */
+      });
+      return;
+    }
+    const newPath = !normalized || normalized.endsWith("/") ? normalized + sourceFilename : normalized;
+    try {
+      const actualPath = await this.operations.copyVaultFile(path2, newPath, allowOverwrite);
+      res.set("Content-Location", encodeURI(actualPath));
+      this.returnCannedResponse(res, { statusCode: 204 });
+    } catch (error2) {
+      if (error2 instanceof FileNotFoundError) {
+        this.returnCannedResponse(res, { statusCode: 404 });
+      } else if (error2 instanceof DestinationAlreadyExistsError) {
+        this.returnCannedResponse(res, {
+          errorCode: 40920 /* DestinationAlreadyExists */
+        });
+      } else {
+        const msg = error2 instanceof Error ? error2.message : String(error2);
+        this.returnCannedResponse(res, {
+          errorCode: 50020 /* FileOperationFailed */,
+          message: `Failed to copy file: ${msg}`
+        });
+      }
+    }
   }
-  periodicGetInterface(period) {
-    return this.operations.periodicGetInterface(period);
-  }
-  periodicGetNote(periodName, timestamp) {
-    return this.operations.periodicGetNote(periodName, timestamp);
-  }
-  async periodicGetOrCreateNote(periodName, timestamp) {
-    return this.operations.periodicGetOrCreateNote(periodName, timestamp);
+  async vaultCopy(req, res) {
+    const segments = this.extractVaultPath(req, res);
+    if (segments === null) return;
+    const filePath = this.wholeFilePath(segments);
+    if (filePath === null) {
+      this.returnCannedResponse(res, { statusCode: 404 });
+      return;
+    }
+    return this._vaultCopy(filePath, req, res);
   }
   redirectToVaultPath(file, req, res, handler) {
     const path2 = file.path;
     res.set("Content-Location", encodeURI(path2));
     return handler(path2, req, res);
-  }
-  getPeriodicDateFromParams(params) {
-    const { year, month, day } = params;
-    if (year && month && day) {
-      const date3 = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-      return date3.getTime();
-    }
-    return Date.now();
-  }
-  async periodicGet(req, res) {
-    const date3 = this.getPeriodicDateFromParams(req.params);
-    const [file, err] = this.periodicGetNote(req.params.period, date3);
-    if (err || !file) {
-      this.returnCannedResponse(res, {
-        errorCode: err ?? 40461 /* PeriodicNoteDoesNotExist */
-      });
-      return;
-    }
-    const suffix = req.params[0] ? decodeURIComponent(req.params[0]) : "";
-    const path2 = file.path + (suffix ? "/" + suffix : "");
-    res.set("Content-Location", encodeURI(file.path));
-    return this._vaultGet(path2, req, res);
-  }
-  async periodicPut(req, res) {
-    const date3 = this.getPeriodicDateFromParams(req.params);
-    const [file, err] = await this.periodicGetOrCreateNote(
-      req.params.period,
-      date3
-    );
-    if (err || !file) {
-      this.returnCannedResponse(res, {
-        errorCode: err ?? 40461 /* PeriodicNoteDoesNotExist */
-      });
-      return;
-    }
-    const suffix = req.params[0] ? decodeURIComponent(req.params[0]) : "";
-    if (suffix) {
-      const resolved = await this._resolvePathAndTarget(file.path + "/" + suffix);
-      if (resolved?.targetType) {
-        if (req.get("Target-Type") || req.get("Target")) {
-          this.returnCannedResponse(res, {
-            errorCode: 42200 /* ConflictingTargetSpecification */
-          });
-          return;
-        }
-        res.set("Content-Location", encodeURI(file.path));
-        return this._vaultPatchTargeted(
-          resolved.filePath,
-          resolved.targetType,
-          resolved.target ?? "",
-          "replace",
-          req,
-          res,
-          { createTargetIfMissing: true }
-        );
-      }
-    }
-    const headerTarget = this._getHeaderTarget(req, res);
-    if (headerTarget !== void 0) {
-      if (!headerTarget) return;
-      res.set("Content-Location", encodeURI(file.path));
-      return this._vaultPatchTargeted(
-        file.path,
-        headerTarget.targetType,
-        headerTarget.target,
-        "replace",
-        req,
-        res,
-        { createTargetIfMissing: true }
-      );
-    }
-    return this.redirectToVaultPath(file, req, res, (p, rq, rs) => {
-      void this._vaultPut(p, rq, rs);
-    });
-  }
-  async periodicPost(req, res) {
-    const date3 = this.getPeriodicDateFromParams(req.params);
-    const [file, err] = await this.periodicGetOrCreateNote(
-      req.params.period,
-      date3
-    );
-    if (err || !file) {
-      this.returnCannedResponse(res, {
-        errorCode: err ?? 40461 /* PeriodicNoteDoesNotExist */
-      });
-      return;
-    }
-    const suffix = req.params[0] ? decodeURIComponent(req.params[0]) : "";
-    if (suffix) {
-      const resolved = await this._resolvePathAndTarget(file.path + "/" + suffix);
-      if (resolved?.targetType) {
-        if (req.get("Target-Type") || req.get("Target")) {
-          this.returnCannedResponse(res, {
-            errorCode: 42200 /* ConflictingTargetSpecification */
-          });
-          return;
-        }
-        res.set("Content-Location", encodeURI(file.path));
-        return this._vaultPatchTargeted(
-          resolved.filePath,
-          resolved.targetType,
-          resolved.target ?? "",
-          "append",
-          req,
-          res
-        );
-      }
-    }
-    const headerTarget = this._getHeaderTarget(req, res);
-    if (headerTarget !== void 0) {
-      if (!headerTarget) return;
-      res.set("Content-Location", encodeURI(file.path));
-      return this._vaultPatchTargeted(
-        file.path,
-        headerTarget.targetType,
-        headerTarget.target,
-        "append",
-        req,
-        res
-      );
-    }
-    return this.redirectToVaultPath(file, req, res, (p, rq, rs) => {
-      void this._vaultPost(p, rq, rs);
-    });
-  }
-  async periodicPatch(req, res) {
-    const date3 = this.getPeriodicDateFromParams(req.params);
-    const [file, err] = await this.periodicGetOrCreateNote(
-      req.params.period,
-      date3
-    );
-    if (err || !file) {
-      this.returnCannedResponse(res, {
-        errorCode: err ?? 40461 /* PeriodicNoteDoesNotExist */
-      });
-      return;
-    }
-    return this.redirectToVaultPath(
-      file,
-      req,
-      res,
-      (p, rq, rs) => {
-        void this._vaultPatch(p, rq, rs);
-      }
-    );
-  }
-  async periodicDelete(req, res) {
-    const date3 = this.getPeriodicDateFromParams(req.params);
-    const [file, err] = this.periodicGetNote(req.params.period, date3);
-    if (err || !file) {
-      this.returnCannedResponse(res, {
-        errorCode: err ?? 40461 /* PeriodicNoteDoesNotExist */
-      });
-      return;
-    }
-    const suffix = req.params[0] ? decodeURIComponent(req.params[0]) : "";
-    if (suffix) {
-      this.returnCannedResponse(res, {
-        statusCode: 405,
-        message: "Deleting a targeted section via URL is not supported. Use PATCH with Operation: replace and an empty body instead."
-      });
-      return;
-    }
-    return this.redirectToVaultPath(
-      file,
-      req,
-      res,
-      (p, rq, rs) => {
-        void this._vaultDelete(p, rq, rs);
-      }
-    );
   }
   async activeFileGet(req, res) {
     const file = this.app.workspace.getActiveFile();
@@ -85854,10 +92000,14 @@ var RequestHandler = class {
       this.returnCannedResponse(res, { statusCode: 404 });
       return;
     }
-    const suffix = req.params[0] ? decodeURIComponent(req.params[0]) : "";
-    const path2 = file.path + (suffix ? "/" + suffix : "");
+    const suffixSegments = this.rawSuffixSegments(req, res);
+    if (suffixSegments === null) return;
     res.set("Content-Location", encodeURI(file.path));
-    return this._vaultGet(path2, req, res);
+    return this._vaultGet(
+      [...file.path.split("/"), ...suffixSegments],
+      req,
+      res
+    );
   }
   async activeFilePut(req, res) {
     const file = this.app.workspace.getActiveFile();
@@ -85865,9 +92015,13 @@ var RequestHandler = class {
       this.returnCannedResponse(res, { statusCode: 404 });
       return;
     }
-    const suffix = req.params[0] ? decodeURIComponent(req.params[0]) : "";
-    if (suffix) {
-      const resolved = await this._resolvePathAndTarget(file.path + "/" + suffix);
+    const suffixSegments = this.rawSuffixSegments(req, res);
+    if (suffixSegments === null) return;
+    if (suffixSegments.length > 0) {
+      const resolved = await this._resolvePathAndTarget([
+        ...file.path.split("/"),
+        ...suffixSegments
+      ]);
       if (resolved?.targetType) {
         if (req.get("Target-Type") || req.get("Target")) {
           this.returnCannedResponse(res, {
@@ -85883,7 +92037,7 @@ var RequestHandler = class {
           "replace",
           req,
           res,
-          { createTargetIfMissing: true }
+          { createTargetIfMissing: true, source: "path", targetSegments: resolved.targetSegments }
         );
       }
     }
@@ -85898,7 +92052,7 @@ var RequestHandler = class {
         "replace",
         req,
         res,
-        { createTargetIfMissing: true }
+        { createTargetIfMissing: true, source: "header" }
       );
     }
     return this.redirectToVaultPath(file, req, res, (p, rq, rs) => {
@@ -85911,9 +92065,13 @@ var RequestHandler = class {
       this.returnCannedResponse(res, { statusCode: 404 });
       return;
     }
-    const suffix = req.params[0] ? decodeURIComponent(req.params[0]) : "";
-    if (suffix) {
-      const resolved = await this._resolvePathAndTarget(file.path + "/" + suffix);
+    const suffixSegments = this.rawSuffixSegments(req, res);
+    if (suffixSegments === null) return;
+    if (suffixSegments.length > 0) {
+      const resolved = await this._resolvePathAndTarget([
+        ...file.path.split("/"),
+        ...suffixSegments
+      ]);
       if (resolved?.targetType) {
         if (req.get("Target-Type") || req.get("Target")) {
           this.returnCannedResponse(res, {
@@ -85928,7 +92086,8 @@ var RequestHandler = class {
           resolved.target ?? "",
           "append",
           req,
-          res
+          res,
+          { source: "path", targetSegments: resolved.targetSegments }
         );
       }
     }
@@ -85942,7 +92101,8 @@ var RequestHandler = class {
         headerTarget.target,
         "append",
         req,
-        res
+        res,
+        { source: "header" }
       );
     }
     return this.redirectToVaultPath(file, req, res, (p, rq, rs) => {
@@ -85954,6 +92114,22 @@ var RequestHandler = class {
     if (!file) {
       this.returnCannedResponse(res, { statusCode: 404 });
       return;
+    }
+    const suffixSegments = this.rawSuffixSegments(req, res);
+    if (suffixSegments === null) return;
+    if (suffixSegments.length > 0) {
+      const resolved = await this._resolvePathAndTarget([
+        ...file.path.split("/"),
+        ...suffixSegments
+      ]);
+      if (resolved?.targetType) {
+        res.set("Content-Location", encodeURI(file.path));
+        return this._vaultPatch(resolved.filePath, req, res, {
+          targetType: resolved.targetType,
+          target: resolved.target,
+          targetSegments: resolved.targetSegments
+        });
+      }
     }
     return this.redirectToVaultPath(
       file,
@@ -85970,8 +92146,9 @@ var RequestHandler = class {
       this.returnCannedResponse(res, { statusCode: 404 });
       return;
     }
-    const suffix = req.params[0] ? decodeURIComponent(req.params[0]) : "";
-    if (suffix) {
+    const suffixSegments = this.rawSuffixSegments(req, res);
+    if (suffixSegments === null) return;
+    if (suffixSegments.length > 0) {
       this.returnCannedResponse(res, {
         statusCode: 405,
         message: "Deleting a targeted section via URL is not supported. Use PATCH with Operation: replace and an empty body instead."
@@ -86137,9 +92314,9 @@ var RequestHandler = class {
       next();
     });
     this.api.use((0, import_response_time.default)());
-    this.api.use((0, import_cors.default)({ methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "MOVE"] }));
+    this.api.use((0, import_cors.default)({ methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "MOVE", "COPY"] }));
     const mcpRouter = import_express.default.Router();
-    mcpRouter.use((0, import_cors.default)({ methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "MOVE"] }));
+    mcpRouter.use((0, import_cors.default)({ methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "MOVE", "COPY"] }));
     mcpRouter.use((req, res, next) => {
       if (!this.requestIsAuthenticated(req)) {
         this.returnCannedResponse(res, {
@@ -86158,7 +92335,9 @@ var RequestHandler = class {
       next();
     });
     mcpRouter.use(import_express.default.json({ limit: MaximumRequestSize }));
-    mcpRouter.all("/", async (req, res) => this.mcpHandler.handleRequest(req, res));
+    mcpRouter.all("/", (req, res, next) => {
+      this.mcpHandler.handleRequest(req, res).catch(next);
+    });
     this.api.use("/mcp", mcpRouter);
     this.api.use(this.publicApiExtensionRouter);
     this.api.use(this.authenticationMiddleware.bind(this));
@@ -86184,6 +92363,13 @@ var RequestHandler = class {
       })
     );
     this.api.use(
+      import_express.default.json({
+        type: "application/vnd.olrapi.patch-instruction+json" /* olrapiPatchInstruction */,
+        strict: false,
+        limit: MaximumRequestSize
+      })
+    );
+    this.api.use(
       import_express.default.text({ type: "text/*", limit: MaximumRequestSize })
     );
     this.api.use(import_express.default.raw({ type: "*/*", limit: MaximumRequestSize }));
@@ -86191,12 +92377,12 @@ var RequestHandler = class {
     this.api.route("/vault/*").get(this.handle((rq, rs) => this.vaultGet(rq, rs))).put(this.handle((rq, rs) => this.vaultPut(rq, rs))).patch(this.handle((rq, rs) => this.vaultPatch(rq, rs))).post(this.handle((rq, rs) => this.vaultPost(rq, rs))).delete(this.handle((rq, rs) => this.vaultDelete(rq, rs))).all((req, res, next) => {
       if (req.method === "MOVE") {
         return this.handle((rq, rs) => this.vaultMove(rq, rs))(req, res, next);
+      } else if (req.method === "COPY") {
+        return this.handle((rq, rs) => this.vaultCopy(rq, rs))(req, res, next);
       } else {
         next();
       }
     });
-    this.api.route("/periodic/:period/:year(\\d{4})/:month(\\d{1,2})/:day(\\d{1,2})/*").get(this.handle((rq, rs) => this.periodicGet(rq, rs))).put(this.handle((rq, rs) => this.periodicPut(rq, rs))).patch(this.handle((rq, rs) => this.periodicPatch(rq, rs))).post(this.handle((rq, rs) => this.periodicPost(rq, rs))).delete(this.handle((rq, rs) => this.periodicDelete(rq, rs)));
-    this.api.route("/periodic/:period/*").get(this.handle((rq, rs) => this.periodicGet(rq, rs))).put(this.handle((rq, rs) => this.periodicPut(rq, rs))).patch(this.handle((rq, rs) => this.periodicPatch(rq, rs))).post(this.handle((rq, rs) => this.periodicPost(rq, rs))).delete(this.handle((rq, rs) => this.periodicDelete(rq, rs)));
     this.api.route("/tags/").get(this.handle((rq, rs) => this.tagsGet(rq, rs)));
     this.api.route("/commands/").get(this.handle((rq, rs) => this.commandGet(rq, rs)));
     this.api.route("/commands/:commandId/").post(this.handle((rq, rs) => this.commandPost(rq, rs)));
@@ -86426,19 +92612,19 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
     this.showAdvancedSettings = false;
     this.plugin = plugin;
   }
-  display() {
-    const { containerEl } = this;
-    containerEl.replaceChildren();
+  getCertificateStatus() {
     const parsedCertificate = this.plugin.settings.crypto && import_node_forge2.default.pki.certificateFromPem(
       this.plugin.settings.crypto.cert
     );
-    const remainingCertificateValidityDays = parsedCertificate && getCertificateValidityDays(parsedCertificate);
-    const shouldRegenerateCertificate = parsedCertificate && !getCertificateIsUptoStandards(parsedCertificate);
-    containerEl.empty();
-    containerEl.classList.add("obsidian-local-rest-api-settings");
-    new import_obsidian4.Setting(containerEl).setHeading().setName("Local REST API with MCP");
-    new import_obsidian4.Setting(containerEl).setHeading().setName("How to access via REST");
-    const apiKeyDiv = containerEl.createDiv();
+    return {
+      remainingCertificateValidityDays: parsedCertificate ? getCertificateValidityDays(parsedCertificate) : null,
+      shouldRegenerateCertificate: parsedCertificate ? !getCertificateIsUptoStandards(parsedCertificate) : false
+    };
+  }
+  renderConnectionInfo(el) {
+    new import_obsidian4.Setting(el).setHeading().setName("Local REST API with MCP");
+    new import_obsidian4.Setting(el).setHeading().setName("How to access via REST");
+    const apiKeyDiv = el.createDiv();
     apiKeyDiv.classList.add("api-key-display");
     apiKeyDiv.createEl("p", {
       text: "You can access Obsidian local REST API & MCP server via the following URLs:"
@@ -86469,7 +92655,6 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
     secureNote.createSpan({ text: "Requires that " });
     secureNote.createEl("a", {
       href: `https://127.0.0.1:${this.plugin.settings.port}/${CERT_NAME}`,
-      // eslint-disable-next-line obsidianmd/ui/sentence-case
       text: "this certificate"
     });
     secureNote.createSpan({
@@ -86477,7 +92662,6 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
     });
     secureNote.createEl("a", {
       href: "https://github.com/coddingtonbear/obsidian-web/wiki/How-do-I-get-my-browser-trust-my-Obsidian-Local-REST-API-certificate%3F",
-      // eslint-disable-next-line obsidianmd/ui/sentence-case
       text: "wiki"
     });
     secureNote.createSpan({ text: " for more information." });
@@ -86536,12 +92720,13 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
     });
     seeMore.createEl("a", {
       href: "https://coddingtonbear.github.io/obsidian-local-rest-api/",
-      // eslint-disable-next-line obsidianmd/ui/sentence-case
       text: "the online docs"
     });
     seeMore.createSpan({ text: "." });
-    new import_obsidian4.Setting(containerEl).setHeading().setName("How to access via MCP");
-    const mcpDiv = containerEl.createDiv();
+  }
+  renderMcpInfo(el) {
+    new import_obsidian4.Setting(el).setHeading().setName("How to access via MCP");
+    const mcpDiv = el.createDiv();
     mcpDiv.classList.add("mcp-display");
     mcpDiv.createEl("p", {
       text: "You can connect to the MCP server via the following endpoints:"
@@ -86569,7 +92754,6 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
     mcpSecureNote.createSpan({ text: "Requires that " });
     mcpSecureNote.createEl("a", {
       href: `https://127.0.0.1:${this.plugin.settings.port}/${CERT_NAME}`,
-      // eslint-disable-next-line obsidianmd/ui/sentence-case
       text: "this certificate"
     });
     mcpSecureNote.createSpan({
@@ -86577,12 +92761,11 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
     });
     mcpSecureNote.createEl("a", {
       href: "https://github.com/coddingtonbear/obsidian-web/wiki/How-do-I-get-my-browser-trust-my-Obsidian-Local-REST-API-certificate%3F",
-      // eslint-disable-next-line obsidianmd/ui/sentence-case
       text: "wiki"
     });
     mcpSecureNote.createSpan({ text: " for more information." });
     const mcpSecureUrlsTd = mcpSecureTr.createEl("td", { cls: "url" });
-    addUrlRow(mcpSecureUrlsTd, mcpSecureUrl);
+    mcpSecureUrlsTd.createEl("pre", { text: mcpSecureUrl });
     const mcpInsecureTr = mcpUrlsTbody.createEl(
       "tr",
       this.plugin.settings.enableInsecureServer === false ? {
@@ -86601,7 +92784,7 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
       text: "Non-encrypted (HTTP) MCP endpoint"
     });
     const mcpInsecureUrlsTd = mcpInsecureTr.createEl("td", { cls: "url" });
-    addUrlRow(mcpInsecureUrlsTd, mcpInsecureUrl);
+    mcpInsecureUrlsTd.createEl("pre", { text: mcpInsecureUrl });
     const headerName = this.plugin.settings.authorizationHeaderName ?? DefaultBearerTokenHeaderName;
     const mcpAuthHeaderP = mcpDiv.createEl("p");
     mcpAuthHeaderP.createSpan({
@@ -86637,31 +92820,32 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
     });
     mcpSeeMore.createEl("a", {
       href: "https://github.com/coddingtonbear/obsidian-local-rest-api#readme",
-      // eslint-disable-next-line obsidianmd/ui/sentence-case
       text: "the project readme"
     });
     mcpSeeMore.createSpan({ text: "." });
-    new import_obsidian4.Setting(containerEl).setHeading().setName("Settings");
-    if (remainingCertificateValidityDays && remainingCertificateValidityDays < 0) {
-      const expiredCertDiv = apiKeyDiv.createDiv();
+  }
+  renderCertificateWarnings(el) {
+    const { remainingCertificateValidityDays, shouldRegenerateCertificate } = this.getCertificateStatus();
+    if (remainingCertificateValidityDays !== null && remainingCertificateValidityDays < 0) {
+      const expiredCertDiv = el.createDiv();
       expiredCertDiv.classList.add("certificate-expired");
       expiredCertDiv.createEl("b", { text: "Your certificate has expired!" });
       expiredCertDiv.createSpan({
-        text: ' You must re-generate your certificate below by pressing the "Re-generate Certificates" button below in order to connect securely to this API.'
+        text: ' You must re-generate your certificate below by pressing the "Re-generate certificates" button below in order to connect securely to this API.'
       });
-    } else if (remainingCertificateValidityDays && remainingCertificateValidityDays < 30) {
-      const soonExpiringCertDiv = apiKeyDiv.createDiv();
+    } else if (remainingCertificateValidityDays !== null && remainingCertificateValidityDays < 30) {
+      const soonExpiringCertDiv = el.createDiv();
       soonExpiringCertDiv.classList.add("certificate-expiring-soon");
       const daysRemaining = Math.floor(remainingCertificateValidityDays);
       soonExpiringCertDiv.createEl("b", {
         text: `Your certificate will expire in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}!`
       });
       soonExpiringCertDiv.createSpan({
-        text: ' You should re-generate your certificate below by pressing the "Re-generate Certificates" button below in order to continue to connect securely to this API.'
+        text: ' You should re-generate your certificate below by pressing the "Re-generate certificates" button below in order to continue to connect securely to this API.'
       });
     }
     if (shouldRegenerateCertificate) {
-      const shouldRegenerateCertificateDiv = apiKeyDiv.createDiv();
+      const shouldRegenerateCertificateDiv = el.createDiv();
       shouldRegenerateCertificateDiv.classList.add(
         "certificate-regeneration-recommended"
       );
@@ -86669,9 +92853,18 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
         text: "You should re-generate your certificate!"
       });
       shouldRegenerateCertificateDiv.createSpan({
-        text: ' Your certificate was generated using earlier standards than are currently used by Obsidian Local REST API with MCP. Some systems or tools may not accept your certificate with its current configuration, and re-generating your certificate may improve compatibility with such tools.  To re-generate your certificate, press the "Re-generate Certificates" button below.'
+        text: ' Your certificate was generated using earlier standards than are currently used by Obsidian Local REST API with MCP. Some systems or tools may not accept your certificate with its current configuration, and re-generating your certificate may improve compatibility with such tools.  To re-generate your certificate, press the "Re-generate certificates" button below.'
       });
     }
+  }
+  display() {
+    const { containerEl } = this;
+    containerEl.empty();
+    containerEl.classList.add("obsidian-local-rest-api-settings");
+    this.renderConnectionInfo(containerEl);
+    this.renderMcpInfo(containerEl);
+    new import_obsidian4.Setting(containerEl).setHeading().setName("Settings");
+    this.renderCertificateWarnings(containerEl);
     new import_obsidian4.Setting(containerEl).setName("Enable non-encrypted (HTTP) server").setDesc(
       "Enables a non-encrypted (HTTP) server on the port designated below.  By default this plugin requires a secure HTTPS connection, but in safe environments you may turn on the non-encrypted server to simplify interacting with the API. Interactions with the API will still require the API key shown above.  Under no circumstances is it recommended that you expose this service to the internet, especially if you turn on this feature!"
     ).addToggle(
@@ -86686,9 +92879,7 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
       }).setValue(this.plugin.settings.enableInsecureServer)
     );
     new import_obsidian4.Setting(containerEl).setName("Reset all cryptography").setDesc(
-      `Pressing this button will cause your certificate,
-        private key, public key, and API key to be regenerated.
-        This settings panel will be closed when you press this.`
+      "Pressing this button will cause your certificate, private key, public key, and API key to be regenerated. This settings panel will be closed when you press this."
     ).addButton((cb) => {
       cb.setWarning().setButtonText("Reset all crypto").onClick(() => {
         delete this.plugin.settings.apiKey;
@@ -86699,9 +92890,7 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
       });
     });
     new import_obsidian4.Setting(containerEl).setName("Re-generate certificates").setDesc(
-      `Pressing this button will cause your certificate,
-        private key,  and public key to be re-generated, but your API key will remain unchanged. 
-        This settings panel will be closed when you press this.`
+      "Pressing this button will cause your certificate, private key, and public key to be re-generated, but your API key will remain unchanged. This settings panel will be closed when you press this."
     ).addButton((cb) => {
       cb.setWarning().setButtonText("Re-generate certificates").onClick(() => {
         delete this.plugin.settings.crypto;
@@ -86711,9 +92900,7 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
       });
     });
     new import_obsidian4.Setting(containerEl).setName("Restore default settings").setDesc(
-      `Pressing this button will reset this plugin's
-        settings to defaults.
-        This settings panel will be closed when you press this.`
+      "Pressing this button will reset this plugin's settings to defaults. This settings panel will be closed when you press this."
     ).addButton((cb) => {
       cb.setWarning().setButtonText("Restore defaults").onClick(() => {
         this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS);
@@ -86723,7 +92910,7 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
       });
     });
     new import_obsidian4.Setting(containerEl).setName("Show advanced settings").setDesc(
-      `Advanced settings are dangerous and may make your environment less secure.`
+      "Advanced settings are dangerous and may make your environment less secure."
     ).addToggle((cb) => {
       cb.onChange((value) => {
         if (this.showAdvancedSettings !== value) {
@@ -86733,137 +92920,137 @@ var LocalRestApiSettingTab = class extends import_obsidian4.PluginSettingTab {
       }).setValue(this.showAdvancedSettings);
     });
     if (this.showAdvancedSettings) {
-      new import_obsidian4.Setting(containerEl).setHeading().setName("Advanced settings");
-      containerEl.createEl("p", {
-        text: `
-          The settings below are potentially dangerous and
-          are intended for use only by people who know what
-          they are doing. Do not change any of these settings if
-          you do not understand what that setting is used for
-          and what security impacts changing that setting will have.
-        `
-      });
-      const noWarrantee = containerEl.createEl("p");
-      noWarrantee.createSpan({
-        text: `
-          Use of this software is licensed to you under the
-          MIT license, and it is important that you understand that
-          this license provides you with no warranty.
-          For the complete license text please see
-        `
-      });
-      noWarrantee.createEl("a", {
-        href: LicenseUrl,
-        text: LicenseUrl
-      });
-      noWarrantee.createSpan({ text: "." });
-      new import_obsidian4.Setting(containerEl).setName("Enable encrypted (HTTPS) server").setDesc(
-        "\n          This controls whether the HTTPS server is enabled.  You almost certainly want to leave this switch in its default state ('on'),\n          but may find it useful to turn this switch off for\n          troubleshooting.\n        "
-      ).addToggle(
-        (cb) => cb.onChange((value) => {
-          const originalValue = this.plugin.settings.enableSecureServer;
-          this.plugin.settings.enableSecureServer = value;
-          void this.plugin.saveSettings();
-          this.plugin.refreshServerState();
-          if (value !== originalValue) {
-            this.display();
-          }
-        }).setValue(this.plugin.settings.enableSecureServer ?? true)
-      );
-      new import_obsidian4.Setting(containerEl).setName("Encrypted (HTTPS) server port").setDesc(
-        "This configures the port on which your REST API will listen for HTTPS connections.  It is recommended that you leave this port with its default setting as tools integrating with this API may expect the default port to be in use.  Under no circumstances is it recommended that you expose this service directly to the internet."
-      ).addText(
-        (cb) => cb.onChange((value) => {
-          this.plugin.settings.port = parseInt(value, 10);
-          void this.plugin.saveSettings();
-          this.plugin.refreshServerState();
-        }).setValue(this.plugin.settings.port.toString())
-      );
-      new import_obsidian4.Setting(containerEl).setName("Non-encrypted (HTTP) server port").addText(
-        (cb) => cb.onChange((value) => {
-          this.plugin.settings.insecurePort = parseInt(value, 10);
-          void this.plugin.saveSettings();
-          this.plugin.refreshServerState();
-        }).setValue(this.plugin.settings.insecurePort.toString())
-      );
-      new import_obsidian4.Setting(containerEl).setName("API key").addText((cb) => {
-        cb.onChange((value) => {
-          this.plugin.settings.apiKey = value;
-          void this.plugin.saveSettings();
-          this.plugin.refreshServerState();
-        }).setValue(this.plugin.settings.apiKey ?? "");
-      });
-      new import_obsidian4.Setting(containerEl).setName("Certificate hostnames").setDesc(
-        `
-          List of extra hostnames to add
-          to your certificate's \`subjectAltName\` field.
-          One hostname per line.
-          You must click the "Re-generate Certificates" button above after changing this value
-          for this to have an effect.  This is useful for
-          situations in which you are accessing Obsidian
-          from a hostname other than the host on which
-          it is running.
+      this.renderAdvancedSettings(containerEl);
+    }
+  }
+  renderAdvancedSettings(containerEl) {
+    new import_obsidian4.Setting(containerEl).setHeading().setName("Advanced settings");
+    containerEl.createEl("p", {
+      text: `
+        The settings below are potentially dangerous and
+        are intended for use only by people who know what
+        they are doing. Do not change any of these settings if
+        you do not understand what that setting is used for
+        and what security impacts changing that setting will have.
       `
-      ).addTextArea(
-        (cb) => cb.onChange((value) => {
-          this.plugin.settings.subjectAltNames = value;
-          void this.plugin.saveSettings();
-        }).setValue(this.plugin.settings.subjectAltNames ?? "")
-      );
-      new import_obsidian4.Setting(containerEl).setName("Certificate").addTextArea(
-        (cb) => cb.onChange((value) => {
+    });
+    const noWarrantee = containerEl.createEl("p");
+    noWarrantee.createSpan({
+      text: `
+        Use of this software is licensed to you under the
+        MIT license, and it is important that you understand that
+        this license provides you with no warranty.
+        For the complete license text please see
+      `
+    });
+    noWarrantee.createEl("a", {
+      href: LicenseUrl,
+      text: LicenseUrl
+    });
+    noWarrantee.createSpan({ text: "." });
+    new import_obsidian4.Setting(containerEl).setName("Enable encrypted (HTTPS) server").setDesc(
+      "This controls whether the HTTPS server is enabled.  You almost certainly want to leave this switch in its default state ('on'), but may find it useful to turn this switch off for troubleshooting."
+    ).addToggle(
+      (cb) => cb.onChange((value) => {
+        const originalValue = this.plugin.settings.enableSecureServer;
+        this.plugin.settings.enableSecureServer = value;
+        void this.plugin.saveSettings();
+        this.plugin.refreshServerState();
+        if (value !== originalValue) {
+          this.display();
+        }
+      }).setValue(this.plugin.settings.enableSecureServer ?? true)
+    );
+    new import_obsidian4.Setting(containerEl).setName("Encrypted (HTTPS) server port").setDesc(
+      "This configures the port on which your REST API will listen for HTTPS connections.  It is recommended that you leave this port with its default setting as tools integrating with this API may expect the default port to be in use.  Under no circumstances is it recommended that you expose this service directly to the internet."
+    ).addText(
+      (cb) => cb.onChange((value) => {
+        this.plugin.settings.port = parseInt(value, 10);
+        void this.plugin.saveSettings();
+        this.plugin.refreshServerState();
+      }).setValue(this.plugin.settings.port.toString())
+    );
+    new import_obsidian4.Setting(containerEl).setName("Non-encrypted (HTTP) server port").addText(
+      (cb) => cb.onChange((value) => {
+        this.plugin.settings.insecurePort = parseInt(value, 10);
+        void this.plugin.saveSettings();
+        this.plugin.refreshServerState();
+      }).setValue(this.plugin.settings.insecurePort.toString())
+    );
+    new import_obsidian4.Setting(containerEl).setName("API key").addText((cb) => {
+      cb.onChange((value) => {
+        this.plugin.settings.apiKey = value;
+        void this.plugin.saveSettings();
+        this.plugin.refreshServerState();
+      }).setValue(this.plugin.settings.apiKey ?? "");
+    });
+    new import_obsidian4.Setting(containerEl).setName("Certificate hostnames").setDesc(
+      'List of extra hostnames to add to your certificate\'s `subjectAltName` field. One hostname per line. You must click the "Re-generate certificates" button above after changing this value for this to have an effect.  This is useful for situations in which you are accessing Obsidian from a hostname other than the host on which it is running.'
+    ).addTextArea(
+      (cb) => cb.onChange((value) => {
+        this.plugin.settings.subjectAltNames = value;
+        void this.plugin.saveSettings();
+      }).setValue(this.plugin.settings.subjectAltNames ?? "")
+    );
+    new import_obsidian4.Setting(containerEl).setName("Certificate").addTextArea(
+      (cb) => cb.onChange((value) => {
+        if (this.plugin.settings.crypto) {
           this.plugin.settings.crypto.cert = value;
           void this.plugin.saveSettings();
           this.plugin.refreshServerState();
-        }).setValue(this.plugin.settings.crypto.cert)
-      );
-      new import_obsidian4.Setting(containerEl).setName("Public key").addTextArea(
-        (cb) => cb.onChange((value) => {
+        }
+      }).setValue(this.plugin.settings.crypto?.cert ?? "")
+    );
+    new import_obsidian4.Setting(containerEl).setName("Public key").addTextArea(
+      (cb) => cb.onChange((value) => {
+        if (this.plugin.settings.crypto) {
           this.plugin.settings.crypto.publicKey = value;
           void this.plugin.saveSettings();
           this.plugin.refreshServerState();
-        }).setValue(this.plugin.settings.crypto.publicKey)
-      );
-      new import_obsidian4.Setting(containerEl).setName("Private key").addTextArea(
-        (cb) => cb.onChange((value) => {
+        }
+      }).setValue(this.plugin.settings.crypto?.publicKey ?? "")
+    );
+    new import_obsidian4.Setting(containerEl).setName("Private key").addTextArea(
+      (cb) => cb.onChange((value) => {
+        if (this.plugin.settings.crypto) {
           this.plugin.settings.crypto.privateKey = value;
           void this.plugin.saveSettings();
           this.plugin.refreshServerState();
-        }).setValue(this.plugin.settings.crypto.privateKey)
+        }
+      }).setValue(this.plugin.settings.crypto?.privateKey ?? "")
+    );
+    new import_obsidian4.Setting(containerEl).setName("Authorization header").addText((cb) => {
+      cb.onChange((value) => {
+        if (value !== DefaultBearerTokenHeaderName) {
+          this.plugin.settings.authorizationHeaderName = value;
+        } else {
+          delete this.plugin.settings.authorizationHeaderName;
+        }
+        void this.plugin.saveSettings();
+        this.plugin.refreshServerState();
+      }).setValue(
+        this.plugin.settings.authorizationHeaderName ?? DefaultBearerTokenHeaderName
       );
-      new import_obsidian4.Setting(containerEl).setName("Authorization header").addText((cb) => {
-        cb.onChange((value) => {
-          if (value !== DefaultBearerTokenHeaderName) {
-            this.plugin.settings.authorizationHeaderName = value;
-          } else {
-            delete this.plugin.settings.authorizationHeaderName;
-          }
-          void this.plugin.saveSettings();
-          this.plugin.refreshServerState();
-        }).setValue(
-          this.plugin.settings.authorizationHeaderName ?? DefaultBearerTokenHeaderName
-        );
-      });
-      new import_obsidian4.Setting(containerEl).setName("Binding host").addText((cb) => {
-        cb.onChange((value) => {
-          if (value !== DefaultBindingHost) {
-            this.plugin.settings.bindingHost = value;
-          } else {
-            delete this.plugin.settings.bindingHost;
-          }
-          void this.plugin.saveSettings();
-          this.plugin.refreshServerState();
-        }).setValue(this.plugin.settings.bindingHost ?? DefaultBindingHost);
-      });
-      new import_obsidian4.Setting(containerEl).setName("Enable verbose logging").setDesc(
-        "When enabled, logs server startup messages and a one-line access log entry for every request to the browser console."
-      ).addToggle(
-        (cb) => cb.onChange((value) => {
-          this.plugin.settings.enableVerboseLogging = value || void 0;
-          void this.plugin.saveSettings();
-        }).setValue(this.plugin.settings.enableVerboseLogging ?? false)
-      );
-    }
+    });
+    new import_obsidian4.Setting(containerEl).setName("Binding host").addText((cb) => {
+      cb.onChange((value) => {
+        if (value !== DefaultBindingHost) {
+          this.plugin.settings.bindingHost = value;
+        } else {
+          delete this.plugin.settings.bindingHost;
+        }
+        void this.plugin.saveSettings();
+        this.plugin.refreshServerState();
+      }).setValue(this.plugin.settings.bindingHost ?? DefaultBindingHost);
+    });
+    new import_obsidian4.Setting(containerEl).setName("Enable verbose logging").setDesc(
+      "When enabled, logs server startup messages and a one-line access log entry for every request to the browser console."
+    ).addToggle(
+      (cb) => cb.onChange((value) => {
+        this.plugin.settings.enableVerboseLogging = value || void 0;
+        void this.plugin.saveSettings();
+      }).setValue(this.plugin.settings.enableVerboseLogging ?? false)
+    );
   }
 };
 var getAPI = (app, manifest, version2) => {
