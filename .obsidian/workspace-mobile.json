@@ -8,17 +8,17 @@
         "type": "tabs",
         "children": [
           {
-            "id": "b53ae407c3aa5d9a",
+            "id": "2de0f2de671b0397",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "题目/高等数学试卷.md",
-                "mode": "preview",
+                "file": "未命名.md",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "高等数学试卷"
+              "title": "未命名"
             }
           }
         ]
@@ -158,9 +158,9 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "nutstore-sync:Start sync": false,
-      "nutstore-sync:Stop sync": false,
-      "nutstore-sync:Open chatbox": false,
+      "nutstore-sync:开始同步": false,
+      "nutstore-sync:停止同步": false,
+      "nutstore-sync:打开 Chatbox": false,
       "switcher:打开快速切换": false,
       "graph:查看关系图谱": false,
       "canvas:新建白板": false,
@@ -170,8 +170,31 @@
       "bases:新建数据库": false
     }
   },
-  "active": "b53ae407c3aa5d9a",
+  "active": "2de0f2de671b0397",
   "lastOpenFiles": [
+    "学习/学习/assets/Markdown基础/file-20260725122457463.jpg",
+    "学习/学习/assets/AI提示词技巧/file-20260725122540766 2.png",
+    "学习/学习/assets/AI提示词技巧/file-20260725122540766 1.png",
+    "学习/学习/assets/AI提示词技巧/file-20260725122540767.png",
+    "学习/学习/assets/AI提示词技巧/file-20260725122540766.png",
+    "学习/学习/Obsidian入门_B站技术爬爬虾.md",
+    "学习/学习/常见的Markdown 图标语法.md",
+    "学习/学习/Obsidian 双链与知识图谱.md",
+    "学习/学习/正则表达式30分钟入门教程.md",
+    "学习/学习/gitignore极简指南.md",
+    "学习/学习/Obsidian使用指南.md",
+    "学习/学习/Markdown基础.md",
+    "学习/学习/AI提示词技巧.md",
+    "学习/学习/AI提示词.md",
+    "学习/学习/cmd.md",
+    "学习资料/Python-100-Days-master/test.json",
+    "题目/高等数学试卷.md",
+    "未命名.md",
+    "学习/学习/assets/Markdown基础",
+    "学习/学习/assets/AI提示词技巧",
+    "学习/学习/assets",
+    "学习/学习",
+    "学习/碎片信息/杜威十进制分类法.md",
     "题目/大学物理单选题.md",
     "题目/大学物理单选题-无答案.md",
     "犬儒主义.md",
@@ -185,38 +208,15 @@
     "学习/碎片信息/虚无主义.md",
     "学习/碎片信息/犬儒主义.md",
     "学习/碎片信息/摩尔定律.md",
-    "随记/闲已成犯罪.md",
-    "杜威十进制分类法.md",
     "随记/assets/闲已成犯罪",
     "随记/assets",
-    "麦格克效应.md",
-    "理发师悖论.md",
-    "闲已成犯罪.md",
-    "知识的诅咒.md",
     "IMG_20260620_090740.jpg",
-    "肾移植：是加不是换.md",
-    "脸是拼出来的.md",
-    "其他/豆瓣电影Top250.md",
-    "学习资料/Python-100-Days-master/Day01-20/16.函数使用进阶.md",
-    "摩尔定律.md",
-    "有趣的话.md",
-    "自由漂浮行星.md",
-    "虚无主义.md",
     "学习/碎片信息",
     "学习资料/Python-100-Days-master/Day66-80/res/pyecharts_map_chart.png",
     "未命名.base",
     "学习/assets/AI提示词技巧/file-20260528160410693.png",
     "学习/assets/AI提示词技巧/file-20260528160410690.png",
     "学习/assets/AI提示词技巧/file-20260528160410687.png",
-    "学习/assets/AI提示词技巧/file-20260528160410679.png",
-    "GenerateTree.py",
-    "Clippings/Bilibili",
-    "学习/assets/AI提示词技巧",
-    "学习/鸽了",
-    "Clippings",
-    "题目/assets/大学物理单选题/file-20260503150239216 1.png",
-    "题目/assets/大学物理单选题/file-20260503150239221.png",
-    "题目/assets/大学物理单选题/file-20260503150239220.png",
-    "test.py"
+    "GenerateTree.py"
   ]
 }
