@@ -5,5 +5,6 @@
   "baseFontSizeAction": true,
   "baseFontSize": 30,
   "interfaceFontFamily": "微软雅黑",
-  "theme": "moonstone"
+  "theme": "obsidian",
+  "accentColor": ""
 }
