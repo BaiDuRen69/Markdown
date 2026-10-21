@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "未命名.md",
-                "mode": "source",
+                "file": "学习资料/Python-100-Days-master/Day01-20/13.常用数据结构之字典.md",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "未命名"
+              "title": "13.常用数据结构之字典"
             }
           }
         ]
@@ -37,7 +37,9 @@
           "type": "file-explorer",
           "state": {
             "sortOrder": "alphabetical",
-            "autoReveal": false
+            "autoReveal": false,
+            "showSearch": false,
+            "searchQuery": ""
           },
           "icon": "lucide-folder-closed",
           "title": "文件列表"
@@ -144,7 +146,7 @@
         "state": {
           "type": "outline",
           "state": {
-            "file": "题目/高等数学试卷.md",
+            "file": "学习资料/Python-100-Days-master/Day01-20/13.常用数据结构之字典.md",
             "followCursor": false,
             "showSearch": false,
             "searchQuery": ""
@@ -172,42 +174,45 @@
   },
   "active": "2de0f2de671b0397",
   "lastOpenFiles": [
+    "学习资料/Python-100-Days-master/Day01-20/12.常用数据结构之集合.md",
+    "学习资料/Python-100-Days-master/Day01-20/11.常用数据结构之字符串.md",
+    "学习资料/Python-100-Days-master/Day01-20/10.常用数据结构之元组.md",
+    "方.canvas",
+    "学习资料/Python-100-Days-master/Day01-20/09.常用数据结构之列表-2.md",
+    "学习资料/Python-100-Days-master/Day01-20/08.常用数据结构之列表-1.md",
+    "学习资料/Python-100-Days-master/Day01-20/07.分支和循环结构实战.md",
+    "学习资料/Python-100-Days-master/Day01-20/06.循环结构.md",
+    "学习资料/Python-100-Days-master/Day01-20/05.分支结构.md",
+    "学习资料/Python-100-Days-master/Day01-20/04.Python语言中的运算符.md",
+    "学习资料/Python-100-Days-master/Day01-20/03.Python语言中的变量.md",
+    "学习资料/Python-100-Days-master/Day01-20/02.第一个Python程序.md",
+    "学习资料/Python-100-Days-master/Day31-35/31.Python语言进阶.md",
+    "学习资料/Python-100-Days-master/Day01-20/01.初识Python.md",
+    "读书/文学.md",
+    "读书/读书啊.md",
+    "学习资料/Python-100-Days-master/Day01-20/15.函数应用实战.md",
+    "读书/《沧浪之水》读后感.md",
+    "读书/《平面国》读后感.md",
+    "读书/《吞食者》读后感.md",
+    "读书/经济.md",
+    "读书/科学.md",
+    "读书/法律.md",
+    "读书/心理.md",
+    "读书/哲学.md",
+    "读书/历史.md",
+    "读书/传记.md",
+    "读书",
     "学习/学习/assets/Markdown基础/file-20260725122457463.jpg",
     "学习/学习/assets/AI提示词技巧/file-20260725122540766 2.png",
     "学习/学习/assets/AI提示词技巧/file-20260725122540766 1.png",
     "学习/学习/assets/AI提示词技巧/file-20260725122540767.png",
     "学习/学习/assets/AI提示词技巧/file-20260725122540766.png",
-    "学习/学习/Obsidian入门_B站技术爬爬虾.md",
-    "学习/学习/常见的Markdown 图标语法.md",
-    "学习/学习/Obsidian 双链与知识图谱.md",
-    "学习/学习/正则表达式30分钟入门教程.md",
-    "学习/学习/gitignore极简指南.md",
-    "学习/学习/Obsidian使用指南.md",
-    "学习/学习/Markdown基础.md",
-    "学习/学习/AI提示词技巧.md",
-    "学习/学习/AI提示词.md",
-    "学习/学习/cmd.md",
     "学习资料/Python-100-Days-master/test.json",
-    "题目/高等数学试卷.md",
-    "未命名.md",
     "学习/学习/assets/Markdown基础",
     "学习/学习/assets/AI提示词技巧",
     "学习/学习/assets",
     "学习/学习",
-    "学习/碎片信息/杜威十进制分类法.md",
-    "题目/大学物理单选题.md",
-    "题目/大学物理单选题-无答案.md",
-    "犬儒主义.md",
     "随记/assets/闲已成犯罪/file-20260628210127508.jpg",
-    "学习/碎片信息/肾移植：是加不是换.md",
-    "学习/碎片信息/自由漂浮行星.md",
-    "学习/碎片信息/脸是拼出来的.md",
-    "学习/碎片信息/知识的诅咒.md",
-    "学习/碎片信息/麦格克效应.md",
-    "学习/碎片信息/理发师悖论.md",
-    "学习/碎片信息/虚无主义.md",
-    "学习/碎片信息/犬儒主义.md",
-    "学习/碎片信息/摩尔定律.md",
     "随记/assets/闲已成犯罪",
     "随记/assets",
     "IMG_20260620_090740.jpg",
@@ -215,8 +220,6 @@
     "学习资料/Python-100-Days-master/Day66-80/res/pyecharts_map_chart.png",
     "未命名.base",
     "学习/assets/AI提示词技巧/file-20260528160410693.png",
-    "学习/assets/AI提示词技巧/file-20260528160410690.png",
-    "学习/assets/AI提示词技巧/file-20260528160410687.png",
-    "GenerateTree.py"
+    "学习/assets/AI提示词技巧/file-20260528160410690.png"
   ]
 }
