@@ -36,5 +36,25 @@ git init #出现了一个.git文件夹(隐藏文件夹)
 命令是`git clone <url>`
 例如，克隆我的Markdown仓库：
 ```bush
-git cl
+git clone https://github.com/BaiDuRen69/Markdown
 ```
+
+克隆远程仓库是可自定义本地仓库名字：
+```bush
+git clone https://github.com/BaiDuRen69/Markdown myMarkdown
+```
+
+### 记录更新
+
+查看当前文件状态
+```bush
+git status
+```
+
+跟踪新文件（未必忽略的）：
+```bush
+git add <files> #所有尖括号都是不用输入的
+git add . #添加当前目录下（包括子目录）所有新文件
+```
+`git add`后可接目录，会添加子目录
+
