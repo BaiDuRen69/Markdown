@@ -1,6 +1,6 @@
 {
   "strictLineBreaks": true,
-  "showLineNumber": true,
+  "showLineNumber": false,
   "readableLineLength": true,
   "promptDelete": false,
   "newLinkFormat": "relative",
@@ -8,8 +8,5 @@
   "defaultViewMode": "preview",
   "foldHeading": true,
   "foldIndent": true,
-  "showUnsupportedFiles": false,
-  "autoPairMarkdown": true,
-  "autoPairBrackets": true,
-  "smartIndentList": true
+  "showUnsupportedFiles": false
 }

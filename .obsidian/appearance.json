@@ -3,8 +3,7 @@
   "textFontFamily": "微软雅黑",
   "monospaceFontFamily": "JetBrains Mono",
   "baseFontSizeAction": true,
-  "baseFontSize": 30,
+  "baseFontSize": 16,
   "interfaceFontFamily": "微软雅黑",
-  "theme": "obsidian",
-  "accentColor": ""
+  "theme": "moonstone"
 }
