@@ -707,3 +707,6 @@ git rebase main feature
 git pull --rebase
 ```
 它等价于先 `fetch`，再把本地提交重放到远程最新提交之后，避免产生无意义的 merge commit。
+
+#### 交互式rebase：整理提交历史
+
