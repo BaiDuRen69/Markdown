@@ -19,6 +19,21 @@ git config --global core.editor "code --wait"
 ```
 作用：在某些必须输入文本（没有在命令中写时）时，Git会自动打开
 
+### Github连接
+
+SSH 全称 **Secure Shell**，是一种用于在不安全网络上安全登录远程主机、执行命令、传输文件的协议。平时说的 `ssh` 通常指 **OpenSSH** 这个最常用的实现，默认端口 **22**。
+
+创建SSH Key：
+```bush
+ssh-keygen -t ed25519 -C "me@example.com"
+```
+
+- `~/.ssh/id_ed25519`：私钥，绝不能泄露
+- `~/.ssh/id_ed25519.pub`：公钥，可以给别人
+
+在GitHub上添加SSH Key：  
+点击“Account settings”->“SSH Keys“ -> "Add SSH Key"，填写任意Title，在Key文本框粘贴`id_ed25519`文件的内容。
+
 ## Git基础
 
 ### 获取Git仓库
@@ -256,16 +271,34 @@ git checkout -- README.md
 版本回退：`git reset` 
 在Git中，用`HEAD`表示当前版本，也就是最新的提交`1094adb...`（注意我的提交ID和你的肯定不一样），上一个版本是`HEAD^`，上上个版本是`HEAD^^`，往上100个版本写成`HEAD~100`。  
 选项`--hard`会回退到上个版本的已提交状态，而`--soft`会回退到上个版本的未提交状态，`--mixed`会回退到上个版本已添加但未提交的状态。
+
+|模式|HEAD 移动|暂存区|工作区|
+|---|---|---|---|
+|`--soft`|✅|保留|保留|
+|`--mixed`（默认）|✅|重置|保留|
+|`--hard`|✅|重置|重置（丢代码）|
+
 ```bush
-git reset --bhard HEAD^
+git reset --hard HEAD^
 ```
 找回误删的提交  
 
 查看所有HEAD移动记录：`git reflog`
 ```bush
-
+git reflog
+git reset --soft <目标hash> # 先软回退，保留改动
 ```
-### 查看远程仓库
+
+回退已push的提交
+
+不要用 `reset --hard` 强推，会破坏别人的历史。用 `git revert`：
+
+```bush
+git revert <commit-hash>      # 生成一个反向提交，抵消该提交
+git revert HEAD               # 撤销最近一次提交
+git revert HEAD~3..HEAD       # 撤销最近 3 次提交
+```
+### 远程仓库
 
 查看远程仓库：`git remote`列出指定的运程仓库的简写。选项`-v`显示需要读写远程仓库使用的 Git 保存的简写与其对应的 URL。
 ```bush
@@ -279,34 +312,45 @@ git remote #origin
 git remote show origin
 ```
 
-添加一个新的运程Git仓库：`git remote add <shortname> <url>`，shortname为仓库的简写。可以使用仓库的简写来代替整个URL。
+添加一个新的远程Git仓库：`git remote add <shortname> <url>`，shortname为仓库的简写。可以使用仓库的简写来代替整个URL。
 ```bush
 git remote add md <https://github.com/BaiDuRen69/Markdown
 git fetch md 
 ```
 
+#### 获取更新
+
 从运程仓库中抓取/拉取你还没有的数据：`git fetch <remote>`，**更新对应的远程跟踪分支，但不合并、不改工作区**。
 ```bush
 git fetch md
 ```
-**从远程仓库获取更新并合并到当前分支**：`git pull`
 
+从远程仓库**获取更新**并**合并**到当前分支：`git pull`
 ```bush
 git pull
 ```
 
+#### 推送
+
 推送到远程仓库：`git push <remote> <branch>`
 ```bush
-git push origin master
+git push                              # 推当前分支到上游
+git push origin main                  # 推 main 到 origin/main
+git push -u origin feature            # 首次推送并设置上游（-u = --set-upstream）
+git push --tags                       # 推送标签
+git push origin v1.0.0                # 推送单个标签
+git push --force                # 危险：直接覆盖远程
+git push --force-with-lease     # 推荐：远程被别人更新过则拒绝
 ```
 
-远程仓库的重命名：`git remote rename`
+
+重命名远程仓库：`git remote rename`
 ```bush
 git remote rename md markdown
 #将仓库md重命名为markdown
 ```
 
-远程仓库的移除：`git remote remove`或`git remote rm`
+移除远程仓库：`git remote remove`或`git remote rm`
 ```bush
 git remote remove md
 ```
@@ -401,13 +445,17 @@ git log --online --decprate -10
 
 ### 创建分支
 
-创建分支：`git branch`
+创建分支：`git branch`，选项`-b`表示创建并切换
 ```bush
 git branch testing
+git checkout -b testing # 创建并切换到testing
+git switch -c testing # 创建并切换，推荐
 ```
 基于某个commit或标签创建分支
 ```bush
-git switch -c hotfix v1.0.0
+git switch -c hotfix v1.2.0     # 基于标签
+git switch -c fix a1b2c3d       # 基于某个提交
+git switch -c fix main~3        # 基于 main 往前第 3 个提交
 ```
 
 ### 查看分支
@@ -432,10 +480,11 @@ git checkout -b dev         # 旧写法，创建并切换
 
 ### 合并分支
 
+合并指定分支到当前分支：`git merge`
 先切到目标分支，再合并：
 ```bush
 git switch main
-git merge dev
+git merge dev # 将dev分支合并到main分支
 ```
 
 ### 删除分支
