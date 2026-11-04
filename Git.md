@@ -507,4 +507,25 @@ git switch -c dev origin/dev      # 基于远程分支建本地分支
 git push -u origin dev            # 推送并设置 upstream
 ```
 
+### 合并冲突
+
+冲突发生在**同一文件的同一区域**被两边以不同方式修改时，文件里会出现冲突标记
+
+解决流程：
+```bush
+git status                 # 查看冲突文件（both modified）
+# 手动编辑，删掉标记，保留正确内容
+git add .           # 标记为已解决
+git commit                 # 完成合并（commit message 已预填）
+
+# 想放弃合并：
+git merge --abort
+```
+
+辅助命令：
+```bush
+git diff                   # 看冲突区域的差异
+git checkout --ours  file  # 冲突处取当前分支版本
+git checkout --theirs file # 冲突处取对方版本
+```
 
