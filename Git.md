@@ -84,7 +84,7 @@ git add . #添加当前目录下（包括子目录）所有新文件
 
 可以用`git diff --staged`命令查看已暂存的将要添加到下次提交里的内容。
 
-### 提交跟新
+### 提交更新
 
 使用`git commit`提交更新
 ```bush
@@ -92,7 +92,7 @@ git commit #这样会启动你选择的文本编辑器来输入说明
 git commit -m "提交的内容" #也可以添加-m，将提交信息与命令放在一起
 ```
 
-### 跳过使用暂存区
+### 跳过暂存区提交
 
 在提交时加上`-a`，Git 就会自动把所有已经跟踪过的文件暂存起来一并提交，从而跳过 `git add` 步骤：
 ```bush
@@ -126,3 +126,336 @@ mv file_from file_to #只更改工作区
 git rm file_from
 git add file_to
 ```
+
+### 查看提交历史
+
+查看提交历史`git log` 
+可以使用`-p`或`-patch`选项来显示每次提交的差异（按补丁的格式输出）并且可以限制显示的日志数目`- <n>`  
+```bush
+git log -p -2 #只显示最近两次提交
+```
+使用`--stst`可以查看提交的简略信息  
+```bush
+git log --stst
+```
+使用`--pretty`切换`git log`的展示格式，`oneline`、`short`、`full`、`fuller`详细程度升高；还有`format`自定义显示格式。
+```bush
+git log --pretty=oneline
+# 每个提交一行：短哈希 + 提交标题
+
+git log --pretty=short
+# 短哈希、作者、日期、标题
+
+git log --pretty=full
+# 比 short 更详细，包含作者和提交者信息
+
+git log --pretty=fuller
+# 最详细的内建格式之一，区分作者日期和提交者日期
+
+git log --pretty=format:"%h - %an, %ar : %s"
+```
+`git log --pretty=format`常用选项：
+
+| 选项    | 说明                          |
+| ----- | --------------------------- |
+| `%H`  | 提交的完整哈希值                    |
+| `%h`  | 提交的简写哈希值                    |
+| `%T`  | 树的完整哈希值                     |
+| `%t`  | 树的简写哈希值                     |
+| `%P`  | 父提交的完整哈希值                   |
+| `%p`  | 父提交的简写哈希值                   |
+| `%an` | 作者名字                        |
+| `%ae` | 作者的电子邮件地址                   |
+| `%ad` | 作者修订日期（可以用 --date=选项 来定制格式） |
+| `%ar` | 作者修订日期，按多久以前的方式显示           |
+| `%cn` | 提交者的名字                      |
+| `%ce` | 提交者的电子邮件地址                  |
+| `%cd` | 提交日期                        |
+| `%cr` | 提交日期（距今多长时间）                |
+| `%s`  | 提交说明                        |
+
+	tip:作者指的是实际作出修改的人，提交者指的是最后将此工作成果提交到仓库的人
+
+`git log`的常用选项：
+
+| 选项                | 说明                                                                    |
+| ----------------- | --------------------------------------------------------------------- |
+| `-p`              | 按补丁格式显示每个提交引入的差异。                                                     |
+| `--stat`          | 显示每次提交的文件修改统计信息。                                                      |
+| `--shortstat`     | 只显示 --stat 中最后的行数修改添加移除统计。                                            |
+| `--name-only`     | 仅在提交信息后显示已修改的文件清单。                                                    |
+| `--name-status`   | 显示新增、修改、删除的文件清单。                                                      |
+| `--abbrev-commit` | 仅显示 SHA-1 校验和所有 40 个字符中的前几个字符。                                        |
+| `--relative-date` | 使用较短的相对时间而不是完整格式显示日期（比如“2 weeks ago”）。                                |
+| `--graph`         | 在日志旁以 ASCII 图形显示分支与合并历史。                                              |
+| `--pretty`        | 使用其他格式显示历史提交信息。可用的选项包括 oneline、short、full、fuller 和 format（用来定义自己的格式）。 |
+| `--oneline`       | `--pretty=oneline --abbrev-commit` 合用的简写。                             |
+
+### 限制输出长度
+
+使用`- <n>`仅显示最近的n次提交，n为任何整数  
+使用`--since`和`--until`按照时间限制  
+```bush
+git log --since=2.weeks #列出最近两周的提交
+
+git log --since="1 week ago" \
+        --until="now" \
+        --pretty=format:"%h - %an, %ar : %s"
+# 查看最近一周的提交 
+```
+使用`--author`指定作者的提交  
+使用`--grep`搜索提交说明中的关键字  
+
+你可以指定多个 `--author` 和 `--grep` 搜索条件，这样会只输出匹配 **任意** `--author` 模式和 **任意** `--grep` 模式的提交。  
+然而，如果你添加了 `--all-match` 选项， 则只会输出匹配 **所有** `--grep` 模式的提交。
+
+使用`-S <字符串>`过滤器只显示哪些**添加**或**删除**该字符串的提交
+```bush
+git log -S function_name
+```
+使用`git log -- <路径>`只显示某些文件或目录的提交，与其他选项组合时路径要在最后
+```bush
+git log -- src/
+git log -- README.md
+```
+限制`git log`输出的选项：
+
+| 选项                    | 说明                    |
+| --------------------- | --------------------- |
+| `-<n>`                | 仅显示最近的 n 条提交。         |
+| `--since`, `--after`  | 仅显示指定时间之后的提交。         |
+| `--until`, `--before` | 仅显示指定时间之前的提交。         |
+| `--author`            | 仅显示作者匹配指定字符串的提交。      |
+| `--committer`         | 仅显示提交者匹配指定字符串的提交。     |
+| `--grep`              | 仅显示提交说明中包含指定字符串的提交。   |
+| `-S`                  | 仅显示添加或删除内容匹配指定字符串的提交。 |
+| `-- <path>`           | 仅显示某些文件或目录的提交         |
+
+### 撤销操作
+
+修正最后一次提交：`git commit --amend ...`，用当前提交代替上次提交。
+选项`--no-edit`沿用原来的提交信息。
+```bush
+git commit --amend #打开编辑器
+git commit --amend -m "新提交的信息"
+git commit --amend --no-edit
+```
+
+撤销暂存区的文件：`git reset HEAD <file>...`和`git restore --staged <file>`
+```bush
+git reset HEAD README.md
+```
+
+撤销工作区的修改：`git checkout -- <file>...`和`gir restore <file>`（新版推荐）
+```bush
+git checkout -- README.md
+```
+
+### 版本回退
+
+版本回退：`git reset` 
+在Git中，用`HEAD`表示当前版本，也就是最新的提交`1094adb...`（注意我的提交ID和你的肯定不一样），上一个版本是`HEAD^`，上上个版本是`HEAD^^`，往上100个版本写成`HEAD~100`。  
+选项`--hard`会回退到上个版本的已提交状态，而`--soft`会回退到上个版本的未提交状态，`--mixed`会回退到上个版本已添加但未提交的状态。
+```bush
+git reset --bhard HEAD^
+```
+找回误删的提交  
+
+查看所有HEAD移动记录：`git reflog`
+```bush
+
+```
+### 查看远程仓库
+
+查看远程仓库：`git remote`列出指定的运程仓库的简写。选项`-v`显示需要读写远程仓库使用的 Git 保存的简写与其对应的 URL。
+```bush
+git remote #origin
+git remote -v 
+```
+
+查看远程仓库的详细信息：`git remote show <remote>`
+```bush
+git remote #origin
+git remote show origin
+```
+
+添加一个新的运程Git仓库：`git remote add <shortname> <url>`，shortname为仓库的简写。可以使用仓库的简写来代替整个URL。
+```bush
+git remote add md <https://github.com/BaiDuRen69/Markdown
+git fetch md 
+```
+
+从运程仓库中抓取/拉取你还没有的数据：`git fetch <remote>`，**更新对应的远程跟踪分支，但不合并、不改工作区**。
+```bush
+git fetch md
+```
+**从远程仓库获取更新并合并到当前分支**：`git pull`
+
+```bush
+git pull
+```
+
+推送到远程仓库：`git push <remote> <branch>`
+```bush
+git push origin master
+```
+
+远程仓库的重命名：`git remote rename`
+```bush
+git remote rename md markdown
+#将仓库md重命名为markdown
+```
+
+远程仓库的移除：`git remote remove`或`git remote rm`
+```bush
+git remote remove md
+```
+
+### 打标签
+
+列出标签：`git tag`，使用`-l`或`-list`按特定的模式查找标签。
+```bush
+git tag
+git tag -l "v1.8.5*"
+```
+
+创建标签：
+
+创建附注标签：`git tag -a`
+```bush
+git tag -a v1.4 -m "my version 1.4"
+```
+查看标签信息和与之对应的提交信息：`git show`
+```bush
+git show v1.4
+```
+创建轻量标签：`git tag <版本>`
+```bush
+git tag v1.4-lw
+```
+
+	tip：核心区别是：附注标签是一个独立的 Git 对象，带元数据；轻量标签只是一个指向 commit 的引用。
+
+后期打标签  
+对过去的提交打标签：
+```bush
+git tag -a v1.2 9fceb02d
+```
+
+共享标签  
+推送标签到共享服务器：`git push origin <tagname>`
+可以使用`--tags`选项一次推送全部标签  
+```bush
+git push origin v1.5
+git push origin --tags
+```
+
+	tip；`git push`默认不会推送标签
+
+删除标签
+删除本地仓库的标签：`git tag -d <tagname>`
+```bush
+git tag -d v1.4-lw
+```
+删除远程仓库标签：`git push <remote> :refs/tags/<tagname>`或者`git push origin --delete <tagname>`
+```bush
+git push origin :refs/tags/v1.4-lw
+git push origin --delete v1.4
+```
+
+检出标签
+把工作区切到某个标签指向的提交：`git checkout`或者`git switch`
+```bush
+git checkout v1.0.0
+git switch --detach v1.0.0 #新版推荐
+```
+
+基于标签修改代码时应创建分支：
+```bush
+git switch -c hotfix-v1.0.0 v1.0.0
+git checkout -b hotfix-v1.0.0 v1.0.0
+```
+
+### Git别名
+
+如果不想每次都输入完整的 Git 命令，可以通过 `git config` 文件来轻松地为每一个命令设置一个别名
+```bush
+git config --global alias.co checkout
+git config --global alias.br branch
+git config --global alias.ci commit
+git config --global alias.unstage 'reset HEAD --'
+```
+
+	tip：Git只是简单地将别名替换为对应的命令。
+
+在 Git 别名中以 `!` 开头，可以让 Git 执行外部 shell 命令，而不是把它当成 Git 子命令。
+```bush
+git config --global alias.ll '!git log --online --decorate -10'
+之后执行：
+git ll
+实际执行：
+git log --online --decprate -10
+```
+
+## Git分支
+
+### 创建分支
+
+创建分支：`git branch`
+```bush
+git branch testing
+```
+基于某个commit或标签创建分支
+```bush
+git switch -c hotfix v1.0.0
+```
+
+### 查看分支
+
+查看分支：`git branch`
+```bush
+git branch          # 本地分支
+git branch -a       # 本地 + 远程分支
+git branch -v       # 显示各分支最新 commit
+git branch --merged # 已合并到当前分支的分支
+```
+
+### 切换分支
+
+切换分支：
+```bush
+git branch dev              # 创建 dev，不切换
+git switch dev              # 切换到 dev
+git switch -c dev           # 创建并切换，推荐
+git checkout -b dev         # 旧写法，创建并切换
+```
+
+### 合并分支
+
+先切到目标分支，再合并：
+```bush
+git switch main
+git merge dev
+```
+
+### 删除分支
+
+```bush
+git branch -d dev     # 删除已合并分支
+git branch -D dev     # 强制删除未合并分支
+```
+删除远程分支：
+```bush
+git push origin --delete dev
+```
+
+### 远程分支
+
+```bush
+git fetch origin
+git branch -a
+git switch -c dev origin/dev      # 基于远程分支建本地分支
+git push -u origin dev            # 推送并设置 upstream
+```
+
+

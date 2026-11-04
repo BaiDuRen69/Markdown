@@ -1,0 +1,11 @@
+{
+  "syncPolicy": "two-way",
+  "modules": {
+    "sync": "enabled",
+    "ai": "enabled"
+  },
+  "ai": {
+    "chatboxLocation": "sidebar",
+    "sessionAppOpenMode": "automatic"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "strictLineBreaks": true,
-  "showLineNumber": false,
+  "showLineNumber": true,
   "readableLineLength": true,
   "promptDelete": false,
   "newLinkFormat": "relative",
