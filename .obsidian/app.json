@@ -8,5 +8,6 @@
   "defaultViewMode": "preview",
   "foldHeading": true,
   "foldIndent": true,
-  "showUnsupportedFiles": false
+  "showUnsupportedFiles": false,
+  "showIndentGuide": true
 }

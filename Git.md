@@ -142,17 +142,31 @@ git rm file_from
 git add file_to
 ```
 
-### 查看提交历史
+### 查看提交历史/日志
 
 查看提交历史`git log` 
+
+```
+tip：在bash查看日志触发分页器时，可以使用：
+· 退出：q
+· 向下翻整页：Space 或 f (forward) 或 Page Down
+· 向上翻整页：b (backward) 或 Page Up
+· 向下翻半页：d (down)
+· 向上翻半页：u (up)
+· 向下滚动一行：Enter 或 ↓ 或 j
+· 向上滚动一行：↑ 或 k
+```
+
 可以使用`-p`或`-patch`选项来显示每次提交的差异（按补丁的格式输出）并且可以限制显示的日志数目`- <n>`  
 ```bush
 git log -p -2 #只显示最近两次提交
 ```
+
 使用`--stst`可以查看提交的简略信息  
 ```bush
 git log --stst
 ```
+
 使用`--pretty`切换`git log`的展示格式，`oneline`、`short`、`full`、`fuller`详细程度升高；还有`format`自定义显示格式。
 ```bush
 git log --pretty=oneline
@@ -169,6 +183,7 @@ git log --pretty=fuller
 
 git log --pretty=format:"%h - %an, %ar : %s"
 ```
+
 `git log --pretty=format`常用选项：
 
 | 选项    | 说明                          |
@@ -490,12 +505,12 @@ git merge dev # 将dev分支合并到main分支
 ### 删除分支
 
 ```bush
-git branch -d dev     # 删除已合并分支
-git branch -D dev     # 强制删除未合并分支
+git branch -d <name>     # 删除已合并分支
+git branch -D <name>     # 强制删除未合并分支
 ```
 删除远程分支：
 ```bush
-git push origin --delete dev
+git push origin --delete <name>
 ```
 
 ### 远程分支
@@ -529,3 +544,166 @@ git checkout --ours  file  # 冲突处取当前分支版本
 git checkout --theirs file # 冲突处取对方版本
 ```
 
+用带参数的`git log`也可以看到分支的合并情况：
+```bush
+ git log --graph --pretty=oneline --abbrev-commit
+```
+
+**Fast-forward**：当被合并分支的提交历史**完全包含**在目标分支的"前方延长线"上时，Git 只需把目标分支的指针**向前移动**到对方的最新提交，不产生任何新提交。  
+如果可能，合并分支时，Git通常会用`Fast forward`模式，但这种模式下，删除分支后，会丢掉分支信息。
+
+```
+                           HEAD
+                             │
+                             ▼
+                          master
+                             │
+                             ▼
+┌───┐    ┌───┐    ┌───┐    ┌───┐
+│   │───▶│   │───▶│   │───▶│   │
+└───┘    └───┘    └───┘    └───┘
+                             ▲
+                             │
+                            dev
+```
+
+如果要强制禁用`Fast forward`模式，Git就会在merge时生成一个新的commit，这样，从分支历史上就可以看出分支信息。  
+
+使用`--no-ff`参数，表示禁用`Fast forward`  
+```bush
+git merge --no-ff -m "merge with no-ff" <name>
+```
+
+```
+                                 HEAD
+                                  │
+                                  ▼
+                                master
+                                  │
+                                  ▼
+                                ┌───┐
+                         ┌─────▶│   │
+┌───┐    ┌───┐    ┌───┐  │      └───┘
+│   │───▶│   │───▶│   │──┤        ▲
+└───┘    └───┘    └───┘  │  ┌───┐ │
+                         └─▶│   │─┘
+                            └───┘
+                              ▲
+                              │
+                             dev
+```
+
+### bug分支
+
+**临时保存未提交修改**（工作区和暂存区）的功能：`git stash`
+```bush
+# 保存当前工作区和暂存区的修改
+git stash
+
+# 保存并添加说明
+git stash push -m "临时保存：登录页修改"
+
+# 查看 stash 列表
+git stash list
+
+# 恢复最近一次 stash，并删除该记录
+git stash pop
+
+# 恢复最近一次 stash，但保留记录
+git stash apply
+
+# 恢复指定 stash
+git stash apply stash@{1}
+
+# 查看某个 stash 的内容
+git stash show -p stash@{0}
+
+# 删除最近一次 stash
+git stash drop
+
+# 清空所有 stash
+git stash clear
+```
+
+#### 常用场景
+ 切换分支前保存修改
+ ```bush
+git stash
+git checkout other-branch
+# 处理完回来
+git checkout original-branch
+git stash pop
+ ```
+
+拉取远程代码前保存本地修改
+```bush
+git stash
+git pull
+git stash pop
+```
+
+保存包含未跟踪文件
+保存时保留暂存区状态
+
+“bug 分支”通常指在 Git 中为修复某个 bug 单独创建的分支，避免直接在主分支或开发分支上改代码。  
+
+```bush
+# 保存当前未提交修改
+git stash push -m "功能开发中"
+
+# 切到主分支拉 bug 分支
+git checkout main
+git pull
+git checkout -b bugfix/xxx
+
+# 修复完成提交后，回到原分支恢复
+git checkout feature/xxx
+git stash pop
+```
+
+`cherry-pick`命令，让我们能复制一个特定的提交到当前分支：`git cherry-pick <修复提交的commit-id>`  
+```bush
+# 保存当前未提交修改
+# 切到主分支拉 bug 分支
+# 修复完成提交后，回到原分支恢复
+...
+git stash pop
+
+# 把修复同步到当前分支
+git cherry-pick <修复提交的commit-id>
+```
+
+### Rebase
+
+**`merge` 是保留分叉再合并，`rebase` 是把你的提交逐个“重放”到新基底上，从而形成线性历史。**
+
+例如：
+```text
+      C---D  feature
+     /
+A---B---E---F  main
+```
+在 `feature` 分支执行：
+```bush
+git switch feature
+git rebase main
+# 把 feature 分支上有、但 main 上没有的提交，重放到 main 最新提交之后。
+```
+结果：
+```text
+A---B---E---F---C'---D'  feature
+```
+
+#### 指定分支变基
+
+```bush
+git rebase main feature
+```
+表示把 `feature` 变基到 `main` 上，但不一定先切换分支。
+
+#### 拉取远程时使用 rebase
+
+```bush
+git pull --rebase
+```
+它等价于先 `fetch`，再把本地提交重放到远程最新提交之后，避免产生无意义的 merge commit。

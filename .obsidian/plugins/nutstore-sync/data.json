@@ -3,7 +3,7 @@
   "credential": "",
   "nutstoreEnterpriseBaseUrl": "",
   "remoteDir": "",
-  "conflictStrategy": "no-conflict-merge",
+  "conflictStrategy": "diff3",
   "oauthResponseText": "YBtevwE9ylvC5PtCBX3GoLFjBCXsFBuEfyK16rhSbvdsfYFBPUc6bwnePgWg9R1T38hWK9VKNBimYz1mJ4vgWO8bFEiiBUCQ9FE48bW0BciCRxKjlFhodC0urR-Qmc_RUL6hkwo8rip-dD6yJ7qNoiWwL09rc8M7xbLQ5sC7j-caiyjXjQ",
   "loginMode": "sso",
   "confirmBeforeSync": true,
@@ -134,9 +134,20 @@
   "autoSyncIntervalSeconds": 300,
   "ai": {
     "providers": {},
-    "yolo": false
+    "yolo": false,
+    "subagents": {
+      "explorer": {
+        "enabled": false
+      }
+    },
+    "memory": {
+      "enabled": true,
+      "path": ".agents/nutstore-sync/MEMORY.md"
+    },
+    "disabledSkills": [],
+    "nutstoreLlmGateway": {}
   },
-  "configDirSyncMode": "all",
+  "configDirSyncMode": "bookmarks",
   "remoteCacheDir": "",
   "useGitStyle": false
 }

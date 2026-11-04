@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Git.md",
+                "file": "学习资料/Python-100-Days-master/Day01-20/13.常用数据结构之字典.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Git"
+              "title": "13.常用数据结构之字典"
             }
           }
         ]
@@ -147,7 +147,7 @@
         "state": {
           "type": "outline",
           "state": {
-            "file": "Git.md",
+            "file": "学习资料/Python-100-Days-master/Day01-20/13.常用数据结构之字典.md",
             "followCursor": false,
             "showSearch": false,
             "searchQuery": ""
@@ -171,6 +171,7 @@
   },
   "active": "2de0f2de671b0397",
   "lastOpenFiles": [
+    "Git.md",
     "读书/心理.md",
     "Git.md",
     "读书/读书啊.md",
@@ -197,7 +198,6 @@
     "学习资料/Python-100-Days-master/Day01-20/15.函数应用实战.md",
     "读书/《沧浪之水》读后感.md",
     "读书/《平面国》读后感.md",
-    "读书/《吞食者》读后感.md",
     "读书",
     "学习/学习/assets/Markdown基础/file-20260725122457463.jpg",
     "学习/学习/assets/AI提示词技巧/file-20260725122540766 2.png",
