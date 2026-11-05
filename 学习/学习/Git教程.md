@@ -59,6 +59,24 @@ git clone https://github.com/BaiDuRen69/Markdown
 git clone https://github.com/BaiDuRen69/Markdown myMarkdown
 ```
 
+URL主要有 **HTTPS** 和 **SSH** 两种核心写法
+
+**1. HTTPS 格式**  
+这是最通用的格式，适用于所有公开和私有仓库，尤其在防火墙或代理后方时也能正常工作。  
+`git clone https://<主机名>/<用户名或组织>/<仓库名>.git`
+```bush
+https://github.com/username/repo.git
+# Github示例
+```
+
+**2. SSH 格式**  
+适合频繁操作或已配置 SSH 密钥的场景，无需每次输入凭证。使用前需要先将 SSH 公钥添加到对应平台的账户中。
+`git clone git@<主机名>:<用户名或组织>/<仓库名>.git`
+```bush
+git@github.com:username/repo.git
+# Github示例
+```
+
 ### 查看
 
 #### 查看项目的文件状态
@@ -209,6 +227,7 @@ git add . #添加当前目录下（包括子目录）所有新文件
 
 #### 忽略文件  
 
+[gitignore极简指南](gitignore极简指南.md)
 创建一个名为 `.gitignore` 的文件，列出要忽略的文件的模式
 
 文件 `.gitignore` 的格式规范如下：
