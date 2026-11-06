@@ -44,7 +44,7 @@ git log --pretty=format:"%h - %an, %ar : %s"
 | `--pretty` 格式 | 输出 |
 | --- | --- |
 | `oneline` | **完整** 40 位哈希 + 提交标题 |
-| `short` / `full` / `fuller` | 依次增加作者、提交者、作者日期与提交日期 |
+| `short` / `full` / `fuller` | `short` = 哈希 + 作者；`full` 再加提交者；`fuller` 再加带星期与时区的作者日期、提交日期 |
 | `format:"..."` | 自定义占位符格式 |
 
 > **注意**：`--pretty=oneline` 是完整哈希；`--oneline` 才是「短哈希 + 标题」，等价于 `--pretty=oneline --abbrev-commit`。
@@ -318,6 +318,7 @@ git switch -c hotfix-v1.0.0 v1.0.0         # 基于标签建分支后再改代�
 
 ```bash
 git branch                    # 本地分支，* 标记当前分支
+git branch -r                 # 只看远程跟踪分支
 git branch -a                 # 本地 + 远程跟踪分支
 git branch -v                 # 各分支最新提交
 git branch --merged           # 已合并进当前分支的分支（可安全删除）
@@ -336,12 +337,36 @@ git branch -D dev             # 强制删除未合并分支
 git push origin --delete dev  # 删除远程分支
 ```
 
+### 同步与跟踪远程分支
+
 ```bash
-git fetch origin
-git switch dev                  # 存在唯一同名远程分支时自动创建跟踪分支
-git switch -c dev origin/dev    # 显式基于远程跟踪分支创建
-git push -u origin dev          # 推送并建立上游
+git fetch origin                      # 更新远程跟踪分支
+git fetch --prune origin              # 同时清掉远程已删除的 origin/* 引用
+git remote prune origin               # 只清理过期引用，不抓取
 ```
+
+> **注意**：`--prune` 只删除过期的远程跟踪引用，**不会删任何本地分支**，本地分支要自己 `git branch -d`。想让每次 fetch 都自动清理，配 `git config --global fetch.prune true`。
+
+```bash
+git switch dev                        # 本地无同名分支、远程唯一同名时，自动创建跟踪分支
+git switch -c dev origin/dev          # 显式基于远程跟踪分支创建，同样自动建立跟踪
+git switch -c dev --track origin/dev  # 同上，把跟踪关系写明
+git push -u origin dev                # 推送并建立上游；origin 是远程仓库名，不是分支名
+```
+
+### 改用远程分支替换本地分支
+
+放弃自己那条本地分支，改成跟踪远程指定分支：
+
+```bash
+git fetch --prune origin
+git branch -r                         # 确认目标分支确实在远程
+git switch -c <branch> --track origin/<branch>
+git pull                              # 上游已设好，可直接同步
+git branch -d <old-branch>            # 删除原来的本地分支
+```
+
+> **注意**：`<branch>` 与 `<old-branch>` 不能同名，否则 `-c` 报 `fatal: a branch named '<branch>' already exists`，要先 `git branch -m <branch> <branch>-local` 改名腾位置。被替换的分支通常未合入，`-d` 会拒绝，确认丢弃才用 `-D`。未提交的改动跟着工作区走、不属于任何分支，删分支不会带走它们。
 
 ### 合并与快进
 
@@ -463,8 +488,8 @@ git rebase -i HEAD~3       # 整理 HEAD~3 之后的 3 个提交（基底本身�
 
 ```text
 pick   a1b2c3d 添加登录接口
-fixup  e4f5g6h 修复拼写
-fixup  i7j8k9l 补充测试
+fixup  e4f5a6b 修复拼写
+fixup  c7d8e9f 补充测试
 ```
 
 | 指令 | 作用 |
