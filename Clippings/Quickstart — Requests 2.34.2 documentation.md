@@ -1,13 +1,3 @@
----
-title: "快速上手 — Requests 2.34.2 文档"
-source: "https://requests.readthedocs.io/en/latest/user/quickstart/"
-author:
-published:
-created: 2026-11-06
-description:
-tags:
-  - "clippings"
----
 ## 快速上手
 
 迫不及待想开始了吗？本页会很好地介绍如何开始使用 Requests。
