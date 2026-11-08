@@ -11,6 +11,9 @@
 <!-- TREE START -->
 ```
 Markdown/
+├── Clippings/
+│   ├── Quickstart — Requests 2.34.2 documentation.md
+│   └── Quickstart — Requests 2.34.2 documentation.md.bak
 ├── 其他/
 │   └── 豆瓣电影Top250.md
 ├── 学习/
@@ -40,6 +43,18 @@ Markdown/
 │       ├── 虚无主义.md
 │       └── 麦格克效应.md
 ├── 学习资料/
+│   ├── HTTP教程/
+│   │   ├── 00.HTTP 教程.md
+│   │   ├── 01.HTTP 简介.md
+│   │   ├── 02.HTTP 报文结构.md
+│   │   ├── 03.HTTP 请求方法.md
+│   │   ├── 04.HTTP 状态码.md
+│   │   ├── 05.HTTP 头部详解.md
+│   │   ├── 06.HTTP 请求体与 Content-Type.md
+│   │   ├── 07.HTTP Cookie 与 Session.md
+│   │   ├── 08.HTTPS 与 SSL、TLS.md
+│   │   ├── 09.curl 命令实战.md
+│   │   └── 10.http 练习题.md
 │   └── Python-100-Days-master/
 ├── 讲座/
 │   ├── assets/
@@ -65,6 +80,7 @@ Markdown/
 │   ├── 荒诞.md
 │   └── 闲已成犯罪.md
 ├── README.md
+├── pip操作.md
 └── 有趣的话.md
 ```
 <!-- TREE END -->
